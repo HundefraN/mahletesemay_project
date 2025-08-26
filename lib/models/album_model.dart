@@ -6,7 +6,8 @@ class Album {
   final String artistId;
   final String artistName;
   final String coverImageUrl;
-  final int year;
+  final int? year;
+  final int? volume;
 
   Album({
     required this.id,
@@ -14,7 +15,8 @@ class Album {
     required this.artistId,
     required this.artistName,
     required this.coverImageUrl,
-    required this.year,
+    this.year,
+    this.volume,
   });
 
   factory Album.fromFirestore(DocumentSnapshot doc) {
@@ -25,7 +27,8 @@ class Album {
       artistId: data['artistId'] ?? '',
       artistName: data['artistName'] ?? '',
       coverImageUrl: data['coverImageUrl'] ?? '',
-      year: data['year'] ?? 0,
+      year: data['year'],
+      volume: data['volume'],
     );
   }
 
@@ -36,6 +39,7 @@ class Album {
       'artistName': artistName,
       'coverImageUrl': coverImageUrl,
       'year': year,
+      'volume': volume,
     };
   }
 }

@@ -1,13 +1,61 @@
-import '../models/vocal_exercise_model.dart';
+
+import 'dart:ui';
+
+import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../models/performance_tip_model.dart';
 
-final List<VocalExercise> demoVocalExercises = [
-  VocalExercise(id: 'd1', title: 'Day 1: Breathing Basics', duration: '10 min', category: 'Daily', description: 'Focus on diaphragmatic breathing. Inhale for 4 counts, hold for 4, exhale for 8. Repeat 10 times. This builds foundational breath support.'),
-  VocalExercise(id: 'd2', title: 'Day 2: Lip Trills', duration: '5 min', category: 'Daily', description: 'Perform lip trills (like a motorboat sound) on a simple 5-note scale, moving up and down your range. This connects breath to phonation without strain.'),
-  VocalExercise(id: 'd3', title: 'Day 3: Humming & Resonance', duration: '10 min', category: 'Daily', description: 'Hum on a comfortable pitch, focusing on the buzzing sensation in your lips, nose, and forehead. This helps find and place your resonance.'),
-  VocalExercise(id: 'w1', title: 'Weekly Goal 1: Range Expansion', duration: '15 min', category: 'Weekly', description: 'Using a "gee" sound, sing major scales, moving one half-step higher each time. Do not push. The goal is gentle expansion.'),
-  VocalExercise(id: 'w2', title: 'Weekly Goal 2: Agility', duration: '15 min', category: 'Weekly', description: 'Practice singing arpeggios (1-3-5-8-5-3-1) on an "ah" vowel. Start slowly and gradually increase speed to improve vocal flexibility.'),
-  VocalExercise(id: 'm1', title: 'Monthly Focus: Dynamics', duration: '20 min', category: 'Monthly', description: 'Hold a single, comfortable note. Start as softly as possible (pianissimo), crescendo to loud (fortissimo), and then decrescendo back to soft. This builds incredible control.'),
+final List<String> scaleMenuItems = [
+  '1st (Ionian)',
+  '2nd (Dorian)',
+  '5th (Mixolydian)',
+  '6th (Aeolian)',
+  'Tizita Minor',
+  'Ambassel',
+  'Anchi Hoy',
+  'Bati',
+  'Blues',
+  'Other',
+];
+
+final Map<String, TextStyle> fontPresets = {
+  'Montserrat': GoogleFonts.montserrat(),
+  'Lora': GoogleFonts.lora(),
+  'Playfair': GoogleFonts.playfairDisplay(),
+  'Oswald': GoogleFonts.oswald(),
+  'Roboto Slab': GoogleFonts.robotoSlab(),
+};
+final List<Gradient> gradientPresets = [
+  const LinearGradient(colors: [Color(0xff434343), Color(0xff000000)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+  const LinearGradient(colors: [Color(0xff0f2027), Color(0xff203a43), Color(0xff2c5364)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+  const LinearGradient(colors: [Color(0xff373B44), Color(0xff4286f4)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+  const LinearGradient(colors: [Color(0xff4b6cb7), Color(0xff182848)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+  const LinearGradient(colors: [Color(0xffc31432), Color(0xff240b36)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+  const LinearGradient(colors: [Color(0xff159957), Color(0xff155799)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+  const LinearGradient(colors: [Color(0xfff2709c), Color(0xffff9472)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+  const LinearGradient(colors: [Color(0xff8A2387), Color(0xffE94057), Color(0xffF27121)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+];
+
+final List<Color> solidColorPresets = [
+  const Color(0xff0D47A1), // App Primary
+  const Color(0xff1a1a1a), // Deep Charcoal
+  const Color(0xff606c38), // Olive
+  const Color(0xff283618), // Dark Olive
+  const Color(0xfffefae0), // Cream
+  const Color(0xffdda15e), // Tan
+  const Color(0xffbc6c25), // Brown
+];
+final List<String> rhythmMenuItems = [
+  'Waltz',
+  'Reggae',
+  'Wello',
+  'Chickchika',
+  'Disco',
+  'Ballad',
+  'Swing',
+  '6/8',
+  'Other',
 ];
 
 final List<PerformanceTip> demoPerformanceTips = [

@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
+import 'package:provider/provider.dart';
 import '../../models/artist_model.dart';
 import '../../services/firebase_service.dart';
+import '../providers/auth_proveider.dart';
 import '../services/coudinary_service.dart';
 
 class AddArtistScreen extends StatefulWidget {
@@ -59,14 +61,7 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
       String imageUrl = '';
 
       if (_pickedImage != null) {
-        final uploadedUrl = await CloudinaryService.uploadImage(
-          _pickedImage!,
-          onProgress: (count, total) {
-            setState(() {
-              _uploadProgress = count / total;
-            });
-          },
-        );
+        final uploadedUrl = await CloudinaryService.uploadImage(_pickedImage!, onProgress: (count, total) => setState(() => _uploadProgress = count / total));
         if (uploadedUrl != null) {
           imageUrl = uploadedUrl;
         } else {
@@ -84,6 +79,16 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
       );
       await _firebaseService.addArtist(newArtist);
 
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.currentModerator != null) {
+        _firebaseService.logActivity(
+          moderatorId: authProvider.currentUser!.uid,
+          moderatorName: authProvider.currentModerator!.fullName,
+          action: 'CREATE_ARTIST',
+          details: 'Added new artist: ${_nameController.text.trim()}',
+        );
+      }
+
       setState(() => _isSaving = false);
 
       if (mounted) {
@@ -92,7 +97,6 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
       }
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

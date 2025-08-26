@@ -1,10 +1,13 @@
+import '../services/coudinary_service.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../models/album_model.dart';
 import '../../services/firebase_service.dart';
-import '../services/coudinary_service.dart';
 
 class EditAlbumScreen extends StatefulWidget {
   final Album album;
@@ -18,6 +21,7 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleController;
   late TextEditingController _yearController;
+  late TextEditingController _volumeController;
   late String _existingCoverUrl;
 
   final _firebaseService = FirebaseService();
@@ -29,17 +33,36 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.album.title);
-    _yearController = TextEditingController(text: widget.album.year.toString());
+    _yearController = TextEditingController(text: widget.album.year?.toString() ?? '');
+    _volumeController = TextEditingController(text: widget.album.volume?.toString() ?? '');
     _existingCoverUrl = widget.album.coverImageUrl;
   }
 
-  Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 60);
+  Future<void> _pickAndCropImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (pickedFile != null) {
-      setState(() {
-        _pickedImage = File(pickedFile.path);
-        _uploadProgress = 0.0;
-      });
+      final croppedFile = await ImageCropper().cropImage(
+        sourcePath: pickedFile.path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        uiSettings: [
+          AndroidUiSettings(
+              toolbarTitle: 'Crop Cover Image',
+              toolbarColor: Theme.of(context).colorScheme.primary,
+              toolbarWidgetColor: Colors.white,
+              initAspectRatio: CropAspectRatioPreset.square,
+              lockAspectRatio: true),
+          IOSUiSettings(
+            title: 'Crop Cover Image',
+            aspectRatioLockEnabled: true,
+          ),
+        ],
+      );
+      if (croppedFile != null) {
+        setState(() {
+          _pickedImage = File(croppedFile.path);
+          _uploadProgress = 0.0;
+        });
+      }
     }
   }
 
@@ -58,7 +81,7 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
         if (uploadedUrl != null) {
           finalImageUrl = uploadedUrl;
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image upload failed.')));
+          CustomSnackbar.show(context, 'Image upload failed.', isError: true);
           setState(() => _isSaving = false);
           return;
         }
@@ -66,7 +89,8 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
 
       final Map<String, dynamic> updatedData = {
         'title': _titleController.text,
-        'year': int.parse(_yearController.text),
+        'year': _yearController.text.isNotEmpty ? int.tryParse(_yearController.text) : null,
+        'volume': _volumeController.text.isNotEmpty ? int.tryParse(_volumeController.text) : null,
         'coverImageUrl': finalImageUrl,
       };
 
@@ -74,8 +98,8 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
       setState(() => _isSaving = false);
 
       if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Album updated successfully!')));
+        Navigator.pop(context, true);
+        CustomSnackbar.show(context, 'Album updated successfully!');
       }
     }
   }
@@ -85,29 +109,7 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
     return Scaffold(
       appBar: AppBar(title: Text('Edit ${widget.album.title}')),
       body: _isSaving
-          ? Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text("Saving data...", style: TextStyle(fontSize: 18)),
-              const SizedBox(height: 20),
-              if (_uploadProgress > 0 && _uploadProgress < 1) ...[
-                LinearProgressIndicator(
-                  value: _uploadProgress,
-                  minHeight: 10,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                const SizedBox(height: 10),
-                Text('${(_uploadProgress * 100).toStringAsFixed(0)}% uploaded'),
-              ] else ...[
-                const CircularProgressIndicator(),
-              ],
-            ],
-          ),
-        ),
-      )
+          ? _buildLoadingIndicator()
           : Form(
         key: _formKey,
         child: ListView(
@@ -116,19 +118,34 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
             _buildSectionCard(
               context,
               title: 'Album Details',
+              icon: MdiIcons.album,
               children: [
                 TextFormField(
                   controller: _titleController,
-                  decoration: _inputDecoration('Album Title', Icons.album_outlined),
+                  decoration: _inputDecoration('Album Title *', Icons.album_outlined),
                   validator: (v) => v!.isEmpty ? 'Required' : null,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _yearController,
-                  decoration: _inputDecoration('Year of Release', Icons.calendar_today_outlined),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  validator: (v) => v!.isEmpty ? 'Required' : null,
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _yearController,
+                        decoration: _inputDecoration('Year', Icons.calendar_today_outlined),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _volumeController,
+                        decoration: _inputDecoration('Volume', Icons.looks_one_outlined),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -136,25 +153,60 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
             _buildSectionCard(
               context,
               title: 'Album Cover Image',
+              icon: MdiIcons.imageEdit,
               children: [
                 _buildImagePreview(),
-                const SizedBox(height: 10),
-                ElevatedButton.icon(
-                  onPressed: _pickImage,
-                  icon: const Icon(Icons.photo_library),
-                  label: const Text('Change Cover'),
+                const SizedBox(height: 16),
+                Center(
+                  child: ElevatedButton.icon(
+                    onPressed: _pickAndCropImage,
+                    icon: const Icon(Icons.photo_library_outlined),
+                    label: const Text('Change Cover'),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 30),
-            ElevatedButton(onPressed: _submit, child: const Text('Save Changes')),
+            ElevatedButton.icon(
+              onPressed: _submit,
+              icon: const Icon(Icons.save_alt_outlined),
+              label: const Text('Save Changes'),
+              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionCard(BuildContext context, {required String title, required List<Widget> children}) {
+  Widget _buildLoadingIndicator() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text("Saving data...", style: TextStyle(fontSize: 18)),
+            const SizedBox(height: 20),
+            if (_uploadProgress > 0 && _uploadProgress < 1) ...[
+              LinearProgressIndicator(
+                value: _uploadProgress,
+                minHeight: 10,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              const SizedBox(height: 10),
+              Text('${(_uploadProgress * 100).toStringAsFixed(0)}% uploaded'),
+            ] else ...[
+              const CircularProgressIndicator(),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionCard(BuildContext context, {required String title, required IconData icon, required List<Widget> children}) {
+    final theme = Theme.of(context);
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -163,7 +215,13 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            Row(
+              children: [
+                Icon(icon, color: theme.colorScheme.primary),
+                const SizedBox(width: 12),
+                Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              ],
+            ),
             const Divider(height: 24),
             ...children,
           ],
@@ -192,13 +250,23 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
         child: Center(child: Icon(Icons.album, size: 60, color: Colors.grey)),
       );
     }
-    return ClipRRect(borderRadius: BorderRadius.circular(10), child: imageWidget);
+    return Center(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: SizedBox(
+          height: 200,
+          width: 200,
+          child: imageWidget,
+        ),
+      ),
+    );
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _yearController.dispose();
+    _volumeController.dispose();
     super.dispose();
   }
 }

@@ -1,5 +1,10 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
+import 'package:mahlete_semay_project/services/pitch_service.dart';
+import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
+
+enum FinderState { idle, findingLowest, findingHighest, finished }
 
 class VocalRangeFinderScreen extends StatefulWidget {
   const VocalRangeFinderScreen({super.key});
@@ -9,68 +14,100 @@ class VocalRangeFinderScreen extends StatefulWidget {
 }
 
 class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
+  final PitchService _pitchService = PitchService();
+  FinderState _currentState = FinderState.idle;
+
   String _lowestNote = '';
   String _highestNote = '';
-  String _vocalRange = '';
-  String _voiceType = '';
-  bool _isFindingLowest = false;
-  bool _isFindingHighest = false;
+  String _currentNote = '';
 
-  void _findLowestNote() {
+  String _stableNote = '';
+  int _stabilityCounter = 0;
+
+  @override
+  void dispose() {
+    _pitchService.dispose();
+    super.dispose();
+  }
+
+  void _startFindingLowest() {
     setState(() {
-      _isFindingLowest = true;
+      _currentState = FinderState.findingLowest;
       _lowestNote = '';
-      _vocalRange = '';
-      _voiceType = '';
-    });
-    Timer(const Duration(seconds: 3), () {
-      setState(() {
-        _lowestNote = 'E2';
-        _isFindingLowest = false;
-      });
-    });
-  }
-
-  void _findHighestNote() {
-    setState(() {
-      _isFindingHighest = true;
       _highestNote = '';
-      _vocalRange = '';
-      _voiceType = '';
     });
-    Timer(const Duration(seconds: 3), () {
-      setState(() {
-        _highestNote = 'G4';
-        _isFindingHighest = false;
-        _calculateRange();
-      });
+    _startListening();
+  }
+
+  void _startFindingHighest() {
+    setState(() => _currentState = FinderState.findingHighest);
+    _startListening();
+  }
+
+  void _startListening() {
+    _pitchService.startListening((pitch) {
+      if (!mounted) return;
+
+      final note = _pitchService.getNoteFromPitch(pitch);
+
+      if (note != _stableNote) {
+        _stableNote = note;
+        _stabilityCounter = 0;
+      } else {
+        _stabilityCounter++;
+      }
+
+      if (_stabilityCounter > 5) {
+        if(mounted) {
+          setState(() => _currentNote = note);
+        }
+      }
     });
   }
 
-  void _calculateRange() {
-    if (_lowestNote.isNotEmpty && _highestNote.isNotEmpty) {
+  void _stopAndSetNote() {
+    _pitchService.stopListening();
+    if (_currentNote.isEmpty) {
+      CustomSnackbar.show(context, "Couldn't detect a stable note. Please try again.", isError: true);
+      _reset();
+      return;
+    }
+
+    if (_currentState == FinderState.findingLowest) {
       setState(() {
-        _vocalRange = '$_lowestNote - $_highestNote';
-        _voiceType = 'Baritone';
+        _lowestNote = _currentNote;
+        _currentState = FinderState.idle;
+        _currentNote = '';
+      });
+    } else if (_currentState == FinderState.findingHighest) {
+      setState(() {
+        _highestNote = _currentNote;
+        _currentState = FinderState.finished;
+        _currentNote = '';
       });
     }
   }
 
   void _reset() {
+    _pitchService.stopListening();
     setState(() {
+      _currentState = FinderState.idle;
       _lowestNote = '';
       _highestNote = '';
-      _vocalRange = '';
-      _voiceType = '';
+      _currentNote = '';
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    bool isFinding = _currentState == FinderState.findingLowest || _currentState == FinderState.findingHighest;
+    String voiceType = _currentState == FinderState.finished ? _pitchService.getVoiceType(_lowestNote, _highestNote) : '';
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Vocal Range Finder'),
+        title: Text(l10n.vocalRangeFinder),
         actions: [IconButton(onPressed: _reset, icon: const Icon(Icons.refresh))],
       ),
       body: SingleChildScrollView(
@@ -80,33 +117,43 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
           children: [
             _buildInstructionCard(
               context,
-              '1. Find Your Lowest Note',
-              'Hum or sing the lowest note you can comfortably produce without straining.',
-              _isFindingLowest,
-              _lowestNote,
-              _findLowestNote,
-              _lowestNote.isEmpty,
+              l10n,
+              title: '1. ${l10n.findLowestNote}',
+              instruction: l10n.findLowestNoteDesc,
+              buttonText: l10n.startFindingLowest,
+              onPressed: _startFindingLowest,
+              showStop: _currentState == FinderState.findingLowest,
+              isComplete: _lowestNote.isNotEmpty,
+              noteResult: _lowestNote,
             ),
             const SizedBox(height: 20),
             _buildInstructionCard(
               context,
-              '2. Find Your Highest Note',
-              'Now, find the highest note you can sing comfortably, without pushing into falsetto (unless that\'s part of your usable range).',
-              _isFindingHighest,
-              _highestNote,
-              _findHighestNote,
-              _lowestNote.isNotEmpty,
+              l10n,
+              title: '2. ${l10n.findHighestNote}',
+              instruction: l10n.findHighestNoteDesc,
+              buttonText: l10n.startFindingHighest,
+              onPressed: _lowestNote.isNotEmpty ? _startFindingHighest : null,
+              showStop: _currentState == FinderState.findingHighest,
+              isComplete: _highestNote.isNotEmpty,
+              noteResult: _highestNote,
             ),
             const SizedBox(height: 40),
-            if (_vocalRange.isNotEmpty) _buildResultCard(context),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 500),
+              child: isFinding
+                  ? _buildLivePitchIndicator(theme)
+                  : _currentState == FinderState.finished
+                  ? _buildResultCard(theme, voiceType, l10n)
+                  : const SizedBox.shrink(),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInstructionCard(BuildContext context, String title, String instruction,
-      bool isLoading, String result, VoidCallback onPressed, bool isEnabled) {
+  Widget _buildInstructionCard(BuildContext context, AppLocalizations l10n, {required String title, required String instruction, required String buttonText, required VoidCallback? onPressed, required bool showStop, required bool isComplete, required String noteResult}) {
     final theme = Theme.of(context);
     return Card(
       elevation: 4,
@@ -123,20 +170,15 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ElevatedButton.icon(
-                  onPressed: isEnabled && !isLoading ? onPressed : null,
-                  icon: Icon(isLoading ? Icons.mic_none : Icons.mic),
-                  label: Text(isLoading ? 'Listening...' : 'Start'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                ),
-                if (result.isNotEmpty)
+                if (!showStop && !isComplete)
+                  ElevatedButton(onPressed: onPressed, child: Text(buttonText))
+                else if (showStop)
+                  ElevatedButton(onPressed: _stopAndSetNote, style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error), child: const Text('Stop & Set Note'))
+                else
+                  const SizedBox(),
+                if (isComplete)
                   Chip(
-                    label: Text(result, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    label: Text(noteResult, style: const TextStyle(fontWeight: FontWeight.bold)),
                     avatar: Icon(Icons.music_note, color: theme.colorScheme.primary),
                   ),
               ],
@@ -147,14 +189,32 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
     );
   }
 
-  Widget _buildResultCard(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget _buildLivePitchIndicator(ThemeData theme) {
     return Card(
       elevation: 6,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15.0),
-        side: BorderSide(color: theme.colorScheme.primary, width: 2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          children: [
+            Text('Listening...', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 16),
+            Text(
+              _currentNote.isNotEmpty ? _currentNote : '--',
+              style: theme.textTheme.displayLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+            ),
+            const SizedBox(height: 16),
+            const LinearProgressIndicator(),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildResultCard(ThemeData theme, String voiceType, AppLocalizations l10n) {
+    return Card(
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0), side: BorderSide(color: theme.colorScheme.primary, width: 2)),
       child: Container(
         padding: const EdgeInsets.all(24.0),
         decoration: BoxDecoration(
@@ -167,18 +227,18 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
         ),
         child: Column(
           children: [
-            const Text('Your Results', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(l10n.yourResults, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
-            Text('Vocal Range', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
-            Text(_vocalRange, style: TextStyle(fontSize: 36, fontWeight: FontWeight.w600, color: theme.colorScheme.primary)),
+            Text(l10n.vocalRange, style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+            Text('$_lowestNote - $_highestNote', style: TextStyle(fontSize: 36, fontWeight: FontWeight.w600, color: theme.colorScheme.primary)),
             const SizedBox(height: 20),
-            Text('Probable Voice Type', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
-            Text(_voiceType, style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w600)),
+            Text(l10n.probableVoiceType, style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+            Text(voiceType, style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),
-            const Text(
-              '(This is an estimate. A professional vocal coach can provide a more accurate classification.)',
+            Text(
+              l10n.voiceTypeDisclaimer,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+              style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
             ),
           ],
         ),

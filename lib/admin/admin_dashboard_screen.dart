@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../screens/admin/manage_vocal_plans_screen.dart';
 import 'add_album_screen.dart';
 import 'add_artists_screen.dart';
 import 'add_song_screen.dart';
 import 'manage_album_screen.dart';
 import 'manage_artists_screen.dart';
+import 'manage_general_exercises_screen.dart';
 import 'manage_songs_screen.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
@@ -71,6 +73,19 @@ class AdminDashboardScreen extends StatelessWidget {
             title: 'Manage Songs',
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManageSongsScreen())),
           ),
+          _buildManageListTile(
+            context,
+            icon: Icons.model_training,
+            title: 'Manage Vocal Plans',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManageVocalPlansScreen())),
+          ),
+          _buildManageListTile(
+            context,
+            icon: Icons.list_alt_rounded,
+            title: 'Manage General Exercises',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManageGeneralExercisesScreen())),
+          ),
+
         ],
       ),
     );

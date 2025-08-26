@@ -8,11 +8,10 @@ class Song {
   final String albumId;
   final String albumTitle;
   final String lyrics;
-  final String scale;
-  final int scaleDegree;
+  final String? scale;
+  final String? rhythm;
   final int viewCount;
   final Timestamp createdAt;
-  // bool isFavorite; <-- REMOVE THIS LINE
 
   Song({
     required this.id,
@@ -22,11 +21,10 @@ class Song {
     required this.albumId,
     required this.albumTitle,
     required this.lyrics,
-    required this.scale,
-    required this.scaleDegree,
+    this.scale,
+    this.rhythm,
     required this.viewCount,
     required this.createdAt,
-    // this.isFavorite = false, <-- AND REMOVE THIS LINE
   });
 
   factory Song.fromFirestore(DocumentSnapshot doc) {
@@ -39,8 +37,8 @@ class Song {
       albumId: data['albumId'] ?? '',
       albumTitle: data['albumTitle'] ?? '',
       lyrics: data['lyrics'] ?? '',
-      scale: data['scale'] ?? '',
-      scaleDegree: data['scaleDegree'] ?? 0,
+      scale: data['scale'],
+      rhythm: data['rhythm'],
       viewCount: data['viewCount'] ?? 0,
       createdAt: data['createdAt'] ?? Timestamp.now(),
     );
@@ -55,7 +53,7 @@ class Song {
       'albumTitle': albumTitle,
       'lyrics': lyrics,
       'scale': scale,
-      'scaleDegree': scaleDegree,
+      'rhythm': rhythm,
       'viewCount': viewCount,
       'createdAt': createdAt,
     };

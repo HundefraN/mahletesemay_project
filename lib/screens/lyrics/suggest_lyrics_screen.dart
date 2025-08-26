@@ -1,0 +1,170 @@
+import 'dart:async';
+
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/material.dart';
+import 'package:mahlete_semay_project/models/submission_history_model.dart';
+import 'package:mahlete_semay_project/models/suggestion_model.dart';
+import 'package:mahlete_semay_project/screens/lyrics/my_submissions_screen.dart';
+import 'package:mahlete_semay_project/services/firebase_service.dart';
+import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class SuggestLyricsScreen extends StatefulWidget {
+  final String? initialTitle;
+  final String? initialArtist;
+
+  const SuggestLyricsScreen({super.key, this.initialTitle, this.initialArtist});
+
+  @override
+  State<SuggestLyricsScreen> createState() => _SuggestLyricsScreenState();
+}
+
+class _SuggestLyricsScreenState extends State<SuggestLyricsScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _firebaseService = FirebaseService();
+  final _titleController = TextEditingController();
+  final _artistController = TextEditingController();
+  final _lyricsController = TextEditingController();
+  bool _isLoading = false;
+  bool _isOffline = false;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialTitle != null) _titleController.text = widget.initialTitle!;
+    if (widget.initialArtist != null) _artistController.text = widget.initialArtist!;
+
+    _checkInitialConnectivity();
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription.cancel();
+    super.dispose();
+  }
+
+  Future<void> _checkInitialConnectivity() async {
+    final result = await Connectivity().checkConnectivity();
+    _updateConnectionStatus(result);
+  }
+
+  void _updateConnectionStatus(List<ConnectivityResult> result) {
+    if (mounted) {
+      setState(() => _isOffline = !result.contains(ConnectivityResult.mobile) && !result.contains(ConnectivityResult.wifi));
+    }
+  }
+
+  Future<void> _saveToLocalHistory(Suggestion suggestion) async {
+    final prefs = await SharedPreferences.getInstance();
+    final historyJson = prefs.getStringList('submissionHistory') ?? [];
+
+    final newEntry = SubmissionHistoryEntry(
+      songTitle: suggestion.songTitle,
+      artistName: suggestion.artistName,
+      submittedAt: DateTime.now(),
+    );
+
+    historyJson.add(newEntry.toJson());
+    await prefs.setStringList('submissionHistory', historyJson);
+  }
+
+  Future<void> _submit() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
+      try {
+        final suggestion = Suggestion(
+          id: '',
+          songTitle: _titleController.text.trim(),
+          artistName: _artistController.text.trim(),
+          lyrics: _lyricsController.text.trim(),
+          submittedAt: Timestamp.now(),
+        );
+        await _firebaseService.addLyricSuggestion(suggestion);
+        await _saveToLocalHistory(suggestion);
+
+        if (mounted) {
+          Navigator.pop(context, true);
+          CustomSnackbar.show(context, 'Thank you! Your suggestion has been submitted for review.');
+        }
+      } catch (e) {
+        if (mounted) CustomSnackbar.show(context, 'Submission failed. Please try again.', isError: true);
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Suggest a Song'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history_rounded),
+            tooltip: 'My Submissions',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MySubmissionsScreen())),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          if (_isOffline) const _OfflineIndicator(),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  TextFormField(controller: _titleController, decoration: _inputDecoration('Song Title *', Icons.music_note), validator: (v) => v!.isEmpty ? 'Required' : null),
+                  const SizedBox(height: 16),
+                  TextFormField(controller: _artistController, decoration: _inputDecoration('Artist Name *', Icons.person), validator: (v) => v!.isEmpty ? 'Required' : null),
+                  const SizedBox(height: 16),
+                  TextFormField(controller: _lyricsController, decoration: _inputDecoration('Lyrics *', Icons.text_fields, alignLabel: true), minLines: 10, maxLines: 20, validator: (v) => v!.isEmpty ? 'Required' : null),
+                  const SizedBox(height: 24),
+                  ElevatedButton(onPressed: _isOffline ? null : _submit, child: Text(_isOffline ? 'Offline - Cannot Submit' : 'Submit for Review')),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon, {bool alignLabel = false}) {
+    return InputDecoration(
+      labelText: label,
+      border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+      prefixIcon: Icon(icon),
+      alignLabelWithHint: alignLabel,
+    );
+  }
+}
+
+class _OfflineIndicator extends StatelessWidget {
+  const _OfflineIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: Colors.black54,
+      padding: const EdgeInsets.all(8),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.wifi_off_rounded, color: Colors.white, size: 16),
+          SizedBox(width: 8),
+          Text('You are offline. Please connect to submit.', style: TextStyle(color: Colors.white)),
+        ],
+      ),
+    );
+  }
+}

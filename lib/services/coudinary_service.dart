@@ -29,4 +29,26 @@ class CloudinaryService {
       return null;
     }
   }
+
+  static Future<String?> uploadAudio(
+      File audioFile, {
+        void Function(int count, int total)? onProgress,
+      }) async {
+    try {
+      CloudinaryResponse response = await _cloudinary.uploadFile(
+        CloudinaryFile.fromFile(
+          audioFile.path,
+          resourceType: CloudinaryResourceType.Video,
+        ),
+        onProgress: onProgress,
+      );
+      return response.secureUrl;
+    } on CloudinaryException catch (e) {
+      print('Cloudinary Error: ${e.message}');
+      return null;
+    } catch (e) {
+      print('Unknown Error: $e');
+      return null;
+    }
+  }
 }

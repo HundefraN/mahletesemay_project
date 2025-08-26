@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:provider/provider.dart';
 import '../../models/artist_model.dart';
 import '../../services/firebase_service.dart';
+import '../providers/auth_proveider.dart';
 import '../services/coudinary_service.dart';
+import '../widgets/custom_snackbar.dart';
 
 class EditArtistScreen extends StatefulWidget {
   final Artist artist;
@@ -75,19 +78,11 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
       String finalImageUrl = _existingImageUrl;
 
       if (_pickedImage != null) {
-        final uploadedUrl = await CloudinaryService.uploadImage(
-          _pickedImage!,
-          onProgress: (count, total) {
-            setState(() {
-              _uploadProgress = count / total;
-            });
-          },
-        );
-
+        final uploadedUrl = await CloudinaryService.uploadImage(_pickedImage!, onProgress: (count, total) => setState(() => _uploadProgress = count / total));
         if (uploadedUrl != null) {
           finalImageUrl = uploadedUrl;
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image upload failed. Please try again.')));
+          CustomSnackbar.show(context, 'Image upload failed. Please try again.', isError: true);
           setState(() => _isSaving = false);
           return;
         }
@@ -101,11 +96,21 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
 
       await _firebaseService.updateArtist(widget.artist.id, updatedData);
 
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.currentModerator != null) {
+        _firebaseService.logActivity(
+          moderatorId: authProvider.currentUser!.uid,
+          moderatorName: authProvider.currentModerator!.fullName,
+          action: 'UPDATE_ARTIST',
+          details: 'Edited artist: ${_nameController.text.trim()}',
+        );
+      }
+
       setState(() => _isSaving = false);
 
       if (mounted) {
         Navigator.pop(context, true);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Artist updated successfully!')));
+        CustomSnackbar.show(context, 'Artist updated successfully!');
       }
     }
   }

@@ -90,7 +90,7 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen> {
           final song = _displayedSongs[index];
           final album = songProvider.allAlbums.firstWhere(
                 (a) => a.id == song.albumId,
-            orElse: () => Album(id: '', title: '', artistId: '', artistName: '', coverImageUrl: '', year: 0),
+            orElse: () => Album(id: '', title: '', artistId: '', artistName: '', coverImageUrl: '', year: 0, volume: 1),
           );
           final heroTag = 'recommended-list-${song.id}';
 

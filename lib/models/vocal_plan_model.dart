@@ -1,43 +1,41 @@
-import 'package:mahlete_semay_project/models/vocal_exercise_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum PlanDuration { daily, weekly, monthly, quarterly }
-
-class VocalExerciseStep {
+class VocalExerciseDay {
+  final String id;
+  final int dayNumber;
   final String title;
   final String description;
-  final String audioAsset;
-  final int durationInSeconds;
+  final String? audioUrl;
+  final bool isRestDay;
 
-  VocalExerciseStep({
+  VocalExerciseDay({
+    required this.id,
+    required this.dayNumber,
     required this.title,
     required this.description,
-    required this.audioAsset,
-    required this.durationInSeconds,
+    this.audioUrl,
+    this.isRestDay = false,
   });
-}
 
-class VocalExerciseRoutine {
-  final String id;
-  final String title;
-  final String category; // e.g., 'Breathing', 'Range', 'Warm-up'
-  final List<VocalExerciseStep> steps;
+  factory VocalExerciseDay.fromFirestore(DocumentSnapshot doc) {
+    Map data = doc.data() as Map<String, dynamic>;
+    return VocalExerciseDay(
+      id: doc.id,
+      dayNumber: data['dayNumber'] ?? 0,
+      title: data['title'] ?? '',
+      description: data['description'] ?? '',
+      audioUrl: data['audioUrl'],
+      isRestDay: data['isRestDay'] ?? false,
+    );
+  }
 
-  VocalExerciseRoutine({
-    required this.id,
-    required this.title,
-    required this.category,
-    required this.steps,
-  });
-}
-
-class VocalPlan {
-  final String title;
-  final PlanDuration duration;
-  final List<VocalExerciseRoutine> routines;
-
-  VocalPlan({
-    required this.title,
-    required this.duration,
-    required this.routines,
-  });
+  Map<String, dynamic> toJson() {
+    return {
+      'dayNumber': dayNumber,
+      'title': title,
+      'description': description,
+      'audioUrl': audioUrl,
+      'isRestDay': isRestDay,
+    };
+  }
 }

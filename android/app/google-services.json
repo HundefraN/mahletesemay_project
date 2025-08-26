@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:106288516521:android:f06e5668ed661a181808b8",
+        "mobilesdk_app_id": "1:106288516521:android:ca7a89222483f89f1808b8",
         "android_client_info": {
-          "package_name": "com.example.mahlete_semay_project"
+          "package_name": "com.hundefra.mahlete_semay"
         }
       },
       "oauth_client": [],
