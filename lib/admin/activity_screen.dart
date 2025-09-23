@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mahlete_semay_project/models/activity_log_model.dart';
 import 'package:mahlete_semay_project/services/firebase_service.dart';
 import 'package:mahlete_semay_project/widgets/loading_placeholders.dart';
@@ -23,6 +24,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
   void initState() {
     super.initState();
     _searchController.addListener(() => setState(() => _searchQuery = _searchController.text));
+    _firebaseService.markAllActivitiesAsSeen();
   }
 
   @override
@@ -38,6 +40,16 @@ class _ActivityScreenState extends State<ActivityScreen> {
     if (action.startsWith('APPROVE')) return Icons.check_circle_outline;
     if (action.startsWith('REJECT')) return Icons.cancel_outlined;
     return Icons.history;
+  }
+
+  Color _getColorForAction(BuildContext context, String action) {
+    final theme = Theme.of(context);
+    if (action.startsWith('CREATE')) return Colors.green;
+    if (action.startsWith('UPDATE')) return theme.colorScheme.primary;
+    if (action.startsWith('DELETE')) return theme.colorScheme.error;
+    if (action.startsWith('APPROVE')) return Colors.blue;
+    if (action.startsWith('REJECT')) return Colors.orange;
+    return Colors.grey;
   }
 
   void _showFilterSheet(List<ActivityLog> allLogs) {
@@ -88,18 +100,62 @@ class _ActivityScreenState extends State<ActivityScreen> {
     );
   }
 
+  void _showLogDetails(ActivityLog log) {
+    showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        builder: (context) {
+          final theme = Theme.of(context);
+          return Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Activity Details", style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                const Divider(height: 24),
+                _buildDetailRow(context, Icons.person_outline, "Moderator", log.moderatorName),
+                _buildDetailRow(context, _getIconForAction(log.action), "Action", log.action.replaceAll('_', ' ')),
+                _buildDetailRow(context, Icons.info_outline, "Details", log.details),
+                _buildDetailRow(context, Icons.access_time, "Timestamp", DateFormat('MMM d, yyyy - hh:mm a').format(log.timestamp.toDate())),
+                const SizedBox(height: 20),
+                SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text("Close"))),
+              ],
+            ),
+          );
+        }
+    );
+  }
+
+  Widget _buildDetailRow(BuildContext context, IconData icon, String label, String value) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: theme.colorScheme.primary),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey)),
+                const SizedBox(height: 2),
+                Text(value, style: theme.textTheme.bodyLarge),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Moderator Activity'),
-        actions: [
-          TextButton.icon(
-            onPressed: () => _firebaseService.markAllActivitiesAsSeen(),
-            icon: const Icon(Icons.done_all),
-            label: const Text('Mark all as seen'),
-          ),
-        ],
       ),
       body: StreamBuilder<List<ActivityLog>>(
         stream: _firebaseService.getActivityLogsStream(),
@@ -150,26 +206,27 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 child: filteredLogs.isEmpty
                     ? const Center(child: Text('No activities match your criteria.'))
                     : ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 80),
                   itemCount: filteredLogs.length,
                   itemBuilder: (context, index) {
                     final log = filteredLogs[index];
                     return ListTile(
+                      onTap: () => _showLogDetails(log),
                       leading: CircleAvatar(
-                        backgroundColor: log.isSeen ? Colors.grey.shade300 : Theme.of(context).colorScheme.primary,
+                        backgroundColor: _getColorForAction(context, log.action).withOpacity(0.1),
                         child: Icon(
                           _getIconForAction(log.action),
-                          color: log.isSeen ? Colors.grey.shade600 : Colors.white,
+                          color: _getColorForAction(context, log.action),
                           size: 20,
                         ),
                       ),
                       title: TextHighlighter(
                         text: log.details,
                         query: _searchQuery,
-                        style: TextStyle(fontWeight: log.isSeen ? FontWeight.normal : FontWeight.bold),
+                        style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
-                      subtitle: TextHighlighter(
-                        text: '${log.moderatorName} • ${timeago.format(log.timestamp.toDate())}',
-                        query: _searchQuery,
+                      subtitle: Text(
+                        'By: ${log.moderatorName} • ${timeago.format(log.timestamp.toDate())}',
                       ),
                     );
                   },

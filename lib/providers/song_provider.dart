@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +9,7 @@ import '../models/song_model.dart';
 import '../services/firebase_service.dart';
 import '../services/local_db_service.dart';
 import '../services/sync_service.dart';
+import '../utils/constants.dart';
 
 class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
   final FirebaseService _firebaseService = FirebaseService();
@@ -18,20 +20,34 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
   List<Album> _albums = [];
   List<Song> _songs = [];
   bool _isLoading = true;
+  bool _isSyncing = false;
   bool _hasNewDataOnMobile = false;
 
   List<HistoryEntry> _history = [];
-  final String _historyKey = 'songHistory';
   List<HistoryEntry> get history => _history;
 
   List<String> _favoriteSongIds = [];
-  final String _favoritesKey = 'favoriteSongIds';
 
   List<Artist> get artists => _artists;
   List<Album> get allAlbums => _albums;
   List<Song> get allSongs => _songs;
   bool get isLoading => _isLoading;
+  bool get isSyncing => _isSyncing;
   bool get hasNewDataOnMobile => _hasNewDataOnMobile;
+
+  static const int _recommendationHistoryThreshold = 3;
+
+  final Map<String, double> _scoringWeights = {
+    'favoriteArtist': 15.0,
+    'viewedArtist': 8.0,
+    'favoriteAlbum': 10.0,
+    'viewedAlbum': 5.0,
+    'favoriteScale': 12.0,
+    'viewedScale': 6.0,
+    'favoriteRhythm': 10.0,
+    'viewedRhythm': 4.0,
+    'seenPenalty': -20.0,
+  };
 
   List<Song> get favoriteSongs {
     if (_songs.isEmpty || _favoriteSongIds.isEmpty) return [];
@@ -52,6 +68,75 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
     return sortedSongs;
   }
 
+  List<Song> getPersonalizedRecommendations() {
+    if (_songs.isEmpty) return [];
+
+    if (_history.length < _recommendationHistoryThreshold) {
+      return trendingSongs;
+    }
+
+    final Map<String, double> artistScores = {};
+    final Map<String, double> albumScores = {};
+    final Map<String, double> scaleScores = {};
+    final Map<String, double> rhythmScores = {};
+
+    final recentHistory = _history.take(20);
+    final Set<String> viewedSongIds = recentHistory.map((e) => e.songId).toSet();
+    final Set<String> favoriteSongIdsSet = _favoriteSongIds.toSet();
+
+    final List<Song> seedSongs = _songs.where((song) =>
+    viewedSongIds.contains(song.id) || favoriteSongIdsSet.contains(song.id)
+    ).toList();
+
+    for (final song in seedSongs) {
+      final isFavorite = favoriteSongIdsSet.contains(song.id);
+      final artistWeight = isFavorite ? _scoringWeights['favoriteArtist']! : _scoringWeights['viewedArtist']!;
+      final albumWeight = isFavorite ? _scoringWeights['favoriteAlbum']! : _scoringWeights['viewedAlbum']!;
+      final scaleWeight = isFavorite ? _scoringWeights['favoriteScale']! : _scoringWeights['viewedScale']!;
+      final rhythmWeight = isFavorite ? _scoringWeights['favoriteRhythm']! : _scoringWeights['viewedRhythm']!;
+
+      artistScores[song.artistId] = (artistScores[song.artistId] ?? 0) + artistWeight;
+      albumScores[song.albumId] = (albumScores[song.albumId] ?? 0) + albumWeight;
+      if (song.scale != null) scaleScores[song.scale!] = (scaleScores[song.scale!] ?? 0) + scaleWeight;
+      if (song.rhythm != null) rhythmScores[song.rhythm!] = (rhythmScores[song.rhythm!] ?? 0) + rhythmWeight;
+    }
+
+    final List<({Song song, double score})> scoredSongs = [];
+    double maxViews = trendingSongs.isNotEmpty ? trendingSongs.first.viewCount.toDouble() : 1.0;
+    if (maxViews == 0) maxViews = 1.0;
+
+    for (final candidateSong in _songs) {
+      double score = 0;
+
+      score += artistScores[candidateSong.artistId] ?? 0;
+      score += albumScores[candidateSong.albumId] ?? 0;
+      if (candidateSong.scale != null) score += scaleScores[candidateSong.scale!] ?? 0;
+      if (candidateSong.rhythm != null) score += rhythmScores[candidateSong.rhythm!] ?? 0;
+
+      final popularityScore = (candidateSong.viewCount / maxViews) * 5;
+      score += popularityScore;
+
+      if (viewedSongIds.contains(candidateSong.id)) {
+        score += _scoringWeights['seenPenalty']!;
+      }
+
+      if (score > 0) {
+        scoredSongs.add((song: candidateSong, score: score));
+      }
+    }
+
+    scoredSongs.sort((a, b) => b.score.compareTo(a.score));
+
+    final recommended = scoredSongs.map((e) => e.song).toList();
+
+    if (recommended.length < 20 && trendingSongs.isNotEmpty) {
+      final popularFallback = trendingSongs.where((s) => !recommended.any((r) => r.id == s.id)).take(20 - recommended.length);
+      recommended.addAll(popularFallback);
+    }
+
+    return recommended;
+  }
+
   SongProvider() {
     _syncService = SyncService(
       firebaseService: _firebaseService,
@@ -63,10 +148,15 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   void _init() async {
     WidgetsBinding.instance.addObserver(this);
+
     await _loadFromLocalDb();
+    _isLoading = false;
+    notifyListeners();
+
     await _loadFavorites();
     await _loadHistory();
-    await _handleSync();
+
+    _handleSync();
   }
 
   @override
@@ -78,16 +168,30 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> _handleSync({bool forceOnMobile = false}) async {
-    final result = await _syncService.performSmartSync(forceOnMobile: forceOnMobile);
+    _isSyncing = true;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    final bool isFirstSyncCompleted = prefs.getBool(prefFirstSyncCompleted) ?? false;
+
+    final result = await _syncService.performSmartSync(
+        forceOnMobile: forceOnMobile,
+        isInitialSync: !isFirstSyncCompleted
+    );
 
     if (result == SyncResult.synced) {
       _hasNewDataOnMobile = false;
       await _loadFromLocalDb();
+      if (!isFirstSyncCompleted) {
+        await prefs.setBool(prefFirstSyncCompleted, true);
+      }
     } else if (result == SyncResult.mobileData) {
       _hasNewDataOnMobile = true;
     } else if (result == SyncResult.noNewData) {
       _hasNewDataOnMobile = false;
     }
+
+    _isSyncing = false;
     notifyListeners();
   }
 
@@ -99,39 +203,14 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
     _artists = await _localDbService.getArtists();
     _albums = await _localDbService.getAlbums();
     _songs = await _localDbService.getSongs();
-    if (_artists.isNotEmpty || _songs.isNotEmpty || _albums.isNotEmpty) {
-      _isLoading = false;
-    }
     notifyListeners();
   }
 
   Future<void> _loadHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    final historyJson = prefs.getStringList(_historyKey) ?? [];
+    final historyJson = prefs.getStringList(prefSongHistory) ?? [];
     _history = historyJson.map((json) => HistoryEntry.fromJson(json)).toList();
     notifyListeners();
-  }
-
-  List<Song> sortSongsByRecommendation({required List<Song> songsToSort}) {
-    if (songsToSort.isEmpty) return [];
-
-    double maxViews = songsToSort
-        .map((s) => s.viewCount)
-        .fold(0, (max, current) => current > max ? current : max)
-        .toDouble();
-    if (maxViews == 0) maxViews = 1.0;
-
-    List<({Song song, double score})> scoredSongs = [];
-    for (var song in songsToSort) {
-      final daysAgo = DateTime.now().difference(song.createdAt.toDate()).inDays;
-      final recencyScore = 1 / (daysAgo + 1);
-      final popularityScore = song.viewCount / maxViews;
-      final totalScore = (popularityScore * 0.7) + (recencyScore * 0.3);
-      scoredSongs.add((song: song, score: totalScore));
-    }
-
-    scoredSongs.sort((a, b) => b.score.compareTo(a.score));
-    return scoredSongs.map((e) => e.song).toList();
   }
 
   Future<void> addToHistory(Song song) async {
@@ -144,7 +223,7 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     final historyJson = _history.map((entry) => entry.toJson()).toList();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_historyKey, historyJson);
+    await prefs.setStringList(prefSongHistory, historyJson);
     notifyListeners();
   }
 
@@ -156,7 +235,7 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> _loadFavorites() async {
     final prefs = await SharedPreferences.getInstance();
-    _favoriteSongIds = prefs.getStringList(_favoritesKey) ?? [];
+    _favoriteSongIds = prefs.getStringList(prefFavoriteSongIds) ?? [];
   }
 
   Future<void> toggleFavorite(String songId) async {
@@ -166,14 +245,47 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
       _favoriteSongIds.add(songId);
     }
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_favoritesKey, _favoriteSongIds);
+    await prefs.setStringList(prefFavoriteSongIds, _favoriteSongIds);
     notifyListeners();
   }
 
   bool isFavorite(String songId) => _favoriteSongIds.contains(songId);
 
-  Future<void> incrementViewCount(String songId) async =>
-      await _firebaseService.incrementSongViewCount(songId);
+  Future<void> incrementViewCount(String songId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastViewedKey = 'last_viewed_$songId';
+    final lastViewedMillis = prefs.getInt(lastViewedKey);
+    final now = DateTime.now();
+
+    if (lastViewedMillis == null || now.difference(DateTime.fromMillisecondsSinceEpoch(lastViewedMillis)).inHours > 12) {
+      try {
+        await _firebaseService.incrementSongViewCount(songId);
+
+        final songIndex = _songs.indexWhere((s) => s.id == songId);
+        if (songIndex != -1) {
+          final oldSong = _songs[songIndex];
+          _songs[songIndex] = Song(
+            id: oldSong.id,
+            title: oldSong.title,
+            artistName: oldSong.artistName,
+            artistId: oldSong.artistId,
+            albumId: oldSong.albumId,
+            albumTitle: oldSong.albumTitle,
+            lyrics: oldSong.lyrics,
+            scale: oldSong.scale,
+            rhythm: oldSong.rhythm,
+            viewCount: oldSong.viewCount + 1,
+            createdAt: oldSong.createdAt,
+          );
+          notifyListeners();
+        }
+
+        await prefs.setInt(lastViewedKey, now.millisecondsSinceEpoch);
+      } catch (e) {
+        debugPrint("Failed to increment view count for $songId: $e");
+      }
+    }
+  }
 
   List<Album> getAlbumsByArtist(String artistId) {
     if (_albums.isEmpty) return [];
@@ -185,41 +297,17 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
     return _songs.where((song) => song.albumId == albumId).toList();
   }
 
-  List<Song> getRecommendedSongs({int count = 6}) {
-    if (_songs.isEmpty) return [];
-    return sortSongsByRecommendation(songsToSort: _songs).take(count).toList();
-  }
-
   List<Artist> getRecommendedArtists({String? region, int? count}) {
     if (_artists.isEmpty || _songs.isEmpty) return [];
-    Map<String, double> artistScores = {};
-    double totalViews = _songs
-        .map((s) => s.viewCount)
-        .fold(0, (prev, count) => prev + count)
-        .toDouble();
-    if (totalViews == 0) totalViews = 1.0;
-    for (var artist in _artists) {
-      double popularityScore = 0;
-      double favoriteScore = 0;
-      final artistSongs = _songs.where((s) => s.artistId == artist.id);
-      if (artistSongs.isNotEmpty) {
-        int artistTotalViews = artistSongs
-            .map((s) => s.viewCount)
-            .fold(0, (prev, count) => prev + count);
-        popularityScore = artistTotalViews / totalViews;
-      }
-      int artistFavoriteCount =
-          artistSongs.where((s) => _favoriteSongIds.contains(s.id)).length;
-      if (_favoriteSongIds.isNotEmpty) {
-        favoriteScore = artistFavoriteCount / _favoriteSongIds.length;
-      }
-      artistScores[artist.id] = (popularityScore * 0.6) + (favoriteScore * 0.4);
+    Map<String, int> artistViewCounts = {};
+    for (var song in _songs) {
+      artistViewCounts[song.artistId] = (artistViewCounts[song.artistId] ?? 0) + song.viewCount;
     }
     List<Artist> sortedArtists = List.from(_artists);
     sortedArtists.sort((a, b) {
-      double scoreA = artistScores[a.id] ?? 0;
-      double scoreB = artistScores[b.id] ?? 0;
-      return scoreB.compareTo(scoreA);
+      int viewsA = artistViewCounts[a.id] ?? 0;
+      int viewsB = artistViewCounts[b.id] ?? 0;
+      return viewsB.compareTo(viewsA);
     });
     List<Artist> result = sortedArtists;
     if (region != null) {

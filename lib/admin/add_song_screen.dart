@@ -1,15 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:mahlete_semay_project/utils/constants.dart';
 import 'package:mahlete_semay_project/widgets/searchable_dropdown.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/album_model.dart';
 import '../../models/artist_model.dart';
 import '../../models/song_model.dart';
 import '../../services/firebase_service.dart';
 import '../../widgets/custom_snackbar.dart';
-import '../providers/auth_proveider.dart';
+import '../../providers/auth_proveider.dart';
 
 class AddSongScreen extends StatefulWidget {
   const AddSongScreen({super.key});
@@ -28,14 +29,40 @@ class _AddSongScreenState extends State<AddSongScreen> {
   final _otherRhythmController = TextEditingController();
 
   bool _isSaving = false;
+  bool _isSingle = false;
 
   Artist? _selectedArtist;
   Album? _selectedAlbum;
   String? _selectedScale;
   String? _selectedRhythm;
 
+  Future<void> _saveRecentArtist(Artist artist) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> recentArtistsJson = prefs.getStringList('recentArtists') ?? [];
+
+    final artistMap = {'id': artist.id, 'name': artist.name, 'imageUrl': artist.imageUrl, 'region': artist.region};
+    String artistJson = json.encode(artistMap);
+
+    recentArtistsJson.removeWhere((item) => json.decode(item)['id'] == artist.id);
+    recentArtistsJson.insert(0, artistJson);
+
+    if (recentArtistsJson.length > 5) {
+      recentArtistsJson = recentArtistsJson.sublist(0, 5);
+    }
+
+    await prefs.setStringList('recentArtists', recentArtistsJson);
+  }
+
+  Future<List<Artist>> _getRecentArtists() async {
+    final prefs = await SharedPreferences.getInstance();
+    final recentArtistsJson = prefs.getStringList('recentArtists') ?? [];
+    return recentArtistsJson.map((jsonString) {
+      final map = json.decode(jsonString);
+      return Artist(id: map['id'], name: map['name'], imageUrl: map['imageUrl'], region: map['region']);
+    }).toList();
+  }
+
   void _onArtistChanged(Artist? artist) {
-    if (artist == null) return;
     setState(() {
       _selectedArtist = artist;
       _selectedAlbum = null;
@@ -46,22 +73,23 @@ class _AddSongScreenState extends State<AddSongScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isSaving = true);
 
-      final finalScale = _selectedScale == 'Other'
-          ? _otherScaleController.text
-          : _selectedScale;
-      final finalRhythm = _selectedRhythm == 'Other' ? _otherRhythmController
-          .text : _selectedRhythm;
+      if (_selectedArtist != null) {
+        await _saveRecentArtist(_selectedArtist!);
+      }
+
+      final finalScale = _selectedScale == 'Other' ? _otherScaleController.text : _selectedScale;
+      final finalRhythm = _selectedRhythm == 'Other' ? _otherRhythmController.text : _selectedRhythm;
 
       final newSong = Song(
         id: '',
-        title: _titleController.text,
-        lyrics: _lyricsController.text,
+        title: _titleController.text.trim(),
+        lyrics: _lyricsController.text.trim(),
         scale: finalScale,
         rhythm: finalRhythm,
-        artistId: _selectedArtist!.id,
-        artistName: _selectedArtist!.name,
-        albumId: _selectedAlbum!.id,
-        albumTitle: _selectedAlbum!.title,
+        artistId: _isSingle ? (_selectedArtist?.id ?? singlesArtistId) : _selectedArtist!.id,
+        artistName: _isSingle ? (_selectedArtist?.name ?? "Various Artists") : _selectedArtist!.name,
+        albumId: _isSingle ? singlesAlbumId : _selectedAlbum!.id,
+        albumTitle: _isSingle ? "Singles" : _selectedAlbum!.title,
         createdAt: Timestamp.now(),
         viewCount: 0,
       );
@@ -86,7 +114,7 @@ class _AddSongScreenState extends State<AddSongScreen> {
     }
   }
 
-    @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Add New Song')),
@@ -101,34 +129,57 @@ class _AddSongScreenState extends State<AddSongScreen> {
               context,
               title: 'Song Association',
               children: [
+                SwitchListTile(
+                  title: const Text('Is this a Single?'),
+                  subtitle: const Text('For songs not part of an official album.'),
+                  value: _isSingle,
+                  onChanged: (value) => setState(() => _isSingle = value),
+                  secondary: Icon(_isSingle ? Icons.music_note : Icons.album),
+                ),
+                const SizedBox(height: 16),
                 SearchableDropdown<Artist>(
-                  label: '1. Select Artist *',
+                  label: _isSingle ? 'Select Artist (Optional)' : '1. Select Artist *',
                   icon: Icons.person_search_outlined,
                   selectedItem: _selectedArtist,
                   onChanged: _onArtistChanged,
-                  validator: (artist) => artist == null ? 'Required' : null,
-                  onFind: (filter) async {
-                    final artists = await _firebaseService.getArtists();
-                    return artists.where((a) => a.name.toLowerCase().contains(filter.toLowerCase())).toList();
+                  validator: (artist) => !_isSingle && artist == null ? 'Required' : null,
+                  itemToString: (artist) => artist.name,
+                  onFindWithHeaders: (filter) async {
+                    final recent = await _getRecentArtists();
+                    final all = await _firebaseService.getArtists();
+
+                    final filteredRecent = recent.where((a) => a.name.toLowerCase().contains(filter.toLowerCase())).toList();
+                    final filteredAll = all.where((a) => a.name.toLowerCase().contains(filter.toLowerCase()) && !recent.any((r) => r.id == a.id)).toList();
+
+                    Map<String, List<Artist>> categorized = {};
+                    if(filteredRecent.isNotEmpty) categorized['Recently Used'] = filteredRecent;
+                    if(filteredAll.isNotEmpty) categorized['All Artists'] = filteredAll;
+
+                    return categorized;
                   },
                   dropdownBuilder: (artist) => _buildArtistDropdownItem(artist),
                   itemBuilder: (artist) => ListTile(leading: CircleAvatar(backgroundImage: artist.imageUrl.isNotEmpty ? NetworkImage(artist.imageUrl) : null, child: artist.imageUrl.isEmpty ? const Icon(Icons.person, size: 16) : null), title: Text(artist.name)),
                 ),
                 const SizedBox(height: 16),
-                SearchableDropdown<Album>(
-                  label: '2. Select Album *',
-                  icon: Icons.album_outlined,
-                  isEnabled: _selectedArtist != null,
-                  selectedItem: _selectedAlbum,
-                  onChanged: (album) => setState(() => _selectedAlbum = album),
-                  validator: (album) => album == null ? 'Required' : null,
-                  onFind: (filter) async {
-                    if (_selectedArtist == null) return [];
-                    final albums = await _firebaseService.getAlbums();
-                    return albums.where((a) => a.artistId == _selectedArtist!.id && a.title.toLowerCase().contains(filter.toLowerCase())).toList();
-                  },
-                  dropdownBuilder: (album) => _buildAlbumDropdownItem(album),
-                  itemBuilder: (album) => ListTile(leading: CircleAvatar(backgroundImage: album.coverImageUrl.isNotEmpty ? NetworkImage(album.coverImageUrl) : null, child: album.coverImageUrl.isEmpty ? const Icon(Icons.album, size: 16) : null), title: Text(album.title)),
+                AnimatedOpacity(
+                  opacity: _isSingle ? 0.4 : 1.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: SearchableDropdown<Album>(
+                    label: '2. Select Album *',
+                    icon: Icons.album_outlined,
+                    isEnabled: !_isSingle && _selectedArtist != null,
+                    selectedItem: _selectedAlbum,
+                    onChanged: (album) => setState(() => _selectedAlbum = album),
+                    validator: (album) => !_isSingle && album == null ? 'Required' : null,
+                    itemToString: (album) => album.title,
+                    onFind: (filter) async {
+                      if (_selectedArtist == null) return [];
+                      final albums = await _firebaseService.getAlbums();
+                      return albums.where((a) => a.artistId == _selectedArtist!.id && a.title.toLowerCase().contains(filter.toLowerCase())).toList();
+                    },
+                    dropdownBuilder: (album) => _buildAlbumDropdownItem(album),
+                    itemBuilder: (album) => ListTile(leading: CircleAvatar(backgroundImage: album.coverImageUrl.isNotEmpty ? NetworkImage(album.coverImageUrl) : null, child: album.coverImageUrl.isEmpty ? const Icon(Icons.album, size: 16) : null), title: Text(album.title)),
+                  ),
                 ),
               ],
             ),
@@ -156,9 +207,7 @@ class _AddSongScreenState extends State<AddSongScreen> {
     );
   }
 
-  Widget _buildSectionCard(BuildContext context, {required String title, required List<Widget> children}) {
-    return Card(elevation: 2, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), child: Padding(padding: const EdgeInsets.all(16.0), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)), const Divider(height: 24), ...children])));
-  }
+  Widget _buildSectionCard(BuildContext context, {required String title, required List<Widget> children}) => Card(elevation: 2, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), child: Padding(padding: const EdgeInsets.all(16.0), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)), const Divider(height: 24), ...children])));
 
   InputDecoration _inputDecoration(String label, IconData icon, {bool alignLabel = false}) {
     return InputDecoration(labelText: label, border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))), prefixIcon: Icon(icon), alignLabelWithHint: alignLabel);

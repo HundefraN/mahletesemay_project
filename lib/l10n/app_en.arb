@@ -48,5 +48,7 @@
     "yourResults": "Your Results",
     "vocalRange": "Vocal Range",
     "probableVoiceType": "Probable Voice Type",
-    "voiceTypeDisclaimer": "(This is an estimate. A professional vocal coach can provide a more accurate classification.)"
+    "voiceTypeDisclaimer": "(This is an estimate. A professional vocal coach can provide a more accurate classification.)",
+    "preferences": "Preferences",
+    "account": "Account"
 }

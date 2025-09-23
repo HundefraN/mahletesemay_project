@@ -24,7 +24,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get lessons => 'ትምህርቶች';
 
   @override
-  String get settings => 'ቅንብሮች';
+  String get settings => 'ማስተካከያዎች';
 
   @override
   String get goodMorning => 'እንደምን አደሩ';
@@ -36,7 +36,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get goodEvening => 'እንደምን አመሹ';
 
   @override
-  String get searchHint => 'ዝማሬዎችን፣ አርቲስቶችን፣ ግጥሞችን ይፈልጉ...';
+  String get searchHint => 'ዝማሬዎችን፣ ዘማሪያንን፣ ግጥሞችን ይፈልጉ...';
 
   @override
   String get favorites => 'የተወደዱ';
@@ -48,10 +48,10 @@ class AppLocalizationsAm extends AppLocalizations {
   String get seeAll => 'ሁሉንም ይመልከቱ';
 
   @override
-  String get ethiopianArtists => 'የኢትዮጵያ አርቲስቶች';
+  String get ethiopianArtists => 'የኢትዮጵያ ዘማሪያን';
 
   @override
-  String get worldwideArtists => 'የዓለም አቀፍ አርቲስቶች';
+  String get worldwideArtists => 'የዓለም አቀፍ ዘማሪያን';
 
   @override
   String get history => 'ታሪክ';
@@ -157,4 +157,10 @@ class AppLocalizationsAm extends AppLocalizations {
   @override
   String get voiceTypeDisclaimer =>
       '(ይህ ግምት ነው። ባለሙያ የድምፅ አሰልጣኝ የበለጠ ትክክለኛ ምደባ ሊሰጥ ይችላል።)';
+
+  @override
+  String get preferences => 'ምርጫዎች';
+
+  @override
+  String get account => 'መለያ';
 }

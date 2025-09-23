@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mahlete_semay_project/models/artist_model.dart';
-import 'package:mahlete_semay_project/widgets/loading_placeholders.dart';
 import 'package:provider/provider.dart';
 import '../../models/album_model.dart';
 import '../../services/firebase_service.dart';

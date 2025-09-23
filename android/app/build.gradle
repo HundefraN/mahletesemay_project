@@ -44,7 +44,7 @@ android {
     defaultConfig {
         applicationId "com.hundefra.mahlete_semay"
         minSdkVersion flutter.minSdkVersion
-        targetSdkVersion 34 // Target Sdk can safely stay at 34
+        targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true

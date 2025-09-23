@@ -1,16 +1,55 @@
-
-import 'dart:ui';
-
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import '../models/performance_tip_model.dart';
 
+const String singlesArtistId = 'singles_artist';
+const String singlesAlbumId = 'singles_album';
+
+const String prefPermissionsCompleted = 'permissions_completed';
+const String prefOnboardingCompleted = 'onboarding_completed';
+const String prefGuidedTourCompletedV2 = 'guided_tour_completed_v2';
+const String prefMashupTourCompletedV2 = 'mashup_helper_tour_completed_v2';
+const String prefLastSyncTimestamp = 'lastSyncTimestamp';
+const String prefFirstSyncCompleted = 'isFirstSyncCompleted';
+const String prefDailyRemindersEnabled = 'dailyRemindersEnabled';
+const String prefUserGender = 'userGender';
+const String prefLastCompletionDate = 'lastCompletionDate';
+const String prefIsDarkMode = 'isDarkMode';
+const String prefLyricsFontSize = 'lyricsFontSize';
+const String prefSongHistory = 'songHistory';
+const String prefFavoriteSongIds = 'favoriteSongIds';
+const String prefSubmissionHistory = 'submissionHistory';
+const String prefSearchHistory = 'searchHistory';
+const String prefServiceReminderDateTime = 'serviceReminderDateTime';
+
+const String planMaleDaily = 'male_daily';
+const String planFemaleDaily = 'female_daily';
+const String planMaleWeekly = 'male_weekly';
+const String planFemaleWeekly = 'female_weekly';
+const String planMaleMonthly = 'male_monthly';
+const String planFemaleMonthly = 'female_monthly';
+const String planMaleQuarterly = 'male_quarterly';
+const String planFemaleQuarterly = 'female_quarterly';
+const String progressSuffix = '_progress';
+
+const String tableArtists = 'artists';
+const String tableAlbums = 'albums';
+const String tableSongs = 'songs';
+const String tableSetlists = 'setlists';
+const String tableSetlistSongs = 'setlist_songs';
+
+const String notificationPayloadVocalExercises = 'vocal_exercises';
+const int dailyReminderNotificationId = 100;
+const int continuationReminderId = 200;
+const int serviceReminderNotificationIdBase = 300;
+
+enum HomePageTab { lyrics, mashup, setlists, exercises, range, lessons }
+
 final List<String> scaleMenuItems = [
-  '1st (Ionian)',
-  '2nd (Dorian)',
-  '5th (Mixolydian)',
-  '6th (Aeolian)',
+  '1st (Major Scale)',
+  '2nd (Dorian Mode)',
+  '5th (Mixolydian Mode)',
+  '6th (Natural minor)',
   'Tizita Minor',
   'Ambassel',
   'Anchi Hoy',
@@ -26,6 +65,7 @@ final Map<String, TextStyle> fontPresets = {
   'Oswald': GoogleFonts.oswald(),
   'Roboto Slab': GoogleFonts.robotoSlab(),
 };
+
 final List<Gradient> gradientPresets = [
   const LinearGradient(colors: [Color(0xff434343), Color(0xff000000)], begin: Alignment.topLeft, end: Alignment.bottomRight),
   const LinearGradient(colors: [Color(0xff0f2027), Color(0xff203a43), Color(0xff2c5364)], begin: Alignment.topLeft, end: Alignment.bottomRight),
@@ -38,14 +78,15 @@ final List<Gradient> gradientPresets = [
 ];
 
 final List<Color> solidColorPresets = [
-  const Color(0xff0D47A1), // App Primary
-  const Color(0xff1a1a1a), // Deep Charcoal
-  const Color(0xff606c38), // Olive
-  const Color(0xff283618), // Dark Olive
-  const Color(0xfffefae0), // Cream
-  const Color(0xffdda15e), // Tan
-  const Color(0xffbc6c25), // Brown
+  const Color(0xff0D47A1),
+  const Color(0xff1a1a1a),
+  const Color(0xff606c38),
+  const Color(0xff283618),
+  const Color(0xfffefae0),
+  const Color(0xffdda15e),
+  const Color(0xffbc6c25),
 ];
+
 final List<String> rhythmMenuItems = [
   'Waltz',
   'Reggae',
@@ -65,4 +106,20 @@ final List<PerformanceTip> demoPerformanceTips = [
   PerformanceTip('t4', 'Master Microphone Technique', 'Pull the mic away slightly on loud, high notes to avoid distortion. Bring it closer for softer, more intimate parts. This simple act dramatically improves the listening experience.'),
   PerformanceTip('t5', 'The Power of Stillness', 'Movement is good, but intentional stillness can be even more powerful. During a profound lyrical moment, standing still can draw all the attention to the message of the song.'),
   PerformanceTip('t6', 'Warm-Up is Non-Negotiable', 'A proper vocal and physical warm-up prevents injury, improves your sound, and calms your nerves. Never skip it.'),
+];
+
+class VoiceTypeRange {
+  final String name;
+  final double lowPitch;
+  final double highPitch;
+  const VoiceTypeRange(this.name, this.lowPitch, this.highPitch);
+}
+
+const List<VoiceTypeRange> voiceTypeRanges = [
+  VoiceTypeRange('Soprano', 220, 880),
+  VoiceTypeRange('Mezzo-Soprano', 174, 698),
+  VoiceTypeRange('Contralto', 146, 587),
+  VoiceTypeRange('Tenor', 110, 440),
+  VoiceTypeRange('Baritone', 82, 330),
+  VoiceTypeRange('Bass', 65, 261),
 ];

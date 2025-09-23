@@ -1,6 +1,4 @@
 import 'dart:async';
-
-import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
@@ -44,6 +42,9 @@ class _SuggestLyricsScreenState extends State<SuggestLyricsScreen> {
   @override
   void dispose() {
     _connectivitySubscription.cancel();
+    _titleController.dispose();
+    _artistController.dispose();
+    _lyricsController.dispose();
     super.dispose();
   }
 
@@ -111,29 +112,25 @@ class _SuggestLyricsScreenState extends State<SuggestLyricsScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          if (_isOffline) const _OfflineIndicator(),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : Form(
-              key: _formKey,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  TextFormField(controller: _titleController, decoration: _inputDecoration('Song Title *', Icons.music_note), validator: (v) => v!.isEmpty ? 'Required' : null),
-                  const SizedBox(height: 16),
-                  TextFormField(controller: _artistController, decoration: _inputDecoration('Artist Name *', Icons.person), validator: (v) => v!.isEmpty ? 'Required' : null),
-                  const SizedBox(height: 16),
-                  TextFormField(controller: _lyricsController, decoration: _inputDecoration('Lyrics *', Icons.text_fields, alignLabel: true), minLines: 10, maxLines: 20, validator: (v) => v!.isEmpty ? 'Required' : null),
-                  const SizedBox(height: 24),
-                  ElevatedButton(onPressed: _isOffline ? null : _submit, child: Text(_isOffline ? 'Offline - Cannot Submit' : 'Submit for Review')),
-                ],
-              ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            TextFormField(controller: _titleController, decoration: _inputDecoration('Song Title *', Icons.music_note), validator: (v) => v!.isEmpty ? 'Required' : null),
+            const SizedBox(height: 16),
+            TextFormField(controller: _artistController, decoration: _inputDecoration('Artist Name *', Icons.person), validator: (v) => v!.isEmpty ? 'Required' : null),
+            const SizedBox(height: 16),
+            TextFormField(controller: _lyricsController, decoration: _inputDecoration('Lyrics *', Icons.text_fields, alignLabel: true), minLines: 10, maxLines: 20, validator: (v) => v!.isEmpty ? 'Required' : null),
+            const SizedBox(height: 24),
+            ElevatedButton(
+                onPressed: _isOffline ? null : _submit,
+                child: const Text('Submit for Review')
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -144,27 +141,6 @@ class _SuggestLyricsScreenState extends State<SuggestLyricsScreen> {
       border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
       prefixIcon: Icon(icon),
       alignLabelWithHint: alignLabel,
-    );
-  }
-}
-
-class _OfflineIndicator extends StatelessWidget {
-  const _OfflineIndicator();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: Colors.black54,
-      padding: const EdgeInsets.all(8),
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.wifi_off_rounded, color: Colors.white, size: 16),
-          SizedBox(width: 8),
-          Text('You are offline. Please connect to submit.', style: TextStyle(color: Colors.white)),
-        ],
-      ),
     );
   }
 }

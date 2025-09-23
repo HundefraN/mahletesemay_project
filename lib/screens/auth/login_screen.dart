@@ -1,11 +1,13 @@
 import 'dart:async';
-
-import '../../providers/auth_proveider.dart';
-import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:mahlete_semay_project/screens/auth/claim_account_screen.dart';
+import 'package:mahlete_semay_project/screens/auth/waiting_for_approval_screen.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../providers/auth_proveider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,7 +18,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscureText = true;
   bool _isOffline = false;
@@ -32,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void dispose() {
     _connectivitySubscription.cancel();
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -51,13 +53,29 @@ class _LoginScreenState extends State<LoginScreen> {
   void _submit() async {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final username = _usernameController.text.trim();
-      final emailForAuth = '$username@ms.com';
-      final error = await authProvider.signIn(emailForAuth, _passwordController.text.trim());
-      if (error == null) {
-        if(mounted) Navigator.pop(context);
-      } else {
-        if(mounted) CustomSnackbar.show(context, 'Invalid username or password.', isError: true);
+      final result = await authProvider.signIn(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+
+      if (mounted) {
+        switch (result) {
+          case SignInResult.success:
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+            break;
+          case SignInResult.pendingApproval:
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const WaitingForApprovalScreen()),
+            );
+            break;
+          case SignInResult.failed:
+          case SignInResult.accountBlocked:
+            CustomSnackbar.show(context, authProvider.authError ?? 'An unknown error occurred.', isError: true);
+            break;
+        }
       }
     }
   }
@@ -68,40 +86,105 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.lock_person_rounded, size: 80, color: theme.colorScheme.primary),
-                const SizedBox(height: 24),
-                Text('Moderator Portal', style: theme.textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Text('Please sign in to continue', style: theme.textTheme.bodyLarge),
-                const SizedBox(height: 32),
-                TextFormField(controller: _usernameController, decoration: const InputDecoration(labelText: 'Username', prefixIcon: Icon(Icons.person_outline_rounded), border: OutlineInputBorder()), keyboardType: TextInputType.text, validator: (value) => value!.isEmpty ? 'Please enter your username' : null),
-                const SizedBox(height: 16),
-                TextFormField(controller: _passwordController, obscureText: _obscureText, decoration: InputDecoration(labelText: 'Password', prefixIcon: const Icon(Icons.lock_outline_rounded), suffixIcon: IconButton(icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined), onPressed: () => setState(() => _obscureText = !_obscureText)), border: const OutlineInputBorder()), validator: (value) => value!.isEmpty ? 'Please enter your password' : null),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: authProvider.isLoading || _isOffline ? null : _submit,
-                    style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                    child: authProvider.isLoading
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : Text(_isOffline ? 'Offline' : 'Sign In'),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.colorScheme.primary.withOpacity(0.8),
+              theme.colorScheme.secondary.withOpacity(0.6),
+            ],
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(32.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.shield_moon_rounded, size: 80, color: Colors.white),
+                  ).animate().fadeIn(duration: 500.ms).scale(begin: const Offset(0.8, 0.8)),
+
+                  const SizedBox(height: 24),
+                  Text('Moderator Portal', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 32, color: Colors.white)),
+                  const SizedBox(height: 8),
+                  Text('Please sign in to continue', style: GoogleFonts.poppins(color: Colors.white.withOpacity(0.8), fontSize: 16)),
+                  const SizedBox(height: 48),
+
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: _inputDecoration('Email', Icons.email_outlined),
+                    style: const TextStyle(color: Colors.white),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) => value!.isEmpty ? 'Please enter your email' : null,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: _obscureText,
+                    decoration: _inputDecoration('Password', Icons.lock_outline_rounded).copyWith(
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: Colors.white.withOpacity(0.7)),
+                        onPressed: () => setState(() => _obscureText = !_obscureText),
+                      ),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                    validator: (value) => value!.isEmpty ? 'Please enter your password' : null,
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: authProvider.isSigningIn || _isOffline ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: Colors.white,
+                        foregroundColor: theme.colorScheme.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      ),
+                      child: authProvider.isSigningIn
+                          ? SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: theme.colorScheme.primary))
+                          : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("First time here?", style: TextStyle(color: Colors.white.withOpacity(0.8))),
+                      TextButton(
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClaimAccountScreen())),
+                        child: const Text("Claim Account", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      )
+                    ],
+                  )
+                ].animate(interval: 100.ms).fadeIn(duration: 400.ms).slideY(begin: 0.5),
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+      prefixIcon: Icon(icon, color: Colors.white.withOpacity(0.7)),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.1),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Colors.white, width: 2)),
     );
   }
 }

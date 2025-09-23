@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../admin/permissions/permission_screen.dart';
 import 'home_screen.dart';
@@ -14,18 +15,19 @@ class SplashWrapper extends StatefulWidget {
 enum AppStatus { checking, needsPermissions, needsOnboarding, ready }
 
 class _SplashWrapperState extends State<SplashWrapper> {
-  // Use a Future to hold the status, which prevents rebuilding.
   late Future<AppStatus> _statusFuture;
 
   @override
   void initState() {
     super.initState();
-    // Set the future in initState. This runs only once.
     _statusFuture = _checkAppStatus();
+    // The splash screen is removed only when the future is complete.
+    _statusFuture.whenComplete(() {
+      FlutterNativeSplash.remove();
+    });
   }
 
   Future<AppStatus> _checkAppStatus() async {
-    // This logic runs completely before the first frame is shown.
     final prefs = await SharedPreferences.getInstance();
     final bool hasCompletedPermissions =
         prefs.getBool('permissions_completed') ?? false;
@@ -43,7 +45,6 @@ class _SplashWrapperState extends State<SplashWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    // FutureBuilder will wait for our check to complete before deciding which screen to show.
     return FutureBuilder<AppStatus>(
       future: _statusFuture,
       builder: (context, snapshot) {
@@ -57,15 +58,15 @@ class _SplashWrapperState extends State<SplashWrapper> {
             case AppStatus.ready:
               return const HomeScreen();
             default:
-            // This case should not be reached, but it's good practice.
               return const Scaffold(body: Center(child: Text("Error")));
           }
         }
 
-        // While checking, show the splash screen (or a simple loader).
-        // The native splash screen will cover this, so it's seamless.
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        // While the future is resolving, the native splash screen is shown,
+        // so returning an empty container is fine and prevents any flicker.
+        return const Scaffold(body: SizedBox.shrink());
       },
     );
   }
 }
+

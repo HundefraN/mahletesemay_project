@@ -93,6 +93,7 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
 
       if (mounted) {
         Navigator.pop(context);
+
         CustomSnackbar.show(context, 'Artist added successfully!');
       }
     }

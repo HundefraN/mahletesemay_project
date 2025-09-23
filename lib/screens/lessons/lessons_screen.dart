@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -10,7 +9,6 @@ import 'package:mahlete_semay_project/models/lesson_model.dart';
 import 'package:mahlete_semay_project/widgets/cached_image.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../widgets/loading_placeholders.dart';
-import '../../widgets/shimmer_loading.dart';
 
 enum SortOption { newest, oldest, popular }
 
@@ -301,7 +299,6 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
 
   Widget _buildLessonsList(String categoryId) {
     final lessonsToShow = _filteredAndSortedLessons;
-    final categoryName = _categories.firstWhere((cat) => cat.id == categoryId).name;
     if (lessonsToShow.isEmpty && !_isLoading) {
       String message = 'No lessons found in this category.';
       if (_apiFailed) {
@@ -466,11 +463,12 @@ class _LevelBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     Color badgeColor;
     switch (level) {
-      case 'Beginner': badgeColor = Colors.green; break;
-      case 'Intermediate': badgeColor = Colors.orange; break;
-      case 'Advanced': badgeColor = Colors.red; break;
+      case 'Beginner': badgeColor = theme.colorScheme.primary; break;
+      case 'Intermediate': badgeColor = theme.colorScheme.secondary; break;
+      case 'Advanced': badgeColor = theme.colorScheme.error; break;
       default: badgeColor = Colors.blueGrey;
     }
     return Container(

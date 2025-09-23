@@ -13,22 +13,21 @@ class TextHighlighter extends StatelessWidget {
     required this.query,
     this.style,
     this.highlightStyle,
-    this.maxLines = 1,
+    this.maxLines = 2,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (query.isEmpty) {
+    if (query.isEmpty || text.isEmpty) {
       return Text(text, style: style, maxLines: maxLines, overflow: TextOverflow.ellipsis);
     }
 
     final theme = Theme.of(context);
     final defaultStyle = style ?? theme.textTheme.bodyMedium!;
-    final finalHighlightStyle = highlightStyle ??
-        defaultStyle.copyWith(
-          fontWeight: FontWeight.bold,
-          fontStyle: FontStyle.italic,
-        );
+    final finalHighlightStyle = highlightStyle ?? defaultStyle.copyWith(
+      fontWeight: FontWeight.bold,
+      fontStyle: FontStyle.italic,
+    );
 
     final textLower = text.toLowerCase();
     final queryLower = query.toLowerCase();
@@ -51,8 +50,8 @@ class TextHighlighter extends StatelessWidget {
             shaderCallback: (bounds) {
               return LinearGradient(
                 colors: [
+                  theme.colorScheme.primary,
                   theme.colorScheme.secondary,
-                  Color.lerp(theme.colorScheme.secondary, theme.colorScheme.primary, 0.5)!,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -79,3 +78,4 @@ class TextHighlighter extends StatelessWidget {
     );
   }
 }
+

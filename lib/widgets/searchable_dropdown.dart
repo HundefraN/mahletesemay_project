@@ -1,120 +1,137 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:mahlete_semay_project/widgets/cached_image.dart';
 
 class SearchableDropdown<T> extends StatefulWidget {
   final String label;
-  final IconData icon;
+  final IconData? icon;
   final T? selectedItem;
-  final Future<List<T>> Function(String filter) onFind;
   final Function(T?) onChanged;
   final String? Function(T?)? validator;
+  final Future<List<T>> Function(String)? onFind;
+  final Future<Map<String, List<T>>> Function(String)? onFindWithHeaders;
   final Widget Function(T) dropdownBuilder;
   final Widget Function(T) itemBuilder;
+  final String Function(T) itemToString;
   final bool isEnabled;
 
   const SearchableDropdown({
     super.key,
     required this.label,
-    required this.icon,
+    this.icon,
     this.selectedItem,
-    required this.onFind,
     required this.onChanged,
     this.validator,
+    this.onFind,
+    this.onFindWithHeaders,
     required this.dropdownBuilder,
     required this.itemBuilder,
+    required this.itemToString,
     this.isEnabled = true,
-  });
+  }) : assert(onFind != null || onFindWithHeaders != null, 'Either onFind or onFindWithHeaders must be provided.');
 
   @override
   State<SearchableDropdown<T>> createState() => _SearchableDropdownState<T>();
 }
 
 class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
-  void _showModal() {
-    showModalBottomSheet(
+  final TextEditingController _textEditingController = TextEditingController();
+
+  void _showSearchBottomSheet() async {
+    final result = await showModalBottomSheet<T>(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.4,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return _SearchableModal<T>(
-              label: widget.label,
-              onFind: widget.onFind,
-              itemBuilder: widget.itemBuilder,
-              onChanged: (item) {
-                widget.onChanged(item);
-                Navigator.pop(context);
-              },
-              scrollController: scrollController,
-            );
-          },
+        return _SearchBottomSheet<T>(
+          title: widget.label,
+          onFind: widget.onFind,
+          onFindWithHeaders: widget.onFindWithHeaders,
+          itemBuilder: widget.itemBuilder,
         );
       },
     );
+    if (result != null) {
+      widget.onChanged(result);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _updateText();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant SearchableDropdown<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedItem != oldWidget.selectedItem) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _updateText();
+      });
+    }
+  }
+
+  void _updateText() {
+    if (widget.selectedItem != null) {
+      _textEditingController.text = widget.itemToString(widget.selectedItem as T);
+    } else {
+      _textEditingController.clear();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FormField<T>(
-      validator: widget.validator,
-      initialValue: widget.selectedItem,
-      builder: (FormFieldState<T> state) {
-        return InkWell(
-          onTap: widget.isEnabled ? _showModal : null,
-          child: InputDecorator(
-            decoration: InputDecoration(
-              labelText: widget.label,
-              border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-              prefixIcon: Icon(widget.icon),
-              errorText: state.errorText,
-              enabled: widget.isEnabled,
-            ),
-            child: widget.selectedItem == null
-                ? Text('Select an option', style: TextStyle(color: widget.isEnabled ? null : Colors.grey))
-                : widget.dropdownBuilder(widget.selectedItem as T),
+    return AbsorbPointer(
+      absorbing: !widget.isEnabled,
+      child: Opacity(
+        opacity: widget.isEnabled ? 1.0 : 0.5,
+        child: TextFormField(
+          controller: _textEditingController,
+          readOnly: true,
+          onTap: _showSearchBottomSheet,
+          validator: (_) => widget.validator?.call(widget.selectedItem),
+          decoration: InputDecoration(
+            labelText: widget.label,
+            border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+            prefixIcon: widget.icon != null ? Icon(widget.icon) : null,
+            suffixIcon: const Icon(Icons.arrow_drop_down),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
 
-class _SearchableModal<T> extends StatefulWidget {
-  final String label;
-  final Future<List<T>> Function(String filter) onFind;
+class _SearchBottomSheet<T> extends StatefulWidget {
+  final String title;
+  final Future<List<T>> Function(String)? onFind;
+  final Future<Map<String, List<T>>> Function(String)? onFindWithHeaders;
   final Widget Function(T) itemBuilder;
-  final Function(T) onChanged;
-  final ScrollController scrollController;
 
-  const _SearchableModal({
-    required this.label,
-    required this.onFind,
+  const _SearchBottomSheet({
+    required this.title,
+    this.onFind,
+    this.onFindWithHeaders,
     required this.itemBuilder,
-    required this.onChanged,
-    required this.scrollController,
   });
 
   @override
-  State<_SearchableModal<T>> createState() => _SearchableModalState<T>();
+  State<_SearchBottomSheet<T>> createState() => _SearchBottomSheetState<T>();
 }
 
-class _SearchableModalState<T> extends State<_SearchableModal<T>> {
+class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
   List<T> _items = [];
+  Map<String, List<T>> _categorizedItems = {};
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _fetchItems('');
-    _searchController.addListener(() => _fetchItems(_searchController.text));
+    _search('');
+    _searchController.addListener(() => _search(_searchController.text));
   }
 
   @override
@@ -123,56 +140,111 @@ class _SearchableModalState<T> extends State<_SearchableModal<T>> {
     super.dispose();
   }
 
-  Future<void> _fetchItems(String filter) async {
+  void _search(String filter) async {
+    if(!mounted) return;
     setState(() => _isLoading = true);
-    final items = await widget.onFind(filter);
-    if(mounted) {
-      setState(() {
-        _items = items;
-        _isLoading = false;
-      });
+    if (widget.onFindWithHeaders != null) {
+      _categorizedItems = await widget.onFindWithHeaders!(filter);
+      _items = _categorizedItems.values.expand((list) => list).toList();
+    } else {
+      _items = await widget.onFind!(filter);
+      _categorizedItems = {};
     }
+    if(!mounted) return;
+    setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 16),
-              Text(widget.label, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
-              TextField(
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+      child: Container(
+        margin: const EdgeInsets.all(16).copyWith(top: MediaQuery.of(context).padding.top + 32),
+        decoration: BoxDecoration(
+          color: isDark ? theme.cardColor.withOpacity(0.9) : theme.cardColor.withOpacity(0.95),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Expanded(child: Text(widget.title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold))),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close))
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: TextField(
                 controller: _searchController,
+                autofocus: true,
                 decoration: InputDecoration(
-                  labelText: 'Search...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    hintText: 'Search...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    filled: true,
+                    fillColor: theme.scaffoldBackgroundColor.withOpacity(0.5)
                 ),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _items.isEmpty
+                  ? const Center(child: Text('No items found'))
+                  : _buildList(),
+            ),
+          ],
         ),
-        Expanded(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-            controller: widget.scrollController,
-            itemCount: _items.length,
-            itemBuilder: (context, index) {
-              final item = _items[index];
-              return InkWell(
-                onTap: () => widget.onChanged(item),
-                child: widget.itemBuilder(item),
-              );
-            },
+      ),
+    );
+  }
+
+  Widget _buildList() {
+    if (widget.onFindWithHeaders != null && _categorizedItems.isNotEmpty) {
+      return ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: _categorizedItems.entries.expand((entry) {
+          final header = Padding(
+            padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
+            child: Text(
+              entry.key,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
+            ),
+          );
+          final items = entry.value.map((item) => Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => Navigator.pop(context, item),
+              borderRadius: BorderRadius.circular(8),
+              child: widget.itemBuilder(item),
+            ),
+          ));
+          return [header, ...items];
+        }).toList(),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: _items.length,
+      itemBuilder: (context, index) {
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => Navigator.pop(context, _items[index]),
+            borderRadius: BorderRadius.circular(8),
+            child: widget.itemBuilder(_items[index]),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 }

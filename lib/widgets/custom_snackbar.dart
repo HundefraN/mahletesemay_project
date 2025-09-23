@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 class CustomSnackbar {
   static void show(BuildContext context, String message, {bool isError = false}) {
     final theme = Theme.of(context);
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
     final snackBar = SnackBar(
       content: Row(
         children: [
@@ -15,12 +17,13 @@ class CustomSnackbar {
         ],
       ),
       backgroundColor: isError ? Colors.red.shade600 : Colors.green.shade600,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      margin: const EdgeInsets.all(12),
-      elevation: 4,
+
+
+      behavior: SnackBarBehavior.fixed,
+
+      shape: null,
+      margin: null,
+      elevation: 0,
     );
 
     ScaffoldMessenger.of(context).showSnackBar(snackBar);

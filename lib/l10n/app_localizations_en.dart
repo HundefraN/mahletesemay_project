@@ -159,4 +159,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get voiceTypeDisclaimer =>
       '(This is an estimate. A professional vocal coach can provide a more accurate classification.)';
+
+  @override
+  String get preferences => 'Preferences';
+
+  @override
+  String get account => 'Account';
 }

@@ -5,11 +5,17 @@ import 'package:mahlete_semay_project/providers/language_provider.dart';
 import 'package:mahlete_semay_project/screens/admin/portal_home_screen.dart';
 import 'package:mahlete_semay_project/screens/auth/login_screen.dart';
 import 'package:mahlete_semay_project/screens/lyrics/suggest_lyrics_screen.dart';
+import 'package:mahlete_semay_project/screens/settings/service_reminder_screen.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
+import 'package:flutter/services.dart';
+import 'dart:ui';
+import 'package:flutter/foundation.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../providers/auth_proveider.dart';
 import '../../providers/theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mahlete_semay_project/services/notification_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 const int dailyReminderNotificationId = 100;
 
@@ -20,20 +26,41 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProviderStateMixin {
   bool _remindersEnabled = true;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _loadReminderPreference();
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadReminderPreference() async {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
-      setState(
-              () => _remindersEnabled = prefs.getBool('dailyRemindersEnabled') ?? true);
+      setState(() => _remindersEnabled = prefs.getBool('dailyRemindersEnabled') ?? true);
     }
   }
 
@@ -54,45 +81,118 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _shareApp() {
+    const String appUrl = "https://play.google.com/store/apps/details?id=your.package.name";
+    const String message = "Check out Mahlete Semay, the ultimate app for worship singers! Download it here: $appUrl";
+    return Share.share(message);
+  }
+
+  Future<void> _showExitDialog() async {
+    final didRequestExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit App?'),
+        content: const Text('Are you sure you want to close the application?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
+    );
+    if (didRequestExit ?? false) {
+      SystemNavigator.pop();
+    }
+  }
+
   void _showLanguagePicker() {
     final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(AppLocalizations.of(context)!.language, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
-              ListTile(
-                title: const Text('English'),
-                onTap: () {
-                  languageProvider.setLocale(const Locale('en'));
-                  Navigator.pop(context);
-                },
-                trailing: languageProvider.currentLocale.languageCode == 'en'
-                    ? const Icon(Icons.check_circle)
-                    : null,
-              ),
-              ListTile(
-                title: const Text('አማርኛ'),
-                onTap: () {
-                  languageProvider.setLocale(const Locale('am'));
-                  Navigator.pop(context);
-                },
-                trailing: languageProvider.currentLocale.languageCode == 'am'
-                    ? const Icon(Icons.check_circle)
-                    : null,
-              ),
-            ],
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Container(
+            margin: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 5,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2.5),
+                  ),
+                ),
+                Text(
+                  AppLocalizations.of(context)!.language,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                _buildLanguageOption(languageProvider, 'English', 'en'),
+                _buildLanguageOption(languageProvider, 'አማርኛ', 'am'),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildLanguageOption(LanguageProvider provider, String language, String code) {
+    final isSelected = provider.currentLocale.languageCode == code;
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: () {
+        provider.setLocale(Locale(code));
+        Navigator.pop(context);
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? theme.colorScheme.primary.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Text(code == 'en' ? '🇺🇸' : '🇪🇹', style: const TextStyle(fontSize: 24)),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                language,
+                style: TextStyle(fontSize: 16, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface),
+              ),
+            ),
+            if (isSelected)
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle),
+                child: const Icon(Icons.check, color: Colors.white, size: 16),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -103,168 +203,253 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final theme = Theme.of(context);
     final moderator = authProvider.currentModerator;
+    final isDark = themeProvider.isDarkMode;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.settings)),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          if (moderator != null) ...[
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15)),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 30,
-                      child: Text(
-                          moderator.firstName.isNotEmpty
-                              ? moderator.firstName[0].toUpperCase()
-                              : '?',
-                          style: const TextStyle(fontSize: 24)),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(moderator.fullName,
-                        style: theme.textTheme.titleLarge
-                            ?.copyWith(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text(moderator.username,
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: Colors.grey)),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Chip(
-                            label: Text('Role: ${moderator.role.toUpperCase()}'),
-                            avatar: const Icon(Icons.shield_outlined)),
-                        const SizedBox(width: 8),
-                        Chip(
-                          label: Text(moderator.status.toUpperCase()),
-                          avatar: Icon(
-                              moderator.status == 'active'
-                                  ? Icons.check_circle
-                                  : Icons.block,
-                              size: 16),
-                          backgroundColor: moderator.status == 'active'
-                              ? Colors.green.withOpacity(0.2)
-                              : Colors.red.withOpacity(0.2),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDark
+                ? [const Color(0xFF1E1E1E), const Color(0xFF121212)]
+                : [const Color(0xFFF4F6F8), const Color(0xFFE3F2FD)],
+          ),
+        ),
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 120,
+              pinned: true,
+              stretch: true,
+              backgroundColor: Colors.transparent,
+              flexibleSpace: FlexibleSpaceBar(
+                title: Text(l10n.settings, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: theme.appBarTheme.titleTextStyle?.color)),
               ),
             ),
-            const SizedBox(height: 20),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 80),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(_animationController),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (authProvider.currentUser != null)
+                            authProvider.isLoadingUser
+                                ? _buildProfileCardPlaceholder(theme)
+                                : (moderator != null
+                                ? _buildSimpleProfileCard(moderator, theme)
+                                : const SizedBox.shrink()),
+
+                          const SizedBox(height: 24),
+                          _buildSectionHeader(l10n.preferences, theme),
+                          const SizedBox(height: 16),
+                          _buildSettingsCard(
+                            theme: theme,
+                            children: [
+                              _buildSettingsTile(icon: Icon(Icons.language_outlined, color: theme.colorScheme.primary), title: l10n.language, subtitle: Provider.of<LanguageProvider>(context).currentLocale.languageCode == 'en' ? 'English' : 'አማርኛ', onTap: _showLanguagePicker, trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16)),
+                              _buildDivider(),
+                              _buildSettingsTile(icon: Icon(isDark ? Icons.dark_mode : Icons.light_mode, color: theme.colorScheme.primary), title: l10n.darkMode, trailing: Transform.scale(scale: 0.8, child: Switch.adaptive(value: isDark, onChanged: (_) => themeProvider.toggleTheme(), activeColor: theme.colorScheme.primary))),
+                              _buildDivider(),
+                              _buildSettingsTile(icon: Icon(Icons.notifications_active_outlined, color: theme.colorScheme.primary), title: l10n.dailyReminders, subtitle: l10n.remindersDesc, trailing: Transform.scale(scale: 0.8, child: Switch.adaptive(value: _remindersEnabled, onChanged: _toggleReminders, activeColor: theme.colorScheme.primary))),
+                              _buildDivider(),
+                              _buildSettingsTile(
+                                icon: Icon(Icons.event_available_outlined, color: theme.colorScheme.primary),
+                                title: 'Service Reminder',
+                                subtitle: 'Set a countdown for your next service',
+                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceReminderScreen())),
+                                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                              ),
+
+                            ],
+                          ),
+
+                          const SizedBox(height: 24),
+                          _buildSectionHeader(l10n.account, theme),
+                          const SizedBox(height: 16),
+                          _buildSettingsCard(
+                            theme: theme,
+                            children: [
+                              if (authProvider.currentUser == null)
+                                _buildSettingsTile(icon: Icon(Icons.add_comment_outlined, color: theme.colorScheme.primary), title: l10n.suggestASong, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SuggestLyricsScreen())), trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16)),
+                              if (authProvider.currentUser == null) _buildDivider(),
+                              _buildSettingsTile(
+                                icon: Icon(Icons.shield_outlined, color: theme.colorScheme.secondary),
+                                title: l10n.moderatorPortal,
+                                onTap: () {
+                                  if (authProvider.currentUser == null) {
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                                  } else if (authProvider.isLoadingUser) {
+                                  } else if (authProvider.currentModerator != null && authProvider.userStatus == 'active') {
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => const PortalHomeScreen()));
+                                  } else {
+                                    String errorMessage = authProvider.currentModerator == null
+                                        ? 'Could not verify moderator status. Please check your connection and restart the app.'
+                                        : 'Your access has been revoked by an admin.';
+                                    CustomSnackbar.show(context, errorMessage, isError: true);
+                                  }
+                                },
+                                trailing: authProvider.isLoadingUser ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                              ),
+                              _buildDivider(),
+                              _buildSettingsTile(
+                                icon: Icon(Icons.share_rounded, color: theme.colorScheme.primary),
+                                title: "Share The App",
+                                onTap: _shareApp,
+                              ),
+                            ],
+                          ),
+
+                          if (kDebugMode) ...[
+                            const SizedBox(height: 24),
+                            _buildSectionHeader("Developer Options", theme),
+                            const SizedBox(height: 16),
+                            _buildSettingsCard(
+                              theme: theme,
+                              children: [
+                                _buildSettingsTile(
+                                  icon: Icon(Icons.notification_important_outlined, color: Colors.teal),
+                                  title: "Send Test Notification",
+                                  onTap: () {
+                                    NotificationService.showTestNotification();
+                                    CustomSnackbar.show(context, 'Test notification sent!');
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+
+                          Padding(
+                            padding: const EdgeInsets.only(top: 40.0),
+                            child: Center(
+                              child: authProvider.currentUser != null && !authProvider.isLoadingUser
+                                  ? ElevatedButton.icon(
+                                onPressed: () => authProvider.signOut(),
+                                icon: const Icon(Icons.logout_rounded),
+                                label: Text(l10n.signOut),
+                                style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error.withOpacity(0.1), foregroundColor: theme.colorScheme.error, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+                              )
+                                  : ElevatedButton.icon(
+                                onPressed: _showExitDialog,
+                                icon: const Icon(Icons.exit_to_app_rounded),
+                                label: const Text('Exit App'),
+                                style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error.withOpacity(0.1), foregroundColor: theme.colorScheme.error, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                          Center(child: Text('Mahlete Semay v1.0.0', style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.5), fontSize: 12))),
+                        ],
+                      ),
+                    ),
+                  ),
+                ]),
+              ),
+            ),
           ],
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-            child: ListTile(
-              contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              leading: Icon(Icons.language, color: theme.colorScheme.primary),
-              title: Text(l10n.language),
-              onTap: _showLanguagePicker,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSimpleProfileCard(dynamic moderator, ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.5), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            moderator.fullName,
+            style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '@${moderator.username}',
+            style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 14),
+          ),
+          const Divider(height: 24),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(color: theme.colorScheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(30)),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.shield_outlined, size: 16, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(moderator.role.toUpperCase(), style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15)),
-            child: ListTile(
-              contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              leading: Icon(
-                  themeProvider.isDarkMode
-                      ? Icons.dark_mode
-                      : Icons.light_mode,
-                  color: theme.colorScheme.primary),
-              title: Text(l10n.darkMode),
-              trailing: Switch(
-                  value: themeProvider.isDarkMode,
-                  onChanged: (value) => themeProvider.toggleTheme()),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15)),
-            child: SwitchListTile(
-              contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              secondary: Icon(Icons.notifications_active_outlined,
-                  color: theme.colorScheme.primary),
-              title: Text(l10n.dailyReminders),
-              subtitle: Text(l10n.remindersDesc),
-              value: _remindersEnabled,
-              onChanged: _toggleReminders,
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          if (authProvider.currentUser == null)
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15)),
-              child: ListTile(
-                contentPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                leading: Icon(Icons.add_comment_outlined,
-                    color: theme.colorScheme.primary),
-                title: Text(l10n.suggestASong),
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const SuggestLyricsScreen())),
-              ),
-            ),
-
-          Card(
-            elevation: 2,
-            margin: const EdgeInsets.only(top: 12),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15)),
-            child: ListTile(
-              contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              leading: Icon(Icons.shield_outlined,
-                  color: theme.colorScheme.secondary),
-              title:
-              Text(l10n.moderatorPortal),
-              onTap: () {
-                if (authProvider.currentUser == null) {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()));
-                } else if (authProvider.userStatus == 'active') {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const PortalHomeScreen()));
-                } else {
-                  CustomSnackbar.show(
-                      context, 'Your access has been revoked by an admin.',
-                      isError: true);
-                }
-              },
-            ),
-          ),
-
-          if (authProvider.currentUser != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 24.0),
-              child: TextButton.icon(
-                icon: const Icon(Icons.logout),
-                label: Text(l10n.signOut),
-                onPressed: () => authProvider.signOut(),
-              ),
-            ),
         ],
       ),
     );
+  }
+
+  Widget _buildProfileCardPlaceholder(ThemeData theme) {
+    return Container(
+      height: 150,
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.5), width: 1),
+      ),
+      child: const Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0, bottom: 4.0),
+      child: Text(title.toUpperCase(), style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 1.0, color: theme.colorScheme.primary)),
+    );
+  }
+
+  Widget _buildSettingsCard({required ThemeData theme, required List<Widget> children}) {
+    return Container(
+      decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: theme.dividerColor.withOpacity(0.5), width: 1)),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildSettingsTile({required Icon? icon, required String title, String? subtitle, VoidCallback? onTap, Widget? trailing}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              if (icon != null) ...[icon, const SizedBox(width: 16)],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500)),
+                    if (subtitle != null) ...[const SizedBox(height: 4), Text(subtitle, style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6)))],
+                  ],
+                ),
+              ),
+              if (trailing != null) trailing,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Divider(height: 1, thickness: 1, indent: 56, endIndent: 20, color: Colors.grey.withOpacity(0.1));
   }
 }

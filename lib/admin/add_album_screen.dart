@@ -1,8 +1,8 @@
 import 'package:provider/provider.dart';
-
-import '../providers/auth_proveider.dart';
-import '../services/coudinary_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/coudinary_service.dart';
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -12,6 +12,7 @@ import 'package:mahlete_semay_project/widgets/searchable_dropdown.dart';
 import '../../models/album_model.dart';
 import '../../models/artist_model.dart';
 import '../../services/firebase_service.dart';
+import '../../providers/auth_proveider.dart';
 
 class AddAlbumScreen extends StatefulWidget {
   const AddAlbumScreen({super.key});
@@ -32,6 +33,32 @@ class _AddAlbumScreenState extends State<AddAlbumScreen> {
 
   Artist? _selectedArtist;
   File? _pickedImage;
+
+  Future<void> _saveRecentArtist(Artist artist) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> recentArtistsJson = prefs.getStringList('recentArtists') ?? [];
+
+    final artistMap = {'id': artist.id, 'name': artist.name, 'imageUrl': artist.imageUrl, 'region': artist.region};
+    String artistJson = json.encode(artistMap);
+
+    recentArtistsJson.removeWhere((item) => json.decode(item)['id'] == artist.id);
+    recentArtistsJson.insert(0, artistJson);
+
+    if (recentArtistsJson.length > 5) {
+      recentArtistsJson = recentArtistsJson.sublist(0, 5);
+    }
+
+    await prefs.setStringList('recentArtists', recentArtistsJson);
+  }
+
+  Future<List<Artist>> _getRecentArtists() async {
+    final prefs = await SharedPreferences.getInstance();
+    final recentArtistsJson = prefs.getStringList('recentArtists') ?? [];
+    return recentArtistsJson.map((jsonString) {
+      final map = json.decode(jsonString);
+      return Artist(id: map['id'], name: map['name'], imageUrl: map['imageUrl'], region: map['region']);
+    }).toList();
+  }
 
   Future<void> _pickAndCropImage() async {
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
@@ -66,6 +93,8 @@ class _AddAlbumScreenState extends State<AddAlbumScreen> {
           return;
         }
       }
+
+      await _saveRecentArtist(_selectedArtist!);
 
       final newAlbum = Album(
         id: '',
@@ -118,9 +147,16 @@ class _AddAlbumScreenState extends State<AddAlbumScreen> {
                   selectedItem: _selectedArtist,
                   onChanged: (artist) => setState(() => _selectedArtist = artist),
                   validator: (artist) => artist == null ? 'Please select an artist' : null,
-                  onFind: (filter) async {
-                    final artists = await _firebaseService.getArtists();
-                    return artists.where((artist) => artist.name.toLowerCase().contains(filter.toLowerCase())).toList();
+                  itemToString: (artist) => artist.name,
+                  onFindWithHeaders: (filter) async {
+                    final recent = await _getRecentArtists();
+                    final all = await _firebaseService.getArtists();
+                    final filteredRecent = recent.where((a) => a.name.toLowerCase().contains(filter.toLowerCase())).toList();
+                    final filteredAll = all.where((a) => a.name.toLowerCase().contains(filter.toLowerCase()) && !recent.any((r) => r.id == a.id)).toList();
+                    Map<String, List<Artist>> categorized = {};
+                    if(filteredRecent.isNotEmpty) categorized['Recently Used'] = filteredRecent;
+                    if(filteredAll.isNotEmpty) categorized['All Artists'] = filteredAll;
+                    return categorized;
                   },
                   dropdownBuilder: (artist) => _buildArtistDropdownItem(artist),
                   itemBuilder: (artist) => ListTile(

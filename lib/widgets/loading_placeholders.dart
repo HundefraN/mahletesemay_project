@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mahlete_semay_project/utils/responsive_sizer.dart';
 import 'package:mahlete_semay_project/widgets/shimmer_loading.dart';
 
 class ListTileShimmer extends StatelessWidget {
@@ -25,8 +26,8 @@ class ListTileShimmer extends StatelessWidget {
   }
 }
 
-class HomePageShimmer extends StatelessWidget {
-  const HomePageShimmer({super.key});
+class ArtistsListShimmer extends StatelessWidget {
+  const ArtistsListShimmer({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -34,104 +35,88 @@ class HomePageShimmer extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       slivers: [
         SliverAppBar(
-          expandedHeight: 120.0,
-          pinned: true,
-          elevation: 0,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          expandedHeight: context.w(140),
+          backgroundColor: Colors.transparent,
           flexibleSpace: FlexibleSpaceBar(
-            titlePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            title: ShimmerLoading(
-              child: Container(
-                width: 180,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
+            background: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: context.w(20), vertical: context.w(16)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ShimmerLoading(
+                      child: Container(
+                        width: 200,
+                        height: 32,
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                    SizedBox(height: context.w(8)),
+                    ShimmerLoading(
+                      child: Container(
+                        width: 150,
+                        height: 20,
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            centerTitle: false,
           ),
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ShimmerLoading(
-                    child: Container(
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ShimmerLoading(
-                  child: Container(
-                    height: 56,
-                    width: 56,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
+            padding: EdgeInsets.fromLTRB(context.w(16), 0, context.w(16), context.w(16)),
+            child: ShimmerLoading(
+              child: Container(
+                height: 56,
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(context.w(20))),
+              ),
             ),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 40)),
+        _buildShimmerSectionHeader(context),
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          padding: EdgeInsets.symmetric(horizontal: context.w(16)),
           sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 3,
+              mainAxisSpacing: context.w(12),
+              crossAxisSpacing: context.w(12),
+              childAspectRatio: 2.6,
             ),
             delegate: SliverChildBuilderDelegate(
                   (context, index) => ShimmerLoading(
                 child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(context.w(16))),
                 ),
               ),
               childCount: 4,
             ),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 40)),
+        _buildShimmerSectionHeader(context),
         SliverToBoxAdapter(
           child: SizedBox(
-            height: 180,
+            height: context.w(195),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: EdgeInsets.symmetric(horizontal: context.w(16)),
               itemCount: 3,
               itemBuilder: (context, index) {
                 return ShimmerLoading(
                   child: Container(
-                    width: 140,
-                    margin: const EdgeInsets.only(right: 16),
+                    width: context.w(120),
+                    margin: EdgeInsets.only(right: context.w(16)),
                     child: Column(
                       children: [
-                        const CircleAvatar(
-                          radius: 60,
-                          backgroundColor: Colors.white,
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          height: 16,
-                          width: 100,
-                          color: Colors.white,
-                        ),
+                        CircleAvatar(radius: context.w(55), backgroundColor: Colors.white),
+                        SizedBox(height: context.w(12)),
+                        Container(height: 16, width: 100, color: Colors.white),
+                        SizedBox(height: context.w(8)),
+                        Container(height: 14, width: 70, color: Colors.white),
                       ],
                     ),
                   ),
@@ -140,7 +125,25 @@ class HomePageShimmer extends StatelessWidget {
             ),
           ),
         ),
+        SliverToBoxAdapter(child: SizedBox(height: context.w(80))),
       ],
+    );
+  }
+
+  Widget _buildShimmerSectionHeader(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.only(left: context.w(16), right: context.w(16), top: context.w(24), bottom: context.w(16)),
+        child: ShimmerLoading(
+          child: Row(
+            children: [
+              Container(width: context.w(40), height: context.w(40), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(context.w(12)))),
+              SizedBox(width: context.w(12)),
+              Container(width: 150, height: 20, color: Colors.white),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mahlete_semay_project/models/moderator_model.dart';
 import 'package:mahlete_semay_project/models/song_model.dart';
 import 'package:mahlete_semay_project/providers/song_provider.dart';
-
 import 'auth_proveider.dart';
 
 class StatsProvider with ChangeNotifier {
@@ -16,7 +15,7 @@ class StatsProvider with ChangeNotifier {
   int totalSongViews = 0;
   int totalModerators = 0;
   Song? mostViewedSong;
-  Moderator? mostActiveModerator; // Placeholder for future logic
+  Moderator? mostActiveModerator;
 
   StatsProvider(this._songProvider, this._authProvider) {
     _songProvider.addListener(_calculateStats);
@@ -25,23 +24,21 @@ class StatsProvider with ChangeNotifier {
   }
 
   void _calculateStats() {
-    // Song Stats
     totalSongs = _songProvider.allSongs.length;
     totalArtists = _songProvider.artists.length;
     totalAlbums = _songProvider.allAlbums.length;
 
     if (_songProvider.allSongs.isNotEmpty) {
-      totalSongViews = _songProvider.allSongs.map((s) => s.viewCount).reduce((a, b) => a + b);
-      _songProvider.allSongs.sort((a, b) => b.viewCount.compareTo(a.viewCount));
-      mostViewedSong = _songProvider.allSongs.first;
+      totalSongViews = _songProvider.allSongs.fold(0, (sum, song) => sum + song.viewCount);
+
+      // Efficiently find the most viewed song without sorting the whole list.
+      mostViewedSong = _songProvider.allSongs.reduce((curr, next) => curr.viewCount > next.viewCount ? curr : next);
     } else {
       totalSongViews = 0;
       mostViewedSong = null;
     }
 
-    // You can add more complex logic here later, e.g., fetching admin logs
-    // to determine the most active moderator. For now, this is a placeholder.
-    totalModerators = 0; // This would require fetching all users, which is an admin SDK task.
+    totalModerators = 0;
 
     notifyListeners();
   }

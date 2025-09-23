@@ -1,28 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:mahlete_semay_project/providers/auth_proveider.dart';
 import 'package:mahlete_semay_project/providers/language_provider.dart';
+import 'package:mahlete_semay_project/providers/service_reminder_provider.dart';
+import 'package:mahlete_semay_project/providers/setlist_provider.dart';
 import 'package:mahlete_semay_project/screens/home_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
 import 'firebase_options.dart';
+import 'managers/download_manager.dart';
 import 'providers/theme_provider.dart';
 import 'providers/song_provider.dart';
 import 'providers/vocal_progress_provider.dart';
 import 'providers/stats_provider.dart';
 import 'screens/splash_wrapper.dart';
 import 'services/notification_service.dart';
+import 'services/pitch_service.dart';
 import 'utils/app_themes.dart';
-import 'widgets/network_aware.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:flutter/foundation.dart';
+import 'utils/constants.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void onNotificationTap(String? payload) {
-  if (payload == 'vocal_exercises') {
+  if (payload == notificationPayloadVocalExercises) {
     navigatorKey.currentState?.pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const HomeScreen(initialIndex: 1)),
+      MaterialPageRoute(builder: (_) => const HomeScreen(initialTab: HomePageTab.exercises)),
           (route) => false,
     );
   }
@@ -32,12 +38,15 @@ Future<void> main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+    appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.appAttest,
   );
+
   await NotificationService.initialize(onSelectNotification: onNotificationTap);
 
-  FlutterNativeSplash.remove();
   runApp(const MyApp());
 }
 
@@ -53,6 +62,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SongProvider()),
         ChangeNotifierProvider(create: (_) => VocalProgressProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => DownloadManager()),
+        ChangeNotifierProvider(create: (_) => SetlistProvider()),
+        ChangeNotifierProvider(create: (_) => PitchService()),
+        ChangeNotifierProvider(create: (_) => ServiceReminderProvider()),
         ChangeNotifierProxyProvider2<SongProvider, AuthProvider, StatsProvider>(
           create: (context) => StatsProvider(
               Provider.of<SongProvider>(context, listen: false),
@@ -71,7 +84,6 @@ class MyApp extends StatelessWidget {
             darkTheme: AppThemes.darkTheme,
             themeMode:
             themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-
             locale: languageProvider.currentLocale,
             supportedLocales: const [
               Locale('en', ''),
@@ -83,8 +95,7 @@ class MyApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-
-            home: const NetworkAware(child: SplashWrapper()),
+            home: const SplashWrapper(),
           );
         },
       ),
