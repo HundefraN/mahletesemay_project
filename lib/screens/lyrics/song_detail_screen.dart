@@ -48,15 +48,14 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
 
   void _scrollListener() {
     final offset = _scrollController.offset;
-    if (offset > 250 && !_showAppBarTitle) {
-      setState(() => _showAppBarTitle = true);
-    } else if (offset <= 250 && _showAppBarTitle) {
-      setState(() => _showAppBarTitle = false);
-    }
-    if (offset < 0) {
-      setState(() => _imageScale = 1.0 - (offset / 300));
-    } else {
-      setState(() => _imageScale = 1.0);
+    final shouldShowTitle = offset > 250;
+    final newScale = offset < 0 ? (1.0 - (offset / 300)) : 1.0;
+
+    if (shouldShowTitle != _showAppBarTitle || (newScale - _imageScale).abs() > 0.01) {
+      setState(() {
+        _showAppBarTitle = shouldShowTitle;
+        _imageScale = newScale;
+      });
     }
   }
 

@@ -9,6 +9,7 @@ import '../../services/firebase_service.dart';
 import '../providers/auth_proveider.dart';
 import '../services/coudinary_service.dart';
 import '../widgets/custom_snackbar.dart';
+import '../../utils/permission_helper.dart';
 
 class EditArtistScreen extends StatefulWidget {
   final Artist artist;
@@ -38,6 +39,9 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
   }
 
   Future<void> _pickAndCropImage() async {
+    final hasPermission = await PermissionHelper.requestPhotoAccess(context);
+    if (!hasPermission) return;
+
     final imagePicker = ImagePicker();
     final pickedFile = await imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 80);
 

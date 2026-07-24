@@ -19,6 +19,7 @@ import 'vocal_exercises/vocal_exercise_list_screen.dart';
 import 'vocal_range/vocal_range_finder_screen.dart';
 import 'mashup/mashup_helper_screen.dart';
 import 'settings/settings_screen.dart';
+import 'tuner/guitar_tuner_screen.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -110,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               PageRouteBuilder(
                 transitionDuration: const Duration(milliseconds: 300),
                 reverseTransitionDuration: const Duration(milliseconds: 250),
-                pageBuilder: (c, a, s) => FadeTransition(opacity: a, child: const SettingsScreen()),
+                pageBuilder: (c, a, s) => FadeTransition(opacity: a, child: const GuitarTunerScreen()),
               ),
             ),
           ),
@@ -212,15 +213,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ],
       ),
       TargetFocus(
-        identify: "Settings FAB",
+        identify: "Guitar Tuner FAB",
         keyTarget: settingsFabKey,
         radius: 56,
         contents: [
           TargetContent(
             align: ContentAlign.top,
             child: _buildTutorialContent(
-              "Settings & More",
-              "Customize theme, manage reminders, and access the Moderator Portal.",
+              "Guitar Tuner",
+              "Tap here anytime to access the professional interactive guitar tuner.",
             ),
           ),
         ],
@@ -282,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     SetlistsScreen(),
     VocalExerciseListScreen(),
     VocalRangeFinderScreen(),
-    LessonsScreen(),
+    SettingsScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -388,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             "Setlists",
             l10n.exercises,
             l10n.range,
-            l10n.lessons,
+            l10n.settings,
           ],
         ),
         floatingActionButton: _buildFloatingActionButton(),
@@ -427,7 +428,7 @@ class _ModernNavBar extends StatelessWidget {
       _NavItemData(IconsaxPlusBold.note_2, IconsaxPlusBold.note, labels[2]),
       _NavItemData(Icons.fitness_center_outlined, Icons.fitness_center, labels[3], key: exercisesTabKey),
       _NavItemData(IconsaxPlusBold.microphone_2, IconsaxPlusBold.microphone, labels[4]),
-      _NavItemData(Icons.school_outlined, Icons.school, labels[5]),
+      _NavItemData(IconsaxPlusLinear.setting_2, IconsaxPlusBold.setting_2, labels[5]),
     ];
 
     return SafeArea(
@@ -463,7 +464,10 @@ class _ModernNavBar extends StatelessWidget {
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          onTap: () => onTap(i),
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            onTap(i);
+                          },
                           borderRadius: BorderRadius.circular(context.w(20)),
                           splashColor: theme.colorScheme.primary.withOpacity(0.1),
                           highlightColor: Colors.transparent,
@@ -579,7 +583,7 @@ class _UltraModernFab extends StatelessWidget {
                     borderRadius: BorderRadius.circular(context.w(32)),
                     child: Container(
                       decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withOpacity(0.2), width: 1)),
-                      child: Icon(IconsaxPlusBold.setting_2, color: Colors.white, size: context.w(28)),
+                      child: Icon(IconsaxPlusBold.music, color: Colors.white, size: context.w(28)),
                     ),
                   ),
                 ),

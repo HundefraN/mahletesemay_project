@@ -1,6 +1,7 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mahlete_semay_project/services/firebase_service.dart';
 import 'package:mahlete_semay_project/services/local_db_service.dart';
+import 'package:mahlete_semay_project/services/notification_service.dart';
 import 'package:mahlete_semay_project/utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -28,22 +29,29 @@ class SyncService {
         _localDbService = localDbService,
         _connectivity = connectivity;
 
-  Future<SyncResult> performSmartSync({bool forceOnMobile = false, required bool isInitialSync}) async {
+  Future<SyncResult> performSmartSync(
+      {bool forceOnMobile = false, required bool isInitialSync}) async {
     if (_isSyncing) {
       return SyncResult.syncAlreadyInProgress;
     }
 
     final connectivityResult = await _connectivity.checkConnectivity();
-    final isConnected = connectivityResult.contains(ConnectivityResult.wifi) ||
-        connectivityResult.contains(ConnectivityResult.mobile);
+    final isConnected =
+        connectivityResult.any((r) => r != ConnectivityResult.none);
 
     if (!isConnected) {
       return SyncResult.offline;
     }
 
-    if (!isInitialSync) {
-      final isWifi = connectivityResult.contains(ConnectivityResult.wifi);
-      if (!isWifi && !forceOnMobile) {
+    final existingSongs = await _localDbService.getSongs();
+    final bool isEmptyDb = existingSongs.isEmpty;
+
+    if (!isInitialSync && !isEmptyDb) {
+      final isWifiOrUnmetered =
+          connectivityResult.contains(ConnectivityResult.wifi) ||
+              connectivityResult.contains(ConnectivityResult.ethernet) ||
+              connectivityResult.contains(ConnectivityResult.vpn);
+      if (!isWifiOrUnmetered && !forceOnMobile) {
         bool hasNewData = await _checkForNewData();
         return hasNewData ? SyncResult.mobileData : SyncResult.noNewData;
       }
@@ -51,6 +59,10 @@ class SyncService {
 
     _isSyncing = true;
     try {
+      final existingSongs = await _localDbService.getSongs();
+      final Set<String> existingSongIds =
+          existingSongs.map((s) => s.id).toSet();
+
       final artists = await _firebaseService.getArtists();
       await _localDbService.syncArtists(artists);
 
@@ -60,8 +72,30 @@ class SyncService {
       final songs = await _firebaseService.getSongs();
       await _localDbService.syncSongs(songs);
 
+      if (!isInitialSync && existingSongIds.isNotEmpty) {
+        final newSongs =
+            songs.where((s) => !existingSongIds.contains(s.id)).toList();
+        if (newSongs.isNotEmpty) {
+          if (newSongs.length == 1) {
+            final song = newSongs.first;
+            await NotificationService.showNewContentNotification(
+              title: "🎵 New Song Added!",
+              body:
+                  "'${song.title}' by ${song.artistName} has been added to the library.",
+            );
+          } else {
+            await NotificationService.showNewContentNotification(
+              title: "🎵 New Songs Added!",
+              body:
+                  "${newSongs.length} new songs have been added to your app library.",
+            );
+          }
+        }
+      }
+
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(prefLastSyncTimestamp, DateTime.now().millisecondsSinceEpoch);
+      await prefs.setInt(
+          prefLastSyncTimestamp, DateTime.now().millisecondsSinceEpoch);
 
       return SyncResult.synced;
     } catch (e) {
@@ -83,7 +117,6 @@ class SyncService {
       final lastSyncDate = DateTime.fromMillisecondsSinceEpoch(lastSyncMillis);
       final hasNewSongs = await _firebaseService.hasNewSongsSince(lastSyncDate);
       return hasNewSongs;
-
     } catch (e) {
       print("Error checking for new data: $e");
       return false;

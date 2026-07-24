@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:mahlete_semay_project/models/vocal_plan_model.dart';
 import 'package:mahlete_semay_project/services/firebase_service.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
+import 'package:mahlete_semay_project/utils/permission_helper.dart';
 
 class AddEditVocalDayScreen extends StatefulWidget {
   final String? planId;
@@ -53,6 +54,9 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
   }
 
   Future<void> _pickAudio() async {
+    final hasPermission = await PermissionHelper.requestAudioAccess(context);
+    if (!hasPermission) return;
+
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.audio);
     if (result != null) {
       setState(() {

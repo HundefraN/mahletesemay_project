@@ -8,6 +8,7 @@ import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../models/album_model.dart';
 import '../../services/firebase_service.dart';
+import '../../utils/permission_helper.dart';
 
 class EditAlbumScreen extends StatefulWidget {
   final Album album;
@@ -39,6 +40,9 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
   }
 
   Future<void> _pickAndCropImage() async {
+    final hasPermission = await PermissionHelper.requestPhotoAccess(context);
+    if (!hasPermission) return;
+
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (pickedFile != null) {
       final croppedFile = await ImageCropper().cropImage(

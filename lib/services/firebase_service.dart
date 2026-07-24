@@ -55,9 +55,10 @@ class FirebaseService {
   Future<List<Artist>> getArtists() async {
     try {
       final snapshot = await _db.collection('artists').get();
+      debugPrint('Fetched ${snapshot.docs.length} artists from Firebase');
       return snapshot.docs.map((doc) => Artist.fromFirestore(doc)).toList();
-    } catch (e) {
-      debugPrint('Error getting artists: $e');
+    } catch (e, stackTrace) {
+      debugPrint('Error getting artists: $e\n$stackTrace');
       return [];
     }
   }
@@ -65,9 +66,10 @@ class FirebaseService {
   Future<List<Album>> getAlbums() async {
     try {
       final snapshot = await _db.collection('albums').get();
+      debugPrint('Fetched ${snapshot.docs.length} albums from Firebase');
       return snapshot.docs.map((doc) => Album.fromFirestore(doc)).toList();
-    } catch (e) {
-      debugPrint('Error getting albums: $e');
+    } catch (e, stackTrace) {
+      debugPrint('Error getting albums: $e\n$stackTrace');
       return [];
     }
   }
@@ -75,9 +77,10 @@ class FirebaseService {
   Future<List<Song>> getSongs() async {
     try {
       final snapshot = await _db.collection('songs').get();
+      debugPrint('Fetched ${snapshot.docs.length} songs from Firebase');
       return snapshot.docs.map((doc) => Song.fromFirestore(doc)).toList();
-    } catch (e) {
-      debugPrint('Error getting songs: $e');
+    } catch (e, stackTrace) {
+      debugPrint('Error getting songs: $e\n$stackTrace');
       return [];
     }
   }

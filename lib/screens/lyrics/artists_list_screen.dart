@@ -1267,7 +1267,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
           crossAxisCount: 2,
           mainAxisSpacing: context.w(12),
           crossAxisSpacing: context.w(12),
-          childAspectRatio: 2.6,
+          childAspectRatio: 2.3,
         ),
         delegate: SliverChildBuilderDelegate(
           (context, index) {
@@ -1325,7 +1325,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                 SizedBox(width: context.w(8)),
                 Expanded(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: context.w(8)),
+                    padding: EdgeInsets.symmetric(
+                        vertical: context.w(6), horizontal: context.w(4)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -1333,12 +1334,17 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                         Text(song.title,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: context.sp(13)),
+                                fontSize: context.sp(12)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis),
-                        const Spacer(),
-                        _SongMetadataColumn(
-                            song: song, fontSize: context.sp(11)),
+                        const SizedBox(height: 2),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.bottomLeft,
+                            child: _SongMetadataColumn(
+                                song: song, fontSize: context.sp(10)),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1357,26 +1363,26 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
 
     return SliverToBoxAdapter(
       child: SizedBox(
-        height: context.w(195),
+        height: context.w(165),
         child: artists.isEmpty
             ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.person_off_rounded,
-                        size: context.w(40),
+                        size: context.w(32),
                         color: Theme.of(context)
                             .colorScheme
                             .onSurface
                             .withOpacity(0.3)),
-                    SizedBox(height: context.w(12)),
+                    SizedBox(height: context.w(8)),
                     Text('No artists in this category.',
                         style: TextStyle(
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurface
                                 .withOpacity(0.6),
-                            fontSize: context.sp(14))),
+                            fontSize: context.sp(13))),
                   ],
                 ),
               )
@@ -1419,16 +1425,16 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                       }
                     },
                     child: Container(
-                      width: context.w(120),
-                      margin: EdgeInsets.only(right: context.w(16)),
+                      width: context.w(95),
+                      margin: EdgeInsets.only(right: context.w(12)),
                       child: Column(
                         children: [
                           Container(
-                            width: context.w(110),
-                            height: context.w(110),
+                            width: context.w(85),
+                            height: context.w(85),
                             decoration: BoxDecoration(
                               borderRadius:
-                                  BorderRadius.circular(context.w(55)),
+                                  BorderRadius.circular(context.w(42.5)),
                               gradient: LinearGradient(
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -1445,28 +1451,28 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                               boxShadow: [
                                 BoxShadow(
                                     color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 8))
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4))
                               ],
                             ),
                             child: Padding(
-                              padding: EdgeInsets.all(context.w(3)),
+                              padding: EdgeInsets.all(context.w(2.5)),
                               child: Hero(
                                 tag: artist.id,
                                 child: Container(
                                   decoration: BoxDecoration(
                                     borderRadius:
-                                        BorderRadius.circular(context.w(52)),
+                                        BorderRadius.circular(context.w(40)),
                                     boxShadow: [
                                       BoxShadow(
                                           color: Colors.black.withOpacity(0.1),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 4))
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2))
                                     ],
                                   ),
                                   child: ClipRRect(
                                     borderRadius:
-                                        BorderRadius.circular(context.w(52)),
+                                        BorderRadius.circular(context.w(40)),
                                     child: isSinglesCategory
                                         ? Container(
                                             color: Theme.of(context)
@@ -1474,7 +1480,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                                 .primaryContainer,
                                             child: Icon(
                                                 IconsaxPlusBold.musicnote,
-                                                size: context.w(40),
+                                                size: context.w(32),
                                                 color: Theme.of(context)
                                                     .colorScheme
                                                     .onPrimaryContainer))
@@ -1485,30 +1491,30 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                               ),
                             ),
                           ),
-                          SizedBox(height: context.w(12)),
+                          SizedBox(height: context.w(8)),
                           Text(artist.name,
                               textAlign: TextAlign.center,
-                              maxLines: 2,
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: context.sp(14))),
-                          SizedBox(height: context.w(4)),
+                                  fontSize: context.sp(12))),
+                          SizedBox(height: context.w(3)),
                           if (!isSinglesCategory)
                             Container(
                               padding: EdgeInsets.symmetric(
-                                  horizontal: context.w(10),
-                                  vertical: context.w(3)),
+                                  horizontal: context.w(8),
+                                  vertical: context.w(2)),
                               decoration: BoxDecoration(
                                   color: Theme.of(context)
                                       .colorScheme
                                       .primaryContainer,
                                   borderRadius:
-                                      BorderRadius.circular(context.w(10))),
+                                      BorderRadius.circular(context.w(8))),
                               child: Text(
                                   '$albumCount Album${albumCount == 1 ? '' : 's'}',
                                   style: TextStyle(
-                                      fontSize: context.sp(11),
+                                      fontSize: context.sp(10),
                                       fontWeight: FontWeight.w500,
                                       color: Theme.of(context)
                                           .colorScheme
@@ -1528,7 +1534,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
     final songProvider = Provider.of<SongProvider>(context, listen: false);
     return SliverToBoxAdapter(
       child: SizedBox(
-        height: context.w(180),
+        height: context.w(150),
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: EdgeInsets.symmetric(horizontal: context.w(16)),
@@ -1539,8 +1545,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
             final heroTag = 'singles-carousel-${song.id}';
 
             return Container(
-              width: context.w(120),
-              margin: EdgeInsets.only(right: context.w(12)),
+              width: context.w(95),
+              margin: EdgeInsets.only(right: context.w(10)),
               child: OpenContainer(
                 transitionType: ContainerTransitionType.fadeThrough,
                 closedElevation: 0,
@@ -1548,7 +1554,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                 closedColor: Colors.transparent,
                 openColor: Colors.transparent,
                 closedShape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(context.w(16))),
+                    borderRadius: BorderRadius.circular(context.w(12))),
                 openBuilder: (context, _) => SongDetailScreen(
                     song: song, heroTag: heroTag, albumCoverUrl: coverUrl),
                 closedBuilder: (context, openContainer) {
@@ -1556,32 +1562,33 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        height: context.w(100),
-                        width: context.w(120),
+                        height: context.w(85),
+                        width: context.w(95),
                         decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(context.w(16)),
+                            borderRadius: BorderRadius.circular(context.w(12)),
                             boxShadow: [
                               BoxShadow(
                                   color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4))
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3))
                             ]),
                         child: Hero(
                             tag: heroTag,
                             child: ClipRRect(
                                 borderRadius:
-                                    BorderRadius.circular(context.w(16)),
+                                    BorderRadius.circular(context.w(12)),
                                 child: _getCoverForSong(song, songProvider))),
                       ),
-                      SizedBox(height: context.w(8)),
+                      SizedBox(height: context.w(6)),
                       Text(song.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: context.sp(13))),
-                      SizedBox(height: context.w(4)),
-                      _SongMetadataColumn(song: song, fontSize: context.sp(11)),
+                              fontSize: context.sp(11))),
+                      SizedBox(height: context.w(2)),
+                      _SongMetadataColumn(
+                          song: song, fontSize: context.sp(9.5)),
                     ],
                   );
                 },
@@ -1622,18 +1629,22 @@ class _SongMetadataColumn extends StatelessWidget {
           ),
         ),
         if (song.viewCount > 0) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Row(
             children: [
               Icon(Icons.visibility_outlined,
-                  size: fontSize + 2,
+                  size: fontSize + 1,
                   color: theme.colorScheme.onSurface.withOpacity(0.5)),
-              const SizedBox(width: 4),
-              Text(
-                compactFormat,
-                style: TextStyle(
-                  fontSize: fontSize,
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+              const SizedBox(width: 3),
+              Expanded(
+                child: Text(
+                  compactFormat,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: fontSize,
+                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  ),
                 ),
               ),
             ],

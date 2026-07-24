@@ -42,18 +42,13 @@ class _SongsListScreenState extends State<SongsListScreen>
 
     _scrollController.addListener(() {
       final offset = _scrollController.offset;
-      if (offset > 100 && !_isScrolled) {
-        setState(() => _isScrolled = true);
-      } else if (offset <= 100 && _isScrolled) {
-        setState(() => _isScrolled = false);
-      }
-      if (offset < 0) {
+      final shouldBeScrolled = offset > 100;
+      final newScale = offset < 0 ? (1.0 - (offset / 250)) : 1.0;
+
+      if (shouldBeScrolled != _isScrolled || (newScale - _imageScale).abs() > 0.01) {
         setState(() {
-          _imageScale = 1.0 - (offset / 250);
-        });
-      } else {
-        setState(() {
-          _imageScale = 1.0;
+          _isScrolled = shouldBeScrolled;
+          _imageScale = newScale;
         });
       }
     });

@@ -112,14 +112,83 @@ class VoiceTypeRange {
   final String name;
   final double lowPitch;
   final double highPitch;
-  const VoiceTypeRange(this.name, this.lowPitch, this.highPitch);
+  final String lowNote;
+  final String highNote;
+  final String description;
+  final List<String> famousExamples;
+  final String category;
+
+  const VoiceTypeRange({
+    required this.name,
+    required this.lowPitch,
+    required this.highPitch,
+    required this.lowNote,
+    required this.highNote,
+    required this.description,
+    required this.famousExamples,
+    required this.category,
+  });
 }
 
 const List<VoiceTypeRange> voiceTypeRanges = [
-  VoiceTypeRange('Soprano', 220, 880),
-  VoiceTypeRange('Mezzo-Soprano', 174, 698),
-  VoiceTypeRange('Contralto', 146, 587),
-  VoiceTypeRange('Tenor', 110, 440),
-  VoiceTypeRange('Baritone', 82, 330),
-  VoiceTypeRange('Bass', 65, 261),
+  VoiceTypeRange(
+    name: 'Soprano',
+    lowPitch: 261.6,
+    highPitch: 1046.5,
+    lowNote: 'C4',
+    highNote: 'C6',
+    description: 'High female singing voice, bright and resonant in high tessitura.',
+    famousExamples: ['Whitney Houston', 'Mariah Carey', 'Celine Dion'],
+    category: 'Female / High',
+  ),
+  VoiceTypeRange(
+    name: 'Mezzo-Soprano',
+    lowPitch: 220.0,
+    highPitch: 880.0,
+    lowNote: 'A3',
+    highNote: 'A5',
+    description: 'Middle female voice with a warm, rich tone and versatile range.',
+    famousExamples: ['Beyoncé', 'Adele', 'Lady Gaga'],
+    category: 'Female / Mid',
+  ),
+  VoiceTypeRange(
+    name: 'Contralto',
+    lowPitch: 174.6,
+    highPitch: 698.5,
+    lowNote: 'F3',
+    highNote: 'F5',
+    description: 'Lowest female singing voice, deep, soulful and rich.',
+    famousExamples: ['Amy Winehouse', 'Cher', 'Tracy Chapman'],
+    category: 'Female / Low',
+  ),
+  VoiceTypeRange(
+    name: 'Tenor',
+    lowPitch: 130.8,
+    highPitch: 523.2,
+    lowNote: 'C3',
+    highNote: 'C5',
+    description: 'Highest natural male singing voice, bright and flexible.',
+    famousExamples: ['Luciano Pavarotti', 'Freddie Mercury', 'Bruno Mars'],
+    category: 'Male / High',
+  ),
+  VoiceTypeRange(
+    name: 'Baritone',
+    lowPitch: 110.0,
+    highPitch: 440.0,
+    lowNote: 'A2',
+    highNote: 'A4',
+    description: 'Most common male voice type, balanced between power and warmth.',
+    famousExamples: ['Elvis Presley', 'Frank Sinatra', 'John Legend'],
+    category: 'Male / Mid',
+  ),
+  VoiceTypeRange(
+    name: 'Bass',
+    lowPitch: 82.4,
+    highPitch: 329.6,
+    lowNote: 'E2',
+    highNote: 'E4',
+    description: 'Lowest male singing voice, deep, resonant and rich in low harmonics.',
+    famousExamples: ['Johnny Cash', 'Barry White', 'Josh Turner'],
+    category: 'Male / Low',
+  ),
 ];

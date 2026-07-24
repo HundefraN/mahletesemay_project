@@ -22,7 +22,8 @@ class _OnboardingInfo {
   _OnboardingInfo(this.title, this.description, this.icon);
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> with TickerProviderStateMixin {
+class _OnboardingScreenState extends State<OnboardingScreen>
+    with TickerProviderStateMixin {
   final PageController _pageController = PageController();
   double _currentPage = 0;
 
@@ -54,10 +55,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
   @override
   void initState() {
     super.initState();
-    _pageController.addListener(() {
-      if (mounted) setState(() => _currentPage = _pageController.page ?? 0);
-    });
-    _bgAnimationController = AnimationController(vsync: this, duration: const Duration(seconds: 15))..repeat(reverse: true);
+    _bgAnimationController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 15))
+          ..repeat(reverse: true);
   }
 
   @override
@@ -73,7 +73,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
     if (mounted) {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const HomeScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
@@ -99,20 +100,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                   child: PageView.builder(
                     controller: _pageController,
                     itemCount: _pages.length,
+                    onPageChanged: (index) {
+                      if (mounted)
+                        setState(() => _currentPage = index.toDouble());
+                    },
                     itemBuilder: (context, index) {
                       final page = _pages[index];
                       double pageOffset = (_currentPage - index);
 
-                      return AnimatedBuilder(
-                        animation: _pageController,
-                        builder: (context, child) {
-                          return Opacity(
-                            opacity: (1 - pageOffset.abs()).clamp(0.0, 1.0),
-                            child: child,
-                          );
-                        },
-                        child: _buildPageContent(theme, page, pageOffset),
-                      );
+                      return _buildPageContent(theme, page, pageOffset);
                     },
                   ),
                 ),
@@ -138,8 +134,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: isDarkMode
-                  ? [theme.colorScheme.background, theme.colorScheme.primary.withOpacity(0.2)]
-                  : [theme.colorScheme.primary.withOpacity(0.1), theme.colorScheme.background],
+                  ? [
+                      theme.colorScheme.background,
+                      theme.colorScheme.primary.withOpacity(0.2)
+                    ]
+                  : [
+                      theme.colorScheme.primary.withOpacity(0.1),
+                      theme.colorScheme.background
+                    ],
               stops: [
                 _bgAnimationController.value,
                 1.0,
@@ -151,47 +153,55 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
     );
   }
 
-  Widget _buildPageContent(ThemeData theme, _OnboardingInfo item, double pageOffset) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Transform.translate(
-            offset: Offset(0, pageOffset * -50),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: theme.colorScheme.primary.withOpacity(0.1),
-                border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2), width: 2),
+  Widget _buildPageContent(
+      ThemeData theme, _OnboardingInfo item, double pageOffset) {
+    return Center(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Transform.translate(
+              offset: Offset(0, pageOffset * -30),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  border: Border.all(
+                      color: theme.colorScheme.primary.withOpacity(0.2),
+                      width: 2),
+                ),
+                child:
+                    Icon(item.icon, size: 72, color: theme.colorScheme.primary),
               ),
-              child: Icon(item.icon, size: 80, color: theme.colorScheme.primary),
             ),
-          ),
-          const SizedBox(height: 48),
-          Transform.translate(
-            offset: Offset(0, pageOffset * 50),
-            child: Text(
-              item.title,
-              style: GoogleFonts.poppins(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: theme.textTheme.headlineLarge?.color),
-              textAlign: TextAlign.center,
+            const SizedBox(height: 32),
+            Transform.translate(
+              offset: Offset(0, pageOffset * 30),
+              child: Text(
+                item.title,
+                style: GoogleFonts.poppins(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: theme.textTheme.headlineLarge?.color),
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Transform.translate(
-            offset: Offset(0, pageOffset * 70),
-            child: Text(
-              item.description,
-              style: theme.textTheme.bodyLarge?.copyWith(height: 1.5, color: theme.textTheme.bodyMedium?.color),
-              textAlign: TextAlign.center,
+            const SizedBox(height: 16),
+            Transform.translate(
+              offset: Offset(0, pageOffset * 40),
+              child: Text(
+                item.description,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                    height: 1.5, color: theme.textTheme.bodyMedium?.color),
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
-        ],
-      ).animate().fadeIn(duration: 600.ms),
+          ],
+        ).animate().fadeIn(duration: 400.ms),
+      ),
     );
   }
 
@@ -208,7 +218,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
             color: theme.colorScheme.primary.withOpacity(0.3),
             size: const Size.square(8.0),
             activeSize: const Size(20.0, 8.0),
-            activeShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5.0)),
+            activeShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(5.0)),
           ),
         ),
         const Spacer(),
@@ -220,23 +231,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
               onPressed: isLastPage
                   ? _completeOnboarding
                   : () => _pageController.nextPage(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeInOut),
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeInOut),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: Text(isLastPage ? "Get Started" : "Next", style: const TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(isLastPage ? "Get Started" : "Next",
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ),
         SizedBox(height: isLastPage ? 60 : 20),
-        if(!isLastPage)
+        if (!isLastPage)
           TextButton(
             onPressed: _completeOnboarding,
             child: const Text('Skip'),
           ),
-        if(!isLastPage)
-          const SizedBox(height: 20),
+        if (!isLastPage) const SizedBox(height: 20),
       ],
     ).animate().fadeIn(delay: 300.ms, duration: 600.ms);
   }

@@ -81,22 +81,30 @@ class ServiceReminderProvider with ChangeNotifier {
   }
 
   Future<void> _scheduleNotifications(ServiceReminder reminder) async {
-    for (int i = 5; i > 0; i--) {
+    // Schedule for 5, 4, 3, 2, 1 days prior, and 0 (Day of Service)
+    for (int i = 5; i >= 0; i--) {
       final notificationDate = reminder.serviceDateTime.subtract(Duration(days: i));
       final scheduledTime = DateTime(
         notificationDate.year,
         notificationDate.month,
         notificationDate.day,
-        10,
+        i == 0 ? 8 : 10,
         0,
       );
 
       if (scheduledTime.isAfter(DateTime.now())) {
-        final uniqueId = (reminder.id.hashCode % 100000) + i;
+        final uniqueId = (reminder.id.hashCode.abs() % 100000) * 10 + i;
+        final title = i == 0
+            ? "🙏 Service Today: ${reminder.title}"
+            : "Service Reminder: $i Day${i == 1 ? '' : 's'} Left!";
+        final body = i == 0
+            ? "Reminder for '${reminder.title}' today at ${DateFormat.jm().format(reminder.serviceDateTime)}."
+            : "Get ready for '${reminder.title}' on ${DateFormat.yMMMd().format(reminder.serviceDateTime)}.";
+
         await NotificationService.scheduleFullScreenReminder(
           id: uniqueId,
-          title: "Service Reminder: $i Days Left!",
-          body: "Get ready for '${reminder.title}' on ${DateFormat.yMMMd().format(reminder.serviceDateTime)}.",
+          title: title,
+          body: body,
           scheduledDate: scheduledTime,
         );
       }
@@ -104,8 +112,8 @@ class ServiceReminderProvider with ChangeNotifier {
   }
 
   Future<void> _cancelNotifications(ServiceReminder reminder) async {
-    for (int i = 1; i <= 5; i++) {
-      final uniqueId = (reminder.id.hashCode % 100000) + i;
+    for (int i = 0; i <= 5; i++) {
+      final uniqueId = (reminder.id.hashCode.abs() % 100000) * 10 + i;
       await NotificationService.cancelNotification(uniqueId);
     }
   }

@@ -9,6 +9,7 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
 import 'package:mahlete_semay_project/widgets/searchable_dropdown.dart';
+import 'package:mahlete_semay_project/utils/permission_helper.dart';
 import '../../models/album_model.dart';
 import '../../models/artist_model.dart';
 import '../../services/firebase_service.dart';
@@ -61,6 +62,9 @@ class _AddAlbumScreenState extends State<AddAlbumScreen> {
   }
 
   Future<void> _pickAndCropImage() async {
+    final hasPermission = await PermissionHelper.requestPhotoAccess(context);
+    if (!hasPermission) return;
+
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (pickedFile != null) {
       final croppedFile = await ImageCropper().cropImage(

@@ -58,6 +58,7 @@ dependencies:
   reorderable_list: ^0.0.1
   flutter_dotenv: ^6.0.0
   pitch_detector_dart: ^0.0.7
+  flutter_timezone: ^3.0.1
 
 dev_dependencies:
   flutter_test:

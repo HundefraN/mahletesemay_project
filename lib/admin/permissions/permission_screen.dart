@@ -1,11 +1,10 @@
-import 'dart:io';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mahlete_semay_project/screens/onboarding/onboarding_screen.dart';
 import 'package:mahlete_semay_project/utils/constants.dart';
+import 'package:mahlete_semay_project/utils/permission_helper.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -57,46 +56,18 @@ class _PermissionScreenState extends State<PermissionScreen> with TickerProvider
     setState(() => _isRequestingPermission = true);
 
     try {
-      final currentPermission = _permissions[_currentPage.round()].permission;
+      final currentPermissionInfo = _permissions[_currentPage.round()];
+      bool granted = false;
 
-      // --- FIX: ROBUST PERMISSION HANDLING LOGIC ---
-      // 1. Check the status first.
-      PermissionStatus status = await currentPermission.status;
-
-      // 2. If it's not granted, then request it.
-      if (!status.isGranted) {
-        // Handle special case for notifications on older Android
-        bool shouldRequest = true;
-        if (Platform.isAndroid && currentPermission == Permission.notification) {
-          final androidInfo = await DeviceInfoPlugin().androidInfo;
-          if (androidInfo.version.sdkInt < 33) {
-            shouldRequest = false;
-          }
-        }
-
-        if (shouldRequest) {
-          status = await currentPermission.request();
-        } else {
-          status = PermissionStatus.granted; // Assume granted if not applicable
-        }
+      if (currentPermissionInfo.permission == Permission.microphone) {
+        granted = await PermissionHelper.requestMicrophone(context);
+      } else if (currentPermissionInfo.permission == Permission.notification) {
+        granted = await PermissionHelper.requestNotification(context);
+      } else {
+        granted = await currentPermissionInfo.permission.request().isGranted;
       }
 
-      // 3. Handle the final status after checking/requesting.
-      if (status.isPermanentlyDenied) {
-        await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('${_permissions[_currentPage.round()].title} Required'),
-            content: Text(
-                'To use this feature, please go to your device settings, find "Mahlete Semay", and enable the Microphone permission.'),
-            actions: [
-              TextButton(child: const Text('Cancel'), onPressed: () => Navigator.pop(context)),
-              FilledButton(child: const Text('Open Settings'), onPressed: () { openAppSettings(); Navigator.pop(context); }),
-            ],
-          ),
-        );
-      } else if (status.isGranted) {
-        // If permission is granted, move to the next step
+      if (granted && mounted) {
         if (_currentPage.round() < _permissions.length - 1) {
           _pageController.nextPage(
             duration: const Duration(milliseconds: 400),
@@ -106,7 +77,6 @@ class _PermissionScreenState extends State<PermissionScreen> with TickerProvider
           await _markPermissionsAsCompleted();
         }
       }
-
     } finally {
       if (mounted) {
         setState(() => _isRequestingPermission = false);

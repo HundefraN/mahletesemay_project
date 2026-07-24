@@ -285,7 +285,11 @@ class _AddEditReminderDialogState extends State<_AddEditReminderDialog> {
     });
   }
 
+  bool _submitted = false;
+
   Future<void> _submit() async {
+    setState(() => _submitted = true);
+    if (_selectedDateTime == null) return;
     if (_formKey.currentState!.validate()) {
       final provider = Provider.of<ServiceReminderProvider>(context, listen: false);
 
@@ -356,7 +360,7 @@ class _AddEditReminderDialogState extends State<_AddEditReminderDialog> {
                       labelText: 'Date & Time',
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.calendar_month),
-                      errorText: _selectedDateTime == null ? 'Please select a date and time' : null,
+                      errorText: (_submitted && _selectedDateTime == null) ? 'Please select a date and time' : null,
                     ),
                     child: Text(
                       _selectedDateTime == null ? 'Tap to select' : DateFormat.yMMMd().add_jm().format(_selectedDateTime!),
