@@ -2,13 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppThemes {
-  static final Color _lightPrimary = const Color(0xFF0D47A1);
-  static final Color _lightSecondary = const Color(0xFFFBC02D);
-  static final Color _lightBackground = const Color(0xFFF4F6F8);
+  // Logo-derived palette: Deep Royal Navy & Celestial Divine Gold
+  static const Color royalNavy = Color(0xFF0A1E3F);
+  static const Color celestialGold = Color(0xFFDFB76C);
+  static const Color celestialGoldLight = Color(0xFFF5E09D);
+  static const Color celestialGoldDark = Color(0xFFC59B27);
+  static const Color navySurfaceLight = Color(0xFFFFFFFF);
+  static const Color navyBackgroundLight = Color(0xFFF5F7FB);
+  static const Color navyBackgroundDark = Color(0xFF070E1B);
+  static const Color navySurfaceDark = Color(0xFF0F1D33);
+  static const Color navyCardDark = Color(0xFF13233D);
 
-  static final Color _darkPrimary = const Color(0xFFFBC02D);
-  static final Color _darkSecondary = const Color(0xFF0D47A1);
-  static final Color _darkBackground = const Color(0xFF121212);
+  static final Color _lightPrimary = royalNavy;
+  static final Color _lightSecondary = celestialGoldDark;
+  static final Color _lightBackground = navyBackgroundLight;
+
+  static final Color _darkPrimary = celestialGold;
+  static final Color _darkSecondary = const Color(0xFF1B3B6F);
+  static final Color _darkBackground = navyBackgroundDark;
 
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
@@ -18,12 +29,11 @@ class AppThemes {
       brightness: Brightness.light,
       primary: _lightPrimary,
       secondary: _lightSecondary,
-      background: _lightBackground,
-      surface: Colors.white,
+      tertiary: celestialGold,
+      surface: navySurfaceLight,
       onPrimary: Colors.white,
-      onSecondary: Colors.black,
-      onBackground: Colors.black,
-      onSurface: Colors.black,
+      onSecondary: Colors.white,
+      onSurface: const Color(0xFF0A1E3F),
     ),
     scaffoldBackgroundColor: _lightBackground,
     textTheme: GoogleFonts.montserratTextTheme(ThemeData.light().textTheme),
@@ -40,7 +50,7 @@ class AppThemes {
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: _lightPrimary,
-        foregroundColor: Colors.white,
+        foregroundColor: celestialGoldLight,
         elevation: 1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -57,10 +67,10 @@ class AppThemes {
     cardTheme: CardThemeData(
       color: Colors.white,
       elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.05),
+      shadowColor: royalNavy.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.black.withOpacity(0.05), width: 1),
+        side: BorderSide(color: royalNavy.withValues(alpha: 0.06), width: 1),
       ),
     ),
   );
@@ -73,17 +83,16 @@ class AppThemes {
       brightness: Brightness.dark,
       primary: _darkPrimary,
       secondary: _darkSecondary,
-      background: _darkBackground,
-      surface: const Color(0xFF1E1E1E),
-      onPrimary: Colors.black,
+      tertiary: celestialGoldLight,
+      surface: navySurfaceDark,
+      onPrimary: const Color(0xFF070E1B),
       onSecondary: Colors.white,
-      onBackground: Colors.white,
       onSurface: Colors.white,
     ),
     scaffoldBackgroundColor: _darkBackground,
     textTheme: GoogleFonts.montserratTextTheme(ThemeData.dark().textTheme),
     appBarTheme: AppBarTheme(
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: navySurfaceDark,
       elevation: 0,
       iconTheme: IconThemeData(color: _darkPrimary),
       titleTextStyle: GoogleFonts.montserrat(
@@ -95,7 +104,7 @@ class AppThemes {
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: _darkPrimary,
-        foregroundColor: Colors.black,
+        foregroundColor: const Color(0xFF070E1B),
         elevation: 1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -110,12 +119,12 @@ class AppThemes {
       },
     ),
     cardTheme: CardThemeData(
-      color: const Color(0xFF1E1E1E),
+      color: navyCardDark,
       elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.2),
+      shadowColor: Colors.black.withOpacity(0.4),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.white.withOpacity(0.08), width: 1),
+        side: BorderSide(color: celestialGold.withOpacity(0.12), width: 1),
       ),
     ),
   );

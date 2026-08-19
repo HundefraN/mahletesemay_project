@@ -4,8 +4,8 @@ import UIKit
 
 @IBDesignable
 class GradientView: UIView {
-    @IBInspectable var startColor: UIColor = .blue { didSet { setNeedsLayout() } }
-    @IBInspectable var endColor: UIColor = .yellow { didSet { setNeedsLayout() } }
+    @IBInspectable var startColor: UIColor = UIColor(red: 10/255.0, green: 30/255.0, blue: 63/255.0, alpha: 1.0) { didSet { setNeedsLayout() } }
+    @IBInspectable var endColor: UIColor = UIColor(red: 223/255.0, green: 183/255.0, blue: 108/255.0, alpha: 1.0) { didSet { setNeedsLayout() } }
     
     private let gradientLayer = CAGradientLayer()
     

@@ -22,6 +22,7 @@ import 'song_detail_screen.dart';
 import '../../models/artist_model.dart';
 import '../../models/song_model.dart';
 import '../../providers/song_provider.dart';
+import '../../services/search_service.dart';
 import 'albums_list_screen.dart';
 import 'songs_list_screen.dart';
 
@@ -93,10 +94,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
   }
 
   void _onSearchChanged(String query) {
-    final songProvider = Provider.of<SongProvider>(context, listen: false);
-    final queryLower = query.trim().toLowerCase();
-
-    if (queryLower.isEmpty) {
+    if (query.trim().isEmpty) {
       setState(() {
         _searchQuery = "";
         _searchResults = [];
@@ -104,142 +102,39 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
       return;
     }
 
-    final searchTokens =
-        queryLower.split(' ').where((s) => s.isNotEmpty).toSet();
-    final Map<String, ({double score, SearchResult result})> resultsMap = {};
-
-    const double titleExactMatch = 50.0;
-    const double titleTokenMatch = 20.0;
-    const double titleContainsMatch = 5.0;
-    const double artistExactMatch = 40.0;
-    const double artistTokenMatch = 15.0;
-    const double artistContainsMatch = 4.0;
-    const double albumExactMatch = 30.0;
-    const double albumContainsMatch = 3.0;
-    const double lyricTokenMatch = 1.0;
-
-    if (_filterType == 'All' || _filterType == 'Songs') {
-      for (final song in songProvider.allSongs) {
-        double currentScore = 0;
-        MatchType matchType = MatchType.lyric;
-        String matchSnippet = song.artistName;
-
-        final titleLower = song.title.toLowerCase();
-        final artistLower = song.artistName.toLowerCase();
-        final lyricsLower = song.lyrics.toLowerCase();
-
-        if (titleLower == queryLower) {
-          currentScore += titleExactMatch;
-          matchType = MatchType.title;
-        } else if (titleLower.contains(queryLower)) {
-          currentScore += titleContainsMatch;
-          matchType = MatchType.title;
-        } else {
-          final titleTokens = titleLower.split(' ').toSet();
-          final titleIntersection = searchTokens.intersection(titleTokens);
-          currentScore += titleIntersection.length * titleTokenMatch;
-          if (titleIntersection.isNotEmpty) matchType = MatchType.title;
-        }
-
-        if (artistLower == queryLower) {
-          currentScore += artistExactMatch;
-          if (currentScore > (resultsMap[song.id]?.score ?? 0)) {
-            matchType = MatchType.artist;
-          }
-        } else if (artistLower.contains(queryLower)) {
-          currentScore += artistContainsMatch;
-          if (currentScore > (resultsMap[song.id]?.score ?? 0)) {
-            matchType = MatchType.artist;
-          }
-        } else {
-          final artistTokens = artistLower.split(' ').toSet();
-          final artistIntersection = searchTokens.intersection(artistTokens);
-          currentScore += artistIntersection.length * artistTokenMatch;
-          if (artistIntersection.isNotEmpty &&
-              currentScore > (resultsMap[song.id]?.score ?? 0)) {
-            matchType = MatchType.artist;
-          }
-        }
-
-        final lyricTokens = lyricsLower.split(RegExp(r'\s+')).toSet();
-        final lyricIntersection = searchTokens.intersection(lyricTokens);
-        currentScore += lyricIntersection.length * lyricTokenMatch;
-        if (lyricIntersection.isNotEmpty && matchType == MatchType.lyric) {
-          final firstMatchWord = lyricIntersection.first;
-          final matchIndex = lyricsLower.indexOf(firstMatchWord);
-          final start = (matchIndex - 20).clamp(0, song.lyrics.length);
-          final end = (matchIndex + firstMatchWord.length + 30)
-              .clamp(0, song.lyrics.length);
-          matchSnippet =
-              "...${song.lyrics.substring(start, end).replaceAll('\n', ' ')}...";
-        }
-
-        if (currentScore > 0) {
-          if (currentScore > (resultsMap[song.id]?.score ?? 0)) {
-            resultsMap[song.id] = (
-              score: currentScore,
-              result: SearchResult(
-                  item: song, matchType: matchType, matchSnippet: matchSnippet)
-            );
-          }
-        }
-      }
+    final songProvider = Provider.of<SongProvider>(context, listen: false);
+    SearchCategory category = SearchCategory.all;
+    switch (_filterType) {
+      case 'Songs':
+        category = SearchCategory.songs;
+        break;
+      case 'Artists':
+        category = SearchCategory.artists;
+        break;
+      case 'Albums':
+        category = SearchCategory.albums;
+        break;
+      case 'Lyrics':
+        category = SearchCategory.lyrics;
+        break;
+      case 'Exercises':
+        category = SearchCategory.exercises;
+        break;
+      default:
+        category = SearchCategory.all;
     }
 
-    if (_filterType == 'All' || _filterType == 'Artists') {
-      for (final artist in songProvider.artists) {
-        double currentScore = 0;
-        final artistLower = artist.name.toLowerCase();
-
-        if (artistLower == queryLower) {
-          currentScore += artistExactMatch;
-        } else if (artistLower.contains(queryLower)) {
-          currentScore += artistContainsMatch * 2;
-        } else {
-          final artistTokens = artistLower.split(' ').toSet();
-          final artistIntersection = searchTokens.intersection(artistTokens);
-          currentScore += artistIntersection.length * artistTokenMatch;
-        }
-
-        if (currentScore > 0) {
-          if (currentScore > (resultsMap[artist.id]?.score ?? 0)) {
-            resultsMap[artist.id] = (
-              score: currentScore,
-              result: SearchResult(item: artist, matchType: MatchType.artist)
-            );
-          }
-        }
-      }
-    }
-
-    if (_filterType == 'All' || _filterType == 'Albums') {
-      for (final album in songProvider.allAlbums) {
-        double currentScore = 0;
-        final albumLower = album.title.toLowerCase();
-
-        if (albumLower == queryLower) {
-          currentScore += albumExactMatch;
-        } else if (albumLower.contains(queryLower)) {
-          currentScore += albumContainsMatch;
-        }
-
-        if (currentScore > 0) {
-          if (currentScore > (resultsMap[album.id]?.score ?? 0)) {
-            resultsMap[album.id] = (
-              score: currentScore,
-              result: SearchResult(item: album, matchType: MatchType.album)
-            );
-          }
-        }
-      }
-    }
-
-    final sortedResults = resultsMap.values.toList();
-    sortedResults.sort((a, b) => b.score.compareTo(a.score));
+    final results = SearchService().searchLocal(
+      query: query,
+      songs: songProvider.allSongs,
+      artists: songProvider.artists,
+      albums: songProvider.allAlbums,
+      category: category,
+    );
 
     setState(() {
       _searchQuery = query;
-      _searchResults = sortedResults.map((e) => e.result).toList();
+      _searchResults = results;
     });
   }
 
@@ -287,6 +182,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                   _buildFilterOption(context, 'Artists', IconsaxPlusBold.user),
                   _buildFilterOption(
                       context, 'Albums', IconsaxPlusBold.music_playlist),
+                  _buildFilterOption(
+                      context, 'Lyrics', IconsaxPlusBold.textalign_left),
                   SizedBox(height: context.w(16)),
                 ],
               ),
@@ -959,29 +856,14 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
 
   Widget _getCoverForSong(Song song, SongProvider songProvider) {
     final theme = Theme.of(context);
-    String coverUrl = '';
-
-    if (song.albumId == singlesAlbumId) {
-      if (song.artistId != singlesArtistId) {
-        final artist = songProvider.artists.firstWhere(
-            (a) => a.id == song.artistId,
-            orElse: () => Artist(id: '', name: '', imageUrl: '', region: ''));
-        coverUrl = artist.imageUrl;
-      }
-    } else {
-      final album = songProvider.allAlbums.firstWhere(
-          (a) => a.id == song.albumId,
-          orElse: () => Album(
-              id: '',
-              title: '',
-              artistId: '',
-              artistName: '',
-              coverImageUrl: ''));
-      coverUrl = album.coverImageUrl;
-    }
+    final coverUrl = _getCoverUrlForSong(song, songProvider);
 
     if (coverUrl.isNotEmpty) {
-      return CachedImage(imageUrl: coverUrl);
+      return CachedImage(
+        imageUrl: coverUrl,
+        memCacheWidth: 200,
+        memCacheHeight: 200,
+      );
     } else {
       return Container(
         decoration: BoxDecoration(
@@ -995,7 +877,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
           ),
         ),
         child: Icon(IconsaxPlusBold.musicnote,
-            color: Colors.white.withOpacity(0.8), size: context.w(30)),
+            color: Colors.white.withOpacity(0.8), size: context.w(26)),
       );
     }
   }
@@ -1095,6 +977,10 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
 
   Widget _buildArtistResultTile(BuildContext context, Artist artist) {
     final theme = Theme.of(context);
+    final songProvider = Provider.of<SongProvider>(context, listen: false);
+    final albums = songProvider.getAlbumsByArtist(artist.id);
+    final songs = songProvider.allSongs.where((s) => s.artistId == artist.id).toList();
+
     return Container(
       margin: EdgeInsets.only(bottom: context.w(10)),
       decoration: BoxDecoration(
@@ -1128,6 +1014,9 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
             height: context.w(48),
             decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(context.w(24)),
+                border: Border.all(
+                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    width: 1.5),
                 boxShadow: [
                   BoxShadow(
                       color: Colors.black.withOpacity(0.1),
@@ -1144,12 +1033,74 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
             query: _searchQuery,
             style: TextStyle(
                 fontWeight: FontWeight.bold, fontSize: context.sp(15))),
-        subtitle: Text('Artist • ${artist.region}',
-            style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-                fontSize: context.sp(12))),
-        trailing: Icon(IconsaxPlusBold.user,
-            color: theme.colorScheme.primary, size: context.w(24)),
+        subtitle: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(
+                  horizontal: context.w(6), vertical: context.w(2)),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(context.w(6)),
+              ),
+              child: Text(
+                '${albums.length} ${albums.length == 1 ? 'Album' : 'Albums'}',
+                style: TextStyle(
+                  fontSize: context.sp(11),
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ),
+            if (songs.isNotEmpty) ...[
+              SizedBox(width: context.w(6)),
+              Text(
+                '•',
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface.withOpacity(0.4),
+                  fontSize: context.sp(12),
+                ),
+              ),
+              SizedBox(width: context.w(6)),
+              Text(
+                '${songs.length} Tracks',
+                style: TextStyle(
+                  fontSize: context.sp(11),
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+            if (artist.region.isNotEmpty) ...[
+              SizedBox(width: context.w(6)),
+              Text(
+                '•',
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface.withOpacity(0.4),
+                  fontSize: context.sp(12),
+                ),
+              ),
+              SizedBox(width: context.w(6)),
+              Text(
+                artist.region,
+                style: TextStyle(
+                  fontSize: context.sp(11),
+                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ],
+        ),
+        trailing: Container(
+          width: context.w(32),
+          height: context.w(32),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: theme.colorScheme.primary.withOpacity(0.08),
+          ),
+          child: Icon(IconsaxPlusBold.arrow_right_3,
+              color: theme.colorScheme.primary, size: context.w(16)),
+        ),
       ),
     );
   }
@@ -1485,7 +1436,10 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                                     .colorScheme
                                                     .onPrimaryContainer))
                                         : CachedImage(
-                                            imageUrl: artist.imageUrl),
+                                            imageUrl: artist.imageUrl,
+                                            memCacheWidth: 200,
+                                            memCacheHeight: 200,
+                                          ),
                                   ),
                                 ),
                               ),

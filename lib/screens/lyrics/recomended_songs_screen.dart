@@ -127,10 +127,14 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final songProvider = Provider.of<SongProvider>(context, listen: false);
+    final songProvider = Provider.of<SongProvider>(context);
+    _allRecommendedSongs = songProvider.getPersonalizedRecommendations();
+    _sortSongs();
     final theme = Theme.of(context);
     if (!_isInitialized) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      _fadeController.forward();
+      _slideController.forward();
+      _isInitialized = true;
     }
 
     final fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOutQuart));

@@ -12,6 +12,10 @@ const String prefMashupTourCompletedV2 = 'mashup_helper_tour_completed_v2';
 const String prefLastSyncTimestamp = 'lastSyncTimestamp';
 const String prefFirstSyncCompleted = 'isFirstSyncCompleted';
 const String prefDailyRemindersEnabled = 'dailyRemindersEnabled';
+const String prefDailyReminderHour = 'dailyReminderHour';
+const String prefDailyReminderMinute = 'dailyReminderMinute';
+const String prefNewContentAlertsEnabled = 'newContentAlertsEnabled';
+const String prefPracticeFollowUpsEnabled = 'practiceFollowUpsEnabled';
 const String prefUserGender = 'userGender';
 const String prefLastCompletionDate = 'lastCompletionDate';
 const String prefIsDarkMode = 'isDarkMode';
@@ -38,10 +42,13 @@ const String tableSongs = 'songs';
 const String tableSetlists = 'setlists';
 const String tableSetlistSongs = 'setlist_songs';
 
-const String notificationPayloadVocalExercises = 'vocal_exercises';
-const int dailyReminderNotificationId = 100;
-const int continuationReminderId = 200;
-const int serviceReminderNotificationIdBase = 300;
+/// Notification ids and payload names live on NotificationService, which owns
+/// the reserved id ranges for each notification kind.
+
+/// The default time for the daily practice reminder: 10:00 local, which is
+/// 4:00 on the Ethiopian clock as shown in the Amharic translations.
+const int defaultDailyReminderHour = 10;
+const int defaultDailyReminderMinute = 0;
 
 enum HomePageTab { lyrics, mashup, setlists, exercises, range, lessons }
 
@@ -78,7 +85,8 @@ final List<Gradient> gradientPresets = [
 ];
 
 final List<Color> solidColorPresets = [
-  const Color(0xff0D47A1),
+  const Color(0xFF0A1E3F),
+  const Color(0xFFDFB76C),
   const Color(0xff1a1a1a),
   const Color(0xff606c38),
   const Color(0xff283618),

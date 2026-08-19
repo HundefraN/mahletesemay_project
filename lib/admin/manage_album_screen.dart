@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:mahlete_semay_project/models/artist_model.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
 import '../../models/album_model.dart';
+import '../../models/artist_model.dart';
+import '../../providers/auth_proveider.dart';
 import '../../services/firebase_service.dart';
 import '../../widgets/custom_snackbar.dart';
-import '../providers/auth_proveider.dart';
+import 'add_album_screen.dart';
 import 'edit_album_screen.dart';
+import 'widgets/admin_ui_kit.dart';
 
 class ManageAlbumsScreen extends StatefulWidget {
   const ManageAlbumsScreen({super.key});
@@ -14,14 +18,22 @@ class ManageAlbumsScreen extends StatefulWidget {
   State<ManageAlbumsScreen> createState() => _ManageAlbumsScreenState();
 }
 
-class _ManageAlbumsScreenState extends State<ManageAlbumsScreen> {
+class _ManageAlbumsScreenState extends State<ManageAlbumsScreen> with SingleTickerProviderStateMixin {
   final FirebaseService _firebaseService = FirebaseService();
   late Future<Map<String, List<Album>>> _albumsFuture;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _albumsFuture = _loadAndCategorizeAlbums();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<Map<String, List<Album>>> _loadAndCategorizeAlbums() async {
@@ -55,48 +67,125 @@ class _ManageAlbumsScreenState extends State<ManageAlbumsScreen> {
     });
   }
 
+  void _navigateToAddAlbum() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AddAlbumScreen()),
+    );
+    if (result == true) {
+      _refreshData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Manage Albums'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Ethiopian'),
-              Tab(text: 'Worldwide'),
-            ],
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF070E1B) : const Color(0xFFF5F7FB),
+      appBar: AppBar(
+        title: Text(
+          'Manage Albums',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 19),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
+            onPressed: () {
+              AdminUiKit.hapticLight();
+              _refreshData();
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF13233D) : Colors.black.withOpacity(0.04),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: TabBar(
+              controller: _tabController,
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              indicator: BoxDecoration(
+                color: isDark ? AdminUiKit.goldAccent : AdminUiKit.primaryNavy,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              labelColor: isDark ? AdminUiKit.primaryNavy : Colors.white,
+              unselectedLabelColor: isDark ? Colors.white60 : Colors.black54,
+              labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13.5),
+              unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13.5),
+              tabs: const [
+                Tab(text: '🇪🇹 Ethiopian Albums'),
+                Tab(text: '🌍 Worldwide Albums'),
+              ],
+            ),
           ),
         ),
-        body: FutureBuilder<Map<String, List<Album>>>(
-          future: _albumsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            }
-            if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('No albums found.'));
-            }
-
-            final categorizedAlbums = snapshot.data!;
-
-            return TabBarView(
-              children: [
-                _AlbumListTab(
-                  albums: categorizedAlbums['Ethiopian'] ?? [],
-                  onDataChanged: _refreshData,
-                ),
-                _AlbumListTab(
-                  albums: categorizedAlbums['Worldwide'] ?? [],
-                  onDataChanged: _refreshData,
-                ),
-              ],
+      ),
+      body: FutureBuilder<Map<String, List<Album>>>(
+        future: _albumsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: AdminUiKit.goldAccent),
             );
-          },
+          }
+          if (snapshot.hasError) {
+            return AdminEmptyState(
+              icon: Icons.error_outline_rounded,
+              title: 'Failed to load albums',
+              description: snapshot.error.toString(),
+              actionLabel: 'Retry',
+              onAction: _refreshData,
+            );
+          }
+
+          final categorizedAlbums = snapshot.data ?? {};
+
+          return TabBarView(
+            controller: _tabController,
+            children: [
+              _AlbumListTab(
+                category: 'Ethiopian',
+                albums: categorizedAlbums['Ethiopian'] ?? [],
+                onDataChanged: _refreshData,
+                onAddAlbum: _navigateToAddAlbum,
+              ),
+              _AlbumListTab(
+                category: 'Worldwide',
+                albums: categorizedAlbums['Worldwide'] ?? [],
+                onDataChanged: _refreshData,
+                onAddAlbum: _navigateToAddAlbum,
+              ),
+            ],
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          AdminUiKit.hapticMedium();
+          _navigateToAddAlbum();
+        },
+        backgroundColor: isDark ? AdminUiKit.goldAccent : AdminUiKit.primaryNavy,
+        foregroundColor: isDark ? AdminUiKit.primaryNavy : Colors.white,
+        icon: const Icon(Icons.add_rounded, size: 22),
+        label: Text(
+          'Add Album',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 14.5),
         ),
       ),
     );
@@ -104,10 +193,17 @@ class _ManageAlbumsScreenState extends State<ManageAlbumsScreen> {
 }
 
 class _AlbumListTab extends StatefulWidget {
+  final String category;
   final List<Album> albums;
   final VoidCallback onDataChanged;
+  final VoidCallback onAddAlbum;
 
-  const _AlbumListTab({required this.albums, required this.onDataChanged});
+  const _AlbumListTab({
+    required this.category,
+    required this.albums,
+    required this.onDataChanged,
+    required this.onAddAlbum,
+  });
 
   @override
   State<_AlbumListTab> createState() => _AlbumListTabState();
@@ -137,23 +233,32 @@ class _AlbumListTabState extends State<_AlbumListTab> {
   }
 
   void _filterAlbums() {
-    final query = _searchController.text.toLowerCase();
+    final query = _searchController.text.toLowerCase().trim();
     setState(() {
-      _filteredAlbums = widget.albums.where((album) =>
-      album.title.toLowerCase().contains(query) ||
-          album.artistName.toLowerCase().contains(query)).toList();
+      if (query.isEmpty) {
+        _filteredAlbums = widget.albums;
+      } else {
+        _filteredAlbums = widget.albums.where((album) =>
+            album.title.toLowerCase().contains(query) ||
+            album.artistName.toLowerCase().contains(query)).toList();
+      }
     });
   }
 
   void _toggleSelection(String albumId) {
+    AdminUiKit.hapticLight();
     setState(() {
-      if (_selectedAlbumIds.contains(albumId)) _selectedAlbumIds.remove(albumId);
-      else _selectedAlbumIds.add(albumId);
+      if (_selectedAlbumIds.contains(albumId)) {
+        _selectedAlbumIds.remove(albumId);
+      } else {
+        _selectedAlbumIds.add(albumId);
+      }
       if (_selectedAlbumIds.isEmpty) _isSelectionMode = false;
     });
   }
 
   void _enterSelectionMode(String albumId) {
+    AdminUiKit.hapticMedium();
     setState(() {
       _isSelectionMode = true;
       _selectedAlbumIds.add(albumId);
@@ -161,6 +266,7 @@ class _AlbumListTabState extends State<_AlbumListTab> {
   }
 
   void _exitSelectionMode() {
+    AdminUiKit.hapticLight();
     setState(() {
       _isSelectionMode = false;
       _selectedAlbumIds.clear();
@@ -168,29 +274,75 @@ class _AlbumListTabState extends State<_AlbumListTab> {
   }
 
   Future<void> _deleteSelectedAlbums() async {
-    final shouldDelete = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('Confirm Deletion'), content: Text('Are you sure you want to delete ${_selectedAlbumIds.length} album(s)? This cannot be undone.'), actions: [TextButton(child: const Text('Cancel'), onPressed: () => Navigator.of(context).pop(false)), FilledButton(child: const Text('Delete'), onPressed: () => Navigator.of(context).pop(true), style: FilledButton.styleFrom(backgroundColor: Colors.red))]));
+    final count = _selectedAlbumIds.length;
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Delete $count Album(s)?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        content: Text(
+          'Are you sure you want to permanently delete these $count album(s)? All attached songs will be affected.',
+          style: GoogleFonts.plusJakartaSans(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AdminUiKit.roseRed,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Delete'),
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+
     if (shouldDelete == true) {
       try {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final albumsToDelete = widget.albums.where((a) => _selectedAlbumIds.contains(a.id)).map((a) => a.title).join(', ');
+        final albumsToDelete = widget.albums
+            .where((a) => _selectedAlbumIds.contains(a.id))
+            .map((a) => a.title)
+            .join(', ');
 
         await _firebaseService.deleteAlbums(_selectedAlbumIds.toList());
 
-        _firebaseService.logActivity(
-          moderatorId: authProvider.currentUser!.uid,
-          moderatorName: authProvider.currentModerator!.fullName,
-          action: 'DELETE_ALBUMS',
-          details: 'Deleted ${_selectedAlbumIds.length} album(s): $albumsToDelete',
-        );
+        if (authProvider.currentUser != null) {
+          _firebaseService.logActivity(
+            moderatorId: authProvider.currentUser!.uid,
+            moderatorName: authProvider.currentModerator?.fullName ?? 'Admin',
+            action: 'DELETE_ALBUMS',
+            details: 'Deleted $count album(s): $albumsToDelete',
+          );
+        }
 
-        CustomSnackbar.show(context, 'Successfully deleted album(s).');
-        _exitSelectionMode();
-        widget.onDataChanged();
+        if (mounted) {
+          CustomSnackbar.show(context, 'Successfully deleted $count album(s).');
+          _exitSelectionMode();
+          widget.onDataChanged();
+        }
       } catch (e) {
-        CustomSnackbar.show(context, 'An error occurred during deletion.', isError: true);
+        if (mounted) {
+          CustomSnackbar.show(context, 'Error deleting albums: $e', isError: true);
+        }
       }
     }
   }
+
+  void _editAlbum(Album album) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => EditAlbumScreen(album: album)),
+    );
+    if (result == true) {
+      widget.onDataChanged();
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -199,72 +351,229 @@ class _AlbumListTabState extends State<_AlbumListTab> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       children: [
-        if (_isSelectionMode)
-          _buildSelectionAppBar()
-        else
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(controller: _searchController, decoration: InputDecoration(labelText: 'Search by Album or Artist', prefixIcon: const Icon(Icons.search), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
-          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: _isSelectionMode
+              ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AdminUiKit.roseRed.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AdminUiKit.roseRed.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        onPressed: _exitSelectionMode,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${_selectedAlbumIds.length} Selected',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: isDark ? Colors.white : AdminUiKit.roseRed,
+                        ),
+                      ),
+                      const Spacer(),
+                      FilledButton.icon(
+                        onPressed: _selectedAlbumIds.isNotEmpty ? _deleteSelectedAlbums : null,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AdminUiKit.roseRed,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(Icons.delete_sweep_rounded, size: 18),
+                        label: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                )
+              : AdminSearchBar(
+                  controller: _searchController,
+                  hintText: 'Search by album title or artist...',
+                  onChanged: (_) => _filterAlbums(),
+                ),
+        ),
+
         Expanded(
           child: _filteredAlbums.isEmpty
-              ? const Center(child: Text('No albums found.'))
-              : ListView.builder(
-            itemCount: _filteredAlbums.length,
-            itemBuilder: (context, index) {
-              final album = _filteredAlbums[index];
-              final isSelected = _selectedAlbumIds.contains(album.id);
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                color: isSelected ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5) : null,
-                child: ListTile(
-                  leading: CircleAvatar(backgroundImage: album.coverImageUrl.isNotEmpty ? NetworkImage(album.coverImageUrl) : null, child: album.coverImageUrl.isEmpty ? const Icon(Icons.album) : null),
-                  title: Text(album.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(album.artistName),
-                  trailing: _isSelectionMode ? Checkbox(value: isSelected, onChanged: (value) => _toggleSelection(album.id)) : const Icon(Icons.edit_outlined),
-                  onTap: () {
-                    if (_isSelectionMode) {
-                      _toggleSelection(album.id);
-                    } else {
-                      _editAlbum(album);
-                    }
-                  },
-                  onLongPress: () {
-                    if (!_isSelectionMode) {
-                      _enterSelectionMode(album.id);
-                    }
-                  },
+              ? AdminEmptyState(
+                  icon: Icons.album_rounded,
+                  title: 'No Albums Found',
+                  description: _searchController.text.isNotEmpty
+                      ? 'No matching albums for "${_searchController.text}".'
+                      : 'There are no ${widget.category.toLowerCase()} albums added yet.',
+                  actionLabel: _searchController.text.isEmpty ? 'Add Album' : null,
+                  onAction: _searchController.text.isEmpty ? widget.onAddAlbum : null,
+                )
+              : RefreshIndicator(
+                  color: AdminUiKit.goldAccent,
+                  onRefresh: () async => widget.onDataChanged(),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 80),
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: _filteredAlbums.length,
+                    itemBuilder: (context, index) {
+                      final album = _filteredAlbums[index];
+                      final isSelected = _selectedAlbumIds.contains(album.id);
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: AdminGlassCard(
+                          onTap: () {
+                            if (_isSelectionMode) {
+                              _toggleSelection(album.id);
+                            } else {
+                              _editAlbum(album);
+                            }
+                          },
+                          onLongPress: () {
+                            if (!_isSelectionMode) {
+                              _enterSelectionMode(album.id);
+                            }
+                          },
+                          borderColor: isSelected ? AdminUiKit.goldAccent : null,
+                          customColor: isSelected
+                              ? (isDark
+                                  ? AdminUiKit.goldAccent.withOpacity(0.15)
+                                  : AdminUiKit.primaryNavy.withOpacity(0.08))
+                              : null,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          borderRadius: 16,
+                          child: Row(
+                            children: [
+                              // Cover Art
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  width: 52,
+                                  height: 52,
+                                  color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                                  child: album.coverImageUrl.isNotEmpty
+                                      ? Image.network(
+                                          album.coverImageUrl,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => Icon(
+                                            Icons.album_rounded,
+                                            size: 28,
+                                            color: AdminUiKit.goldAccent,
+                                          ),
+                                        )
+                                      : Icon(
+                                          Icons.album_rounded,
+                                          size: 28,
+                                          color: AdminUiKit.goldAccent,
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+
+                              // Metadata
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      album.title,
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark ? Colors.white : AdminUiKit.primaryNavy,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      album.artistName,
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w500,
+                                        color: isDark ? Colors.white60 : Colors.black54,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (album.year != null || album.volume != null) ...[
+                                      const SizedBox(height: 5),
+                                      Row(
+                                        children: [
+                                          if (album.year != null)
+                                            Container(
+                                              margin: const EdgeInsets.only(right: 6),
+                                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: AdminUiKit.royalBlue.withOpacity(0.12),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                '📅 ${album.year}',
+                                                style: GoogleFonts.plusJakartaSans(
+                                                  fontSize: 10.5,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AdminUiKit.royalBlue,
+                                                ),
+                                              ),
+                                            ),
+                                          if (album.volume != null)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: AdminUiKit.goldAccent.withOpacity(0.15),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                'Vol. ${album.volume}',
+                                                style: GoogleFonts.plusJakartaSans(
+                                                  fontSize: 10.5,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: isDark ? AdminUiKit.goldHighlight : AdminUiKit.primaryNavy,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+
+                              if (_isSelectionMode)
+                                Checkbox(
+                                  value: isSelected,
+                                  activeColor: AdminUiKit.goldAccent,
+                                  checkColor: AdminUiKit.primaryNavy,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                                  onChanged: (_) => _toggleSelection(album.id),
+                                )
+                              else
+                                Container(
+                                  padding: const EdgeInsets.all(7),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? Colors.white10 : Colors.black.withOpacity(0.04),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.edit_note_rounded,
+                                    size: 20,
+                                    color: isDark ? AdminUiKit.goldHighlight : AdminUiKit.primaryNavy,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              );
-            },
-          ),
         ),
       ],
     );
-  }
-
-  Widget _buildSelectionAppBar() {
-    return Container(
-      color: Theme.of(context).colorScheme.primaryContainer,
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Row(
-        children: [
-          IconButton(icon: const Icon(Icons.close), onPressed: _exitSelectionMode),
-          Text('${_selectedAlbumIds.length} selected', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          const Spacer(),
-          IconButton(icon: const Icon(Icons.delete_outline), onPressed: _selectedAlbumIds.isNotEmpty ? _deleteSelectedAlbums : null),
-        ],
-      ),
-    );
-  }
-
-  void _editAlbum(Album album) async {
-    final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => EditAlbumScreen(album: album)));
-    if (result == true) {
-      widget.onDataChanged();
-    }
   }
 }

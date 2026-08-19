@@ -205,8 +205,10 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
 
     await _loadFromLocalDb();
-    _isLoading = false;
-    notifyListeners();
+    if (_songs.isNotEmpty) {
+      _isLoading = false;
+      notifyListeners();
+    }
 
     await _loadFavorites();
     await _loadHistory();
@@ -220,7 +222,12 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
     });
 
     final bool shouldForce = _songs.isEmpty;
-    _handleSync(forceOnMobile: shouldForce);
+    await _handleSync(forceOnMobile: shouldForce || true);
+
+    if (_isLoading) {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   @override
@@ -261,6 +268,9 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     _isSyncing = false;
+    if (_isLoading && _songs.isNotEmpty) {
+      _isLoading = false;
+    }
     notifyListeners();
   }
 

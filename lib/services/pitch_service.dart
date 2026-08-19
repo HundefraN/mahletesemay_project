@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:record/record.dart';
-import 'package:pitch_detector_dart/pitch_detector.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../utils/constants.dart';
 import '../utils/generated_tones.dart';
@@ -11,7 +9,17 @@ import '../utils/generated_tones.dart';
 class PitchData {
   final double pitch;
   final String note;
-  PitchData({this.pitch = 0.0, this.note = ''});
+  final double clarity;
+  final double rms;
+  
+  PitchData({
+    this.pitch = 0.0,
+    this.note = '',
+    this.clarity = 0.0,
+    this.rms = 0.0,
+  });
+
+  bool get hasPitch => pitch > 0.0 && note.isNotEmpty;
 }
 
 class Note {
@@ -22,20 +30,30 @@ class Note {
 }
 
 class PitchService with ChangeNotifier {
-  final AudioRecorder _audioRecorder = AudioRecorder();
-  final PitchDetector _pitchDetector = PitchDetector(audioSampleRate: 44100, bufferSize: 2048);
-  final AudioPlayer _soundPlayer = AudioPlayer();
+  AudioRecorder? _audioRecorderInstance;
+  AudioRecorder get _audioRecorder => _audioRecorderInstance ??= AudioRecorder();
+
+  AudioPlayer? _soundPlayerInstance;
+  AudioPlayer get _soundPlayer => _soundPlayerInstance ??= AudioPlayer();
+
   StreamSubscription<Uint8List>? _recordStreamSubscription;
 
   final List<int> _audioByteBuffer = [];
-  static const int _targetBytes = 4096; // 2048 samples * 2 bytes/sample (PCM 16-bit)
+  // 4096 bytes = 2048 samples (PCM 16-bit mono)
+  static const int _targetBytes = 4096;
+  // 75% overlap for ultra-smooth ~23ms pitch refresh rate
+  static const int _hopBytes = 1024;
+  static const int _sampleRate = 44100;
   
-  double _adaptiveNoiseFloor = 60.0;
-  static const int _filterWindowSize = 5;
+  double _noiseFloor = 30.0;
+  static const int _filterWindowSize = 3;
   final List<double> _pitchFilterBuffer = [];
+  double _smoothedPitch = 0.0;
 
   PitchData _pitchData = PitchData();
   PitchData get pitchData => _pitchData;
+  bool _isListening = false;
+  bool get isListening => _isListening;
 
   /// Plays a synthesized audio beep tuned to the exact pitch frequency.
   Future<void> playPitchBeep(double frequency) async {
@@ -82,7 +100,7 @@ class PitchService with ChangeNotifier {
   }
 
   Future<bool> startListening() async {
-    if (await _audioRecorder.isRecording()) {
+    if (_isListening || await _audioRecorder.isRecording()) {
       return true;
     }
 
@@ -93,62 +111,78 @@ class PitchService with ChangeNotifier {
     try {
       _audioByteBuffer.clear();
       _pitchFilterBuffer.clear();
+      _smoothedPitch = 0.0;
+      _noiseFloor = 30.0;
 
       final stream = await _audioRecorder.startStream(const RecordConfig(
         encoder: AudioEncoder.pcm16bits,
-        sampleRate: 44100,
+        sampleRate: _sampleRate,
         numChannels: 1,
       ));
 
-      _recordStreamSubscription = stream.listen((data) async {
+      _isListening = true;
+      _recordStreamSubscription = stream.listen((data) {
         _audioByteBuffer.addAll(data);
 
         while (_audioByteBuffer.length >= _targetBytes) {
           final chunkBytes = Uint8List.fromList(_audioByteBuffer.sublist(0, _targetBytes));
-          _audioByteBuffer.removeRange(0, _targetBytes);
+          // Hop forward with 75% overlap
+          _audioByteBuffer.removeRange(0, _hopBytes);
 
           final rms = _calculateRMS(chunkBytes);
           
-          // Adaptive Noise Gate Floor
-          if (rms < 120.0) {
-            _adaptiveNoiseFloor = _adaptiveNoiseFloor * 0.9 + rms * 0.1;
+          // Adaptive smooth noise floor tracking
+          if (rms < 50.0) {
+            _noiseFloor = _noiseFloor * 0.96 + rms * 0.04;
           }
-          final dynamicThreshold = max(60.0, _adaptiveNoiseFloor * 1.6);
+          final dynamicThreshold = max(25.0, _noiseFloor * 1.25);
 
           if (rms < dynamicThreshold) {
             if (_pitchData.pitch != 0.0) {
-              _pitchData = PitchData(pitch: 0.0, note: '');
+              _pitchData = PitchData(pitch: 0.0, note: '', clarity: 0.0, rms: rms);
               _pitchFilterBuffer.clear();
+              _smoothedPitch = 0.0;
               notifyListeners();
             }
             continue;
           }
 
           try {
-            // High precision pitch estimation using McLeod Autocorrelation + Parabolic Interpolation
-            double detectedPitch = _detectPitchMcLeod(chunkBytes);
+            // High-precision YIN+ Pitch Detector with subharmonic verification
+            final result = detectPitchFromPcm16(chunkBytes, sampleRate: _sampleRate);
 
-            // Fallback to pitch_detector_dart if McLeod NSDF peak was inconclusive
-            if (detectedPitch <= 0.0) {
-              final result = await _pitchDetector.getPitchFromIntBuffer(chunkBytes);
-              if (result.pitched && result.pitch >= 55.0 && result.pitch <= 1400.0) {
-                detectedPitch = result.pitch;
-              }
-            }
-
-            if (detectedPitch >= 55.0 && detectedPitch <= 1400.0) {
-              _pitchFilterBuffer.add(detectedPitch);
+            if (result.pitch >= 40.0 && result.pitch <= 1500.0 && result.clarity >= 0.40) {
+              _pitchFilterBuffer.add(result.pitch);
               if (_pitchFilterBuffer.length > _filterWindowSize) {
                 _pitchFilterBuffer.removeAt(0);
               }
 
-              // Median filter to eliminate transient spikes
+              // Median filter to eliminate transient spike noise
               final sortedPitches = List<double>.from(_pitchFilterBuffer)..sort();
               final medianPitch = sortedPitches[sortedPitches.length ~/ 2];
 
-              final note = getNoteFromPitch(medianPitch);
-              if ((_pitchData.pitch - medianPitch).abs() > 0.3 || _pitchData.note != note) {
-                _pitchData = PitchData(pitch: medianPitch, note: note);
+              // Exponential moving average for jitter-free pitch reading
+              if (_smoothedPitch == 0.0 || (_smoothedPitch - medianPitch).abs() > 35.0) {
+                _smoothedPitch = medianPitch;
+              } else {
+                _smoothedPitch = _smoothedPitch * 0.50 + medianPitch * 0.50;
+              }
+
+              final note = getNoteFromPitch(_smoothedPitch);
+              if ((_pitchData.pitch - _smoothedPitch).abs() > 0.15 || _pitchData.note != note) {
+                _pitchData = PitchData(
+                  pitch: _smoothedPitch,
+                  note: note,
+                  clarity: result.clarity,
+                  rms: rms,
+                );
+                notifyListeners();
+              }
+            } else {
+              if (_pitchData.pitch != 0.0) {
+                _pitchData = PitchData(pitch: 0.0, note: '', clarity: 0.0, rms: rms);
+                _pitchFilterBuffer.clear();
+                _smoothedPitch = 0.0;
                 notifyListeners();
               }
             }
@@ -160,98 +194,144 @@ class PitchService with ChangeNotifier {
       return true;
     } catch (e) {
       debugPrint("PitchService: Error starting audio stream: $e");
+      _isListening = false;
       return false;
     }
   }
 
-  /// McLeod / NSDF (Normalized Square Difference Function) Pitch Detection with Parabolic Interpolation
-  double _detectPitchMcLeod(Uint8List buffer, {int sampleRate = 44100}) {
+  /// High-Precision YIN+ Pitch Detector with Harmonic Multi-tau Disambiguation
+  /// Supports frequencies from 40 Hz (Low B / Drop D guitar / Bass) up to 1500 Hz (Soprano C6+)
+  static PitchData detectPitchFromPcm16(Uint8List buffer, {int sampleRate = 44100}) {
     final samplesCount = buffer.length ~/ 2;
-    if (samplesCount < 512) return 0.0;
+    if (samplesCount < 512) return PitchData();
 
     final byteData = ByteData.sublistView(buffer);
     final floats = Float64List(samplesCount);
 
-    // Apply Hanning Window to eliminate spectral leakage & boundary discontinuities
+    // Step 0: Convert 16-bit PCM Little Endian to normalized [-1.0, 1.0] floats & subtract DC offset
+    double sum = 0.0;
     for (int i = 0; i < samplesCount; i++) {
       final rawSample = byteData.getInt16(i * 2, Endian.little);
-      final normSample = rawSample / 32768.0;
-      final hanningWindow = 0.5 * (1.0 - cos(2.0 * pi * i / (samplesCount - 1)));
-      floats[i] = normSample * hanningWindow;
+      final val = rawSample / 32768.0;
+      floats[i] = val;
+      sum += val;
+    }
+    final double dcMean = sum / samplesCount;
+    for (int i = 0; i < samplesCount; i++) {
+      floats[i] -= dcMean;
     }
 
-    final minLag = (sampleRate / 1400.0).floor().clamp(15, samplesCount ~/ 4);
-    final maxLag = (sampleRate / 55.0).ceil().clamp(minLag + 5, samplesCount ~/ 2);
+    final yinBufferSize = samplesCount ~/ 2;
+    final yinBuffer = Float64List(yinBufferSize);
 
-    final nsdf = Float64List(maxLag + 1);
-
-    for (int lag = minLag; lag <= maxLag; lag++) {
-      double num = 0.0;
-      double den1 = 0.0;
-      double den2 = 0.0;
-
-      for (int i = 0; i < samplesCount - lag; i++) {
-        final x1 = floats[i];
-        final x2 = floats[i + lag];
-        num += x1 * x2;
-        den1 += x1 * x1;
-        den2 += x2 * x2;
+    // Step 1: Compute difference function d(tau) = sum((x[i] - x[i+tau])^2)
+    for (int tau = 0; tau < yinBufferSize; tau++) {
+      double diff = 0.0;
+      for (int i = 0; i < yinBufferSize; i++) {
+        final delta = floats[i] - floats[i + tau];
+        diff += delta * delta;
       }
+      yinBuffer[tau] = diff;
+    }
 
-      final den = den1 + den2;
-      if (den > 0.00001) {
-        nsdf[lag] = 2.0 * num / den;
+    // Step 2: Cumulative Mean Normalized Difference Function (CMNDF)
+    yinBuffer[0] = 1.0;
+    double runningSum = 0.0;
+    for (int tau = 1; tau < yinBufferSize; tau++) {
+      runningSum += yinBuffer[tau];
+      if (runningSum > 0.00001) {
+        yinBuffer[tau] *= tau / runningSum;
       } else {
-        nsdf[lag] = 0.0;
+        yinBuffer[tau] = 1.0;
       }
     }
 
-    double maxVal = -1.0;
-    const double clarityThreshold = 0.42;
-    List<int> peakIndices = [];
+    // Step 3: Absolute Thresholding & Peak Picking with Subharmonic Disambiguation
+    // Limits for 40 Hz to 1500 Hz
+    final int minTau = (sampleRate / 1500.0).floor().clamp(2, yinBufferSize - 1);
+    final int maxTau = (sampleRate / 40.0).ceil().clamp(minTau + 1, yinBufferSize - 1);
 
-    for (int lag = minLag + 1; lag < maxLag; lag++) {
-      if (nsdf[lag] > nsdf[lag - 1] && nsdf[lag] >= nsdf[lag + 1]) {
-        if (nsdf[lag] > maxVal) {
-          maxVal = nsdf[lag];
+    const double initialThreshold = 0.15;
+    int tauEstimate = -1;
+    double bestClarity = 0.0;
+
+    // Collect all candidate local minima below threshold
+    for (int tau = minTau; tau <= maxTau; tau++) {
+      if (yinBuffer[tau] < initialThreshold) {
+        while (tau + 1 <= maxTau && yinBuffer[tau + 1] < yinBuffer[tau]) {
+          tau++;
         }
-        if (nsdf[lag] >= clarityThreshold) {
-          peakIndices.add(lag);
-        }
-      }
-    }
-
-    if (peakIndices.isEmpty || maxVal < clarityThreshold) {
-      return 0.0;
-    }
-
-    // Select fundamental peak to avoid octave errors
-    int chosenLag = peakIndices.first;
-    for (final idx in peakIndices) {
-      if (nsdf[idx] >= maxVal * 0.85) {
-        chosenLag = idx;
+        tauEstimate = tau;
+        bestClarity = (1.0 - yinBuffer[tau]).clamp(0.0, 1.0);
         break;
       }
     }
 
-    // Parabolic Peak Interpolation
-    final alpha = nsdf[chosenLag - 1];
-    final beta = nsdf[chosenLag];
-    final gamma = nsdf[chosenLag + 1];
-
-    final denominator = 2.0 * (2.0 * beta - alpha - gamma);
-    double delta = 0.0;
-    if (denominator.abs() > 1e-6) {
-      delta = (gamma - alpha) / denominator;
+    // Fallback: If strict threshold was not reached, find global minimum in range
+    if (tauEstimate == -1) {
+      double globalMin = double.infinity;
+      int globalMinTau = -1;
+      for (int tau = minTau; tau <= maxTau; tau++) {
+        if (yinBuffer[tau] < globalMin) {
+          globalMin = yinBuffer[tau];
+          globalMinTau = tau;
+        }
+      }
+      if (globalMin < 0.50 && globalMinTau != -1) {
+        tauEstimate = globalMinTau;
+        bestClarity = (1.0 - globalMin).clamp(0.0, 1.0);
+      }
     }
 
-    final refinedLag = chosenLag + delta;
-    if (refinedLag <= 0) return 0.0;
+    if (tauEstimate <= 0) return PitchData();
 
-    final pitch = sampleRate / refinedLag;
-    if (pitch < 55.0 || pitch > 1400.0) return 0.0;
+    // Step 3b: Subharmonic / Octave Error Disambiguation
+    // Only promote to 2*tau if the first candidate was a partial harmonic dip (not ultra-low)
+    // and the 2*tau dip is strictly significantly deeper than the candidate dip.
+    final int doubleTau = tauEstimate * 2;
+    if (doubleTau <= maxTau && yinBuffer[tauEstimate] > 0.06) {
+      int searchStart = max(minTau, doubleTau - 3);
+      int searchEnd = min(maxTau, doubleTau + 3);
+      int subharmonicTau = -1;
+      double subharmonicVal = double.infinity;
 
-    return pitch;
+      for (int t = searchStart; t <= searchEnd; t++) {
+        if (yinBuffer[t] < subharmonicVal) {
+          subharmonicVal = yinBuffer[t];
+          subharmonicTau = t;
+        }
+      }
+
+      // If the subharmonic has significantly deeper correlation than candidate
+      if (subharmonicTau != -1 &&
+          subharmonicVal < yinBuffer[tauEstimate] * 0.80 &&
+          subharmonicVal < 0.25) {
+        tauEstimate = subharmonicTau;
+        bestClarity = (1.0 - subharmonicVal).clamp(0.0, 1.0);
+      }
+    }
+
+    // Step 4: Sub-cent Parabolic Interpolation on the chosen minimum
+    final int x0 = (tauEstimate > 0) ? tauEstimate - 1 : tauEstimate;
+    final int x2 = (tauEstimate + 1 < yinBufferSize) ? tauEstimate + 1 : tauEstimate;
+
+    double refinedTau = tauEstimate.toDouble();
+    if (x0 != tauEstimate && x2 != tauEstimate) {
+      final s0 = yinBuffer[x0];
+      final s1 = yinBuffer[tauEstimate];
+      final s2 = yinBuffer[x2];
+      final denominator = 2.0 * (2.0 * s1 - s2 - s0);
+      if (denominator.abs() > 1e-6) {
+        refinedTau = tauEstimate + (s2 - s0) / denominator;
+      }
+    }
+
+    if (refinedTau <= 0) return PitchData();
+
+    final pitch = sampleRate / refinedTau;
+    if (pitch < 40.0 || pitch > 1500.0) return PitchData();
+
+    return PitchData(pitch: pitch, clarity: bestClarity);
   }
 
   double _calculateRMS(Uint8List buffer) {
@@ -268,6 +348,7 @@ class PitchService with ChangeNotifier {
   }
 
   Future<void> stopListening() async {
+    _isListening = false;
     if (_recordStreamSubscription != null) {
       await _recordStreamSubscription?.cancel();
       _recordStreamSubscription = null;
@@ -281,6 +362,7 @@ class PitchService with ChangeNotifier {
     }
     _audioByteBuffer.clear();
     _pitchFilterBuffer.clear();
+    _smoothedPitch = 0.0;
     _pitchData = PitchData();
     notifyListeners();
   }
@@ -288,8 +370,8 @@ class PitchService with ChangeNotifier {
   @override
   void dispose() {
     stopListening();
-    _audioRecorder.dispose();
-    _soundPlayer.dispose();
+    _audioRecorderInstance?.dispose();
+    _soundPlayerInstance?.dispose();
     super.dispose();
   }
 
@@ -309,7 +391,15 @@ class PitchService with ChangeNotifier {
   }
 
   double getPitchFromNote(String note) {
-    const notes = {'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5, 'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11};
+    const notes = {
+      'C': 0, 'C#': 1, 'Db': 1,
+      'D': 2, 'D#': 3, 'Eb': 3,
+      'E': 4,
+      'F': 5, 'F#': 6, 'Gb': 6,
+      'G': 7, 'G#': 8, 'Ab': 8,
+      'A': 9, 'A#': 10, 'Bb': 10,
+      'B': 11,
+    };
     if (note.length < 2) return 0.0;
     try {
       final octaveStr = note.substring(note.length - 1);
@@ -323,9 +413,19 @@ class PitchService with ChangeNotifier {
     }
   }
 
+  /// Calculates cents difference between target and detected pitch:
+  /// cents = 1200 * log2(userPitch / targetPitch)
   double getCentsDifference(double targetPitch, double userPitch) {
     if (targetPitch <= 0 || userPitch <= 0) return 0.0;
     return 1200 * (log(userPitch / targetPitch) / log(2.0));
+  }
+
+  /// Octave-wrapped cents difference (e.g. for auto-transposed vocal pitch training)
+  /// Returns nearest octave cents difference in range [-600, +600]
+  double getOctaveWrappedCentsDifference(double targetPitch, double userPitch) {
+    if (targetPitch <= 0 || userPitch <= 0) return 0.0;
+    final rawCents = getCentsDifference(targetPitch, userPitch);
+    return ((rawCents + 600) % 1200) - 600;
   }
 
   String getVoiceType(String lowestNote, String highestNote) {

@@ -1,0 +1,30 @@
+{
+  "name": "mahlete-semay-migration",
+  "version": "1.0.0",
+  "description": "ETL and Media Migration tool from Firebase/Cloudinary to Supabase",
+  "main": "migrate.js",
+  "type": "module",
+  "scripts": {
+    "start": "node migrate.js",
+    "migrate": "node migrate.js",
+    "dry-run": "node migrate.js --dry-run",
+    "data-only": "node migrate.js --skip-media",
+    "media-only": "node migrate.js --media-only",
+    "verify": "node migrate.js --verify-only"
+  },
+  "keywords": [
+    "supabase",
+    "firebase",
+    "migration",
+    "etl",
+    "cloudinary"
+  ],
+  "author": "Mahlete Semay Development Team",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "dotenv": "^16.4.7",
+    "firebase-admin": "^13.1.0",
+    "mime-types": "^2.1.35"
+  }
+}

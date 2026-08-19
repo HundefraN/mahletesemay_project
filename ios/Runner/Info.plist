@@ -33,10 +33,10 @@
 		<key>NSMicrophoneUsageDescription</key>
 		<string>This app uses the microphone for the Vocal Range Finder and Pitch Trainer features to help you analyze and improve your singing.</string>
 		<key>UIBackgroundModes</key>
-        <array>
-            <string>fetch</string>
-            <string>remote-notification</string>
-        </array>
+		<array>
+			<string>fetch</string>
+			<string>remote-notification</string>
+		</array>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>This app needs access to your photo library to let you pick artist and album covers.</string>
 		<key>NSPhotoLibraryAddUsageDescription</key>

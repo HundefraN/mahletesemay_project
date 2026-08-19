@@ -29,6 +29,13 @@ class SyncService {
         _localDbService = localDbService,
         _connectivity = connectivity;
 
+  /// Read straight from preferences because sync can run outside the widget
+  /// tree, where NotificationSettingsProvider is not reachable.
+  Future<bool> _newContentAlertsEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(prefNewContentAlertsEnabled) ?? true;
+  }
+
   Future<SyncResult> performSmartSync(
       {bool forceOnMobile = false, required bool isInitialSync}) async {
     if (_isSyncing) {
@@ -64,30 +71,37 @@ class SyncService {
           existingSongs.map((s) => s.id).toSet();
 
       final artists = await _firebaseService.getArtists();
-      await _localDbService.syncArtists(artists);
+      if (artists.isNotEmpty) {
+        await _localDbService.syncArtists(artists);
+      }
 
       final albums = await _firebaseService.getAlbums();
-      await _localDbService.syncAlbums(albums);
+      if (albums.isNotEmpty) {
+        await _localDbService.syncAlbums(albums);
+      }
 
       final songs = await _firebaseService.getSongs();
-      await _localDbService.syncSongs(songs);
+      if (songs.isNotEmpty) {
+        await _localDbService.syncSongs(songs);
+      }
 
       if (!isInitialSync && existingSongIds.isNotEmpty) {
         final newSongs =
             songs.where((s) => !existingSongIds.contains(s.id)).toList();
-        if (newSongs.isNotEmpty) {
+        if (newSongs.isNotEmpty && await _newContentAlertsEnabled()) {
           if (newSongs.length == 1) {
             final song = newSongs.first;
             await NotificationService.showNewContentNotification(
-              title: "🎵 New Song Added!",
+              title: 'New song added',
               body:
-                  "'${song.title}' by ${song.artistName} has been added to the library.",
+                  '"${song.title}" by ${song.artistName} is now in your library.',
+              songId: song.id,
             );
           } else {
             await NotificationService.showNewContentNotification(
-              title: "🎵 New Songs Added!",
+              title: '${newSongs.length} new songs added',
               body:
-                  "${newSongs.length} new songs have been added to your app library.",
+                  'Fresh lyrics are waiting in your library, including "${newSongs.first.title}".',
             );
           }
         }
@@ -98,8 +112,8 @@ class SyncService {
           prefLastSyncTimestamp, DateTime.now().millisecondsSinceEpoch);
 
       return SyncResult.synced;
-    } catch (e) {
-      print("Sync error: $e");
+    } catch (e, stackTrace) {
+      print("Sync error: $e\n$stackTrace");
       return SyncResult.error;
     } finally {
       _isSyncing = false;

@@ -4,20 +4,17 @@ import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:mahlete_semay_project/providers/language_provider.dart';
 import 'package:mahlete_semay_project/screens/admin/portal_home_screen.dart';
 import 'package:mahlete_semay_project/screens/auth/login_screen.dart';
+import 'package:mahlete_semay_project/screens/auth/waiting_for_approval_screen.dart';
 import 'package:mahlete_semay_project/screens/lyrics/suggest_lyrics_screen.dart';
-import 'package:mahlete_semay_project/screens/settings/service_reminder_screen.dart';
+import 'package:mahlete_semay_project/screens/settings/notification_settings_screen.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../providers/auth_proveider.dart';
 import '../../providers/theme_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mahlete_semay_project/services/notification_service.dart';
+import 'package:mahlete_semay_project/providers/notification_settings_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-const int dailyReminderNotificationId = 100;
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -27,14 +24,12 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProviderStateMixin {
-  bool _remindersEnabled = true;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _loadReminderPreference();
 
     _animationController = AnimationController(
       vsync: this,
@@ -57,28 +52,12 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     super.dispose();
   }
 
-  Future<void> _loadReminderPreference() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (mounted) {
-      setState(() => _remindersEnabled = prefs.getBool('dailyRemindersEnabled') ?? true);
-    }
-  }
-
-  Future<void> _toggleReminders(bool value) async {
-    setState(() => _remindersEnabled = value);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('dailyRemindersEnabled', value);
-    if (value) {
-      await NotificationService.scheduleStyledDailyReminder(
-          id: dailyReminderNotificationId,
-          title: "Daily Vocal Workout Reminder",
-          body: "Time to train your voice and keep up the progress!");
-      if (mounted)
-        CustomSnackbar.show(context, 'Daily reminders enabled for 10 AM.');
-    } else {
-      await NotificationService.cancelNotification(dailyReminderNotificationId);
-      if (mounted) CustomSnackbar.show(context, 'Daily reminders disabled.');
-    }
+  /// Summarises the notification setup for the settings row, so the state is
+  /// visible without opening the sub-screen.
+  String _notificationSummary(NotificationSettingsProvider settings) {
+    if (!settings.permission.notificationsEnabled) return 'Blocked by system';
+    if (!settings.dailyRemindersEnabled) return 'Daily reminder off';
+    return 'Daily reminder at ${settings.dailyReminderTime.format(context)}';
   }
 
   Future<void> _shareApp() {
@@ -212,8 +191,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: isDark
-                ? [const Color(0xFF1E1E1E), const Color(0xFF121212)]
-                : [const Color(0xFFF4F6F8), const Color(0xFFE3F2FD)],
+                ? [const Color(0xFF0F1D33), const Color(0xFF070E1B)]
+                : [const Color(0xFFF5F7FB), const Color(0xFFE8EEF5)],
           ),
         ),
         child: CustomScrollView(
@@ -256,16 +235,27 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                               _buildDivider(),
                               _buildSettingsTile(icon: Icon(isDark ? Icons.dark_mode : Icons.light_mode, color: theme.colorScheme.primary), title: l10n.darkMode, trailing: Transform.scale(scale: 0.8, child: Switch.adaptive(value: isDark, onChanged: (_) => themeProvider.toggleTheme(), activeColor: theme.colorScheme.primary))),
                               _buildDivider(),
-                              _buildSettingsTile(icon: Icon(Icons.notifications_active_outlined, color: theme.colorScheme.primary), title: l10n.dailyReminders, subtitle: l10n.remindersDesc, trailing: Transform.scale(scale: 0.8, child: Switch.adaptive(value: _remindersEnabled, onChanged: _toggleReminders, activeColor: theme.colorScheme.primary))),
-                              _buildDivider(),
-                              _buildSettingsTile(
-                                icon: Icon(Icons.event_available_outlined, color: theme.colorScheme.primary),
-                                title: 'Service Reminder',
-                                subtitle: 'Set a countdown for your next service',
-                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServiceReminderScreen())),
-                                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                              Consumer<NotificationSettingsProvider>(
+                                builder: (context, settings, _) => _buildSettingsTile(
+                                  icon: Icon(
+                                    settings.permission.notificationsEnabled
+                                        ? Icons.notifications_active_outlined
+                                        : Icons.notifications_off_outlined,
+                                    color: settings.isBlockedBySystem
+                                        ? theme.colorScheme.error
+                                        : theme.colorScheme.primary,
+                                  ),
+                                  title: 'Notifications',
+                                  subtitle: _notificationSummary(settings),
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const NotificationSettingsScreen(),
+                                    ),
+                                  ),
+                                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                                ),
                               ),
-
                             ],
                           ),
 
@@ -285,13 +275,15 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                                   if (authProvider.currentUser == null) {
                                     Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
                                   } else if (authProvider.isLoadingUser) {
-                                  } else if (authProvider.currentModerator != null && authProvider.userStatus == 'active') {
+                                    // User status is loading
+                                  } else if (authProvider.currentModerator != null && (authProvider.userStatus == 'active' || authProvider.isAdmin)) {
                                     Navigator.push(context, MaterialPageRoute(builder: (_) => const PortalHomeScreen()));
+                                  } else if (authProvider.userStatus == 'review') {
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => WaitingForApprovalScreen()));
+                                  } else if (authProvider.userStatus == 'blocked') {
+                                    CustomSnackbar.show(context, 'Your account has been blocked by an administrator.', isError: true);
                                   } else {
-                                    String errorMessage = authProvider.currentModerator == null
-                                        ? 'Could not verify moderator status. Please check your connection and restart the app.'
-                                        : 'Your access has been revoked by an admin.';
-                                    CustomSnackbar.show(context, errorMessage, isError: true);
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
                                   }
                                 },
                                 trailing: authProvider.isLoadingUser ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.arrow_forward_ios_rounded, size: 16),
@@ -304,25 +296,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                               ),
                             ],
                           ),
-
-                          if (kDebugMode) ...[
-                            const SizedBox(height: 24),
-                            _buildSectionHeader("Developer Options", theme),
-                            const SizedBox(height: 16),
-                            _buildSettingsCard(
-                              theme: theme,
-                              children: [
-                                _buildSettingsTile(
-                                  icon: Icon(Icons.notification_important_outlined, color: Colors.teal),
-                                  title: "Send Test Notification",
-                                  onTap: () {
-                                    NotificationService.showTestNotification();
-                                    CustomSnackbar.show(context, 'Test notification sent!');
-                                  },
-                                ),
-                              ],
-                            ),
-                          ],
 
                           Padding(
                             padding: const EdgeInsets.only(top: 40.0),
@@ -343,7 +316,30 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                             ),
                           ),
                           const SizedBox(height: 30),
-                          Center(child: Text('Mahlete Semay v1.0.0', style: TextStyle(color: theme.textTheme.bodySmall?.color?.withOpacity(0.5), fontSize: 12))),
+                          Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image.asset(
+                                    'assets/logo/logo.png',
+                                    width: 32,
+                                    height: 32,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Mahlete Semay v1.0.0',
+                                  style: TextStyle(
+                                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.5),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),

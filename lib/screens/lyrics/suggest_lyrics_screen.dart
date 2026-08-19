@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:mahlete_semay_project/models/submission_history_model.dart';
@@ -82,7 +81,7 @@ class _SuggestLyricsScreenState extends State<SuggestLyricsScreen> {
           songTitle: _titleController.text.trim(),
           artistName: _artistController.text.trim(),
           lyrics: _lyricsController.text.trim(),
-          submittedAt: Timestamp.now(),
+          submittedAt: DateTime.now(),
         );
         await _firebaseService.addLyricSuggestion(suggestion);
         await _saveToLocalHistory(suggestion);

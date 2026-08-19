@@ -2,9 +2,9 @@ import 'package:mahlete_semay_project/models/album_model.dart';
 import 'package:mahlete_semay_project/models/artist_model.dart';
 import 'package:mahlete_semay_project/models/setlist_model.dart';
 import 'package:mahlete_semay_project/models/song_model.dart';
+import 'package:mahlete_semay_project/utils/amharic_transliterator.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LocalDbService {
   static final LocalDbService _instance = LocalDbService._internal();
@@ -23,7 +23,7 @@ class LocalDbService {
     String path = join(await getDatabasesPath(), 'mahlete_semay.db');
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createTables,
       onUpgrade: _onUpgrade,
     );
@@ -32,14 +32,14 @@ class LocalDbService {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('''
-        CREATE TABLE setlists(
+        CREATE TABLE IF NOT EXISTS setlists(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           createdAt INTEGER NOT NULL
         )
       ''');
       await db.execute('''
-        CREATE TABLE setlist_songs(
+        CREATE TABLE IF NOT EXISTS setlist_songs(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           setlistId INTEGER NOT NULL,
           songId TEXT NOT NULL,
@@ -50,6 +50,24 @@ class LocalDbService {
         )
       ''');
     }
+
+    if (oldVersion < 3) {
+      // Add search_keywords, english_name, english_title columns safely
+      Future<void> addColumnSafely(String table, String colDef) async {
+        try {
+          await db.execute('ALTER TABLE $table ADD COLUMN $colDef');
+        } catch (_) {
+          // Column might already exist
+        }
+      }
+
+      await addColumnSafely('artists', 'englishName TEXT');
+      await addColumnSafely('artists', 'search_keywords TEXT');
+      await addColumnSafely('albums', 'englishTitle TEXT');
+      await addColumnSafely('albums', 'search_keywords TEXT');
+      await addColumnSafely('songs', 'englishTitle TEXT');
+      await addColumnSafely('songs', 'search_keywords TEXT');
+    }
   }
 
   Future<void> _createTables(Database db, int version) async {
@@ -57,25 +75,30 @@ class LocalDbService {
       CREATE TABLE artists(
         id TEXT PRIMARY KEY,
         name TEXT,
+        englishName TEXT,
         imageUrl TEXT,
-        region TEXT
+        region TEXT,
+        search_keywords TEXT
       )
     ''');
     await db.execute('''
       CREATE TABLE albums(
         id TEXT PRIMARY KEY,
         title TEXT,
+        englishTitle TEXT,
         artistId TEXT,
         artistName TEXT,
         coverImageUrl TEXT,
         year INTEGER,
-        volume INTEGER
+        volume INTEGER,
+        search_keywords TEXT
       )
     ''');
     await db.execute('''
       CREATE TABLE songs(
         id TEXT PRIMARY KEY,
         title TEXT,
+        englishTitle TEXT,
         artistName TEXT,
         artistId TEXT,
         albumId TEXT,
@@ -84,7 +107,8 @@ class LocalDbService {
         scale TEXT,
         rhythm TEXT,
         viewCount INTEGER,
-        createdAt INTEGER
+        createdAt INTEGER,
+        search_keywords TEXT
       )
     ''');
     await db.execute('''
@@ -112,7 +136,7 @@ class LocalDbService {
     Batch batch = db.batch();
     batch.delete('artists');
     for (var artist in artists) {
-      batch.insert('artists', {'id': artist.id, ...artist.toJson()},
+      batch.insert('artists', artist.toLocalDbMap(),
           conflictAlgorithm: ConflictAlgorithm.replace);
     }
     await batch.commit(noResult: true);
@@ -123,7 +147,7 @@ class LocalDbService {
     Batch batch = db.batch();
     batch.delete('albums');
     for (var album in albums) {
-      batch.insert('albums', {'id': album.id, ...album.toJson()},
+      batch.insert('albums', album.toLocalDbMap(),
           conflictAlgorithm: ConflictAlgorithm.replace);
     }
     await batch.commit(noResult: true);
@@ -134,9 +158,7 @@ class LocalDbService {
     Batch batch = db.batch();
     batch.delete('songs');
     for (var song in songs) {
-      final songMap = song.toJson();
-      songMap['createdAt'] = song.createdAt.millisecondsSinceEpoch;
-      batch.insert('songs', {'id': song.id, ...songMap},
+      batch.insert('songs', song.toLocalDbMap(),
           conflictAlgorithm: ConflictAlgorithm.replace);
     }
     await batch.commit(noResult: true);
@@ -146,11 +168,29 @@ class LocalDbService {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('artists');
     return List.generate(maps.length, (i) {
+      final map = maps[i];
+      final name = map['name']?.toString() ?? '';
+      final engName = map['englishName']?.toString() ??
+          (AmharicTransliterator.containsAmharic(name)
+              ? AmharicTransliterator.toLatin(name)
+              : '');
+
+      final kwRaw = map['search_keywords']?.toString() ?? '';
+      final keywords = kwRaw.isNotEmpty
+          ? kwRaw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+          : AmharicTransliterator.generateSearchKeywords(
+              title: name,
+              englishTitle: engName,
+              subtitleOrArtist: map['region']?.toString(),
+            );
+
       return Artist(
-        id: maps[i]['id'],
-        name: maps[i]['name'],
-        imageUrl: maps[i]['imageUrl'],
-        region: maps[i]['region'],
+        id: map['id']?.toString() ?? '',
+        name: name,
+        englishName: engName,
+        imageUrl: map['imageUrl']?.toString() ?? '',
+        region: map['region']?.toString() ?? '',
+        searchKeywords: keywords,
       );
     });
   }
@@ -159,14 +199,34 @@ class LocalDbService {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('albums');
     return List.generate(maps.length, (i) {
+      final map = maps[i];
+      final title = map['title']?.toString() ?? '';
+      final engTitle = map['englishTitle']?.toString() ??
+          (AmharicTransliterator.containsAmharic(title)
+              ? AmharicTransliterator.toLatin(title)
+              : '');
+      final yearVal = map['year'];
+      final volumeVal = map['volume'];
+
+      final kwRaw = map['search_keywords']?.toString() ?? '';
+      final keywords = kwRaw.isNotEmpty
+          ? kwRaw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+          : AmharicTransliterator.generateSearchKeywords(
+              title: title,
+              englishTitle: engTitle,
+              subtitleOrArtist: map['artistName']?.toString(),
+            );
+
       return Album(
-        id: maps[i]['id'],
-        title: maps[i]['title'],
-        artistId: maps[i]['artistId'],
-        artistName: maps[i]['artistName'],
-        coverImageUrl: maps[i]['coverImageUrl'],
-        year: maps[i]['year'],
-        volume: maps[i]['volume'],
+        id: map['id']?.toString() ?? '',
+        title: title,
+        englishTitle: engTitle,
+        artistId: map['artistId']?.toString() ?? '',
+        artistName: map['artistName']?.toString() ?? '',
+        coverImageUrl: map['coverImageUrl']?.toString() ?? '',
+        year: yearVal is int ? yearVal : int.tryParse(yearVal?.toString() ?? ''),
+        volume: volumeVal is int ? volumeVal : int.tryParse(volumeVal?.toString() ?? ''),
+        searchKeywords: keywords,
       );
     });
   }
@@ -175,19 +235,55 @@ class LocalDbService {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('songs');
     return List.generate(maps.length, (i) {
+      final map = maps[i];
+      final title = map['title']?.toString() ?? '';
+      final engTitle = map['englishTitle']?.toString() ??
+          (AmharicTransliterator.containsAmharic(title)
+              ? AmharicTransliterator.toLatin(title)
+              : '');
+
+      final createdAtVal = map['createdAt'];
+      DateTime dt;
+      if (createdAtVal is int) {
+        dt = DateTime.fromMillisecondsSinceEpoch(createdAtVal);
+      } else if (createdAtVal is String) {
+        dt = DateTime.tryParse(createdAtVal) ?? DateTime.now();
+      } else {
+        dt = DateTime.now();
+      }
+
+      final viewCountVal = map['viewCount'];
+      final int viewCount = viewCountVal is int
+          ? viewCountVal
+          : int.tryParse(viewCountVal?.toString() ?? '') ?? 0;
+
+      final kwRaw = map['search_keywords']?.toString() ?? '';
+      final artistName = map['artistName']?.toString() ?? '';
+      final lyrics = map['lyrics']?.toString() ?? '';
+
+      final keywords = kwRaw.isNotEmpty
+          ? kwRaw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+          : AmharicTransliterator.generateSearchKeywords(
+              title: title,
+              englishTitle: engTitle,
+              subtitleOrArtist: artistName,
+              lyricsOrDescription: lyrics,
+            );
+
       return Song(
-        id: maps[i]['id'],
-        title: maps[i]['title'],
-        artistName: maps[i]['artistName'],
-        artistId: maps[i]['artistId'],
-        albumId: maps[i]['albumId'],
-        albumTitle: maps[i]['albumTitle'],
-        lyrics: maps[i]['lyrics'],
-        scale: maps[i]['scale'],
-        rhythm: maps[i]['rhythm'],
-        viewCount: maps[i]['viewCount'],
-        createdAt:
-        Timestamp.fromMillisecondsSinceEpoch(maps[i]['createdAt']),
+        id: map['id']?.toString() ?? '',
+        title: title,
+        englishTitle: engTitle,
+        artistName: artistName,
+        artistId: map['artistId']?.toString() ?? '',
+        albumId: map['albumId']?.toString() ?? '',
+        albumTitle: map['albumTitle']?.toString() ?? '',
+        lyrics: lyrics,
+        scale: map['scale']?.toString(),
+        rhythm: map['rhythm']?.toString(),
+        viewCount: viewCount,
+        createdAt: dt,
+        searchKeywords: keywords,
       );
     });
   }

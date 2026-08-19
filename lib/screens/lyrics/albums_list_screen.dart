@@ -1,15 +1,15 @@
 import 'dart:ui';
-import 'package:mahlete_semay_project/screens/lyrics/songs_list_screen.dart';
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:animations/animations.dart';
 import '../../models/album_model.dart';
 import '../../models/artist_model.dart';
 import '../../providers/song_provider.dart';
 import '../../utils/constants.dart';
-import '../../utils/responsive_sizer.dart';
 import '../../widgets/cached_image.dart';
+import 'songs_list_screen.dart';
 
 class AlbumsListScreen extends StatefulWidget {
   final Artist artist;
@@ -25,204 +25,218 @@ class AlbumsListScreen extends StatefulWidget {
   State<AlbumsListScreen> createState() => _AlbumsListScreenState();
 }
 
-class _AlbumsListScreenState extends State<AlbumsListScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _fadeController;
-  late AnimationController _slideController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
+class _AlbumsListScreenState extends State<AlbumsListScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
-  List<Album> _albumsToDisplay = [];
+  List<Album> _albums = [];
 
   @override
   void initState() {
     super.initState();
-    _setupAlbums();
-
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeOutQuart),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
-
-    _scrollController.addListener(() {
-      if (_scrollController.offset > 100 && !_isScrolled) {
-        setState(() => _isScrolled = true);
-      } else if (_scrollController.offset <= 100 && _isScrolled) {
-        setState(() => _isScrolled = false);
-      }
-    });
-
-    _fadeController.forward();
-    _slideController.forward();
+    _loadAlbums();
+    _scrollController.addListener(_onScroll);
   }
 
-  void _setupAlbums() {
+  void _onScroll() {
+    final scrolled = _scrollController.hasClients && _scrollController.offset > 120;
+    if (scrolled != _isScrolled) {
+      setState(() => _isScrolled = scrolled);
+    }
+  }
+
+  void _loadAlbums() {
     final songProvider = Provider.of<SongProvider>(context, listen: false);
-    _albumsToDisplay = songProvider.getAlbumsByArtist(widget.artist.id);
+    final artistAlbums = songProvider.getAlbumsByArtist(widget.artist.id);
+    final artistSingles = songProvider.allSongs.where(
+      (song) => song.artistId == widget.artist.id && song.albumId == singlesAlbumId,
+    ).toList();
 
-    final artistSingles = songProvider.allSongs.where((song) =>
-    song.artistId == widget.artist.id && song.albumId == singlesAlbumId).toList();
-
+    final List<Album> list = List.from(artistAlbums);
     if (artistSingles.isNotEmpty) {
       final singlesAlbum = Album(
         id: singlesAlbumId,
-        title: "Singles",
+        title: "Singles & Standalone",
         artistId: widget.artist.id,
         artistName: widget.artist.name,
         coverImageUrl: '',
       );
-      _albumsToDisplay.insert(0, singlesAlbum);
+      list.insert(0, singlesAlbum);
     }
+    _albums = list;
   }
 
   @override
   void didUpdateWidget(covariant AlbumsListScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.artist.id != oldWidget.artist.id) {
-      _setupAlbums();
+      _loadAlbums();
     }
   }
 
   @override
   void dispose() {
-    _fadeController.dispose();
-    _slideController.dispose();
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final songProvider = Provider.of<SongProvider>(context, listen: false);
+    final songProvider = Provider.of<SongProvider>(context);
     final theme = Theme.of(context);
     final isTablet = MediaQuery.of(context).size.width > 720;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final allArtistSongs = songProvider.allSongs.where((s) => s.artistId == widget.artist.id).toList();
+    final totalViews = allArtistSongs.fold<int>(0, (sum, s) => sum + s.viewCount);
 
     if (isTablet) {
-      return _buildTabletContent(songProvider, theme);
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: Column(
+          children: [
+            _buildTabletHeader(theme, totalViews, allArtistSongs.length),
+            Expanded(child: _buildAlbumGrid(songProvider, theme, isDark)),
+          ],
+        ),
+      );
     }
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       extendBodyBehindAppBar: true,
       body: CustomScrollView(
         controller: _scrollController,
         physics: const BouncingScrollPhysics(),
         slivers: [
-          _buildSliverAppBar(theme),
-          _buildAlbumGrid(songProvider),
+          _buildSliverAppBar(theme, totalViews, allArtistSongs.length),
+          _buildAlbumGrid(songProvider, theme, isDark),
         ],
       ),
     );
   }
 
-  Widget _buildTabletContent(SongProvider songProvider, ThemeData theme) {
-    return Column(
-      children: [
-        _buildTabletHeader(theme),
-        Expanded(child: _buildAlbumGrid(songProvider)),
-      ],
-    );
-  }
-
-  Widget _buildTabletHeader(ThemeData theme) {
-    return SizedBox(
-      height: 150,
+  Widget _buildTabletHeader(ThemeData theme, int totalViews, int totalSongs) {
+    final compactViews = NumberFormat.compact().format(totalViews);
+    return Container(
+      height: 160,
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        border: Border(bottom: BorderSide(color: theme.colorScheme.onSurface.withOpacity(0.06))),
+      ),
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Hero(
-            tag: widget.artistHeroTag,
-            child: CachedImage(
-              imageUrl: widget.artist.imageUrl,
-              errorWidget: Container(color: theme.colorScheme.primary),
-            ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [ Colors.black.withOpacity(0.1), Colors.black.withOpacity(0.8)],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.15,
+              child: CachedImage(
+                imageUrl: widget.artist.imageUrl,
+                memCacheWidth: 600,
+                memCacheHeight: 300,
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Row(
               children: [
-                Text(
-                  widget.artist.name,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: context.sp(28),
-                    fontWeight: FontWeight.w900,
-                    shadows: const [Shadow(offset: Offset(0, 2), blurRadius: 8, color: Colors.black54)],
+                Hero(
+                  tag: widget.artistHeroTag,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: theme.colorScheme.primary, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.colorScheme.primary.withOpacity(0.3),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: CachedImage(
+                        imageUrl: widget.artist.imageUrl,
+                        memCacheWidth: 250,
+                        memCacheHeight: 250,
+                      ),
+                    ),
                   ),
                 ),
-                SizedBox(height: context.w(8)),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: context.w(12), vertical: context.w(6)),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(context.w(20)),
-                    border: Border.all(color: Colors.white.withOpacity(0.3)),
-                  ),
-                  child: Text(
-                    '${_albumsToDisplay.length} Release${_albumsToDisplay.length == 1 ? '' : 's'}',
-                    style: TextStyle(color: Colors.white, fontSize: context.sp(14), fontWeight: FontWeight.w600),
+                const SizedBox(width: 24),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.artist.name,
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 26),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _buildBadge(theme, '${_albums.length} Releases'),
+                          const SizedBox(width: 8),
+                          _buildBadge(theme, '$totalSongs Tracks'),
+                          if (totalViews > 0) ...[
+                            const SizedBox(width: 8),
+                            _buildBadge(theme, '$compactViews Views', icon: IconsaxPlusLinear.eye),
+                          ],
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  SliverAppBar _buildSliverAppBar(ThemeData theme) {
+  SliverAppBar _buildSliverAppBar(ThemeData theme, int totalViews, int totalSongs) {
+    final compactViews = NumberFormat.compact().format(totalViews);
+
     return SliverAppBar(
-      expandedHeight: context.w(300),
+      expandedHeight: 280,
       pinned: true,
       stretch: true,
-      backgroundColor: _isScrolled ? theme.colorScheme.surface.withOpacity(0.9) : Colors.transparent,
-      elevation: _isScrolled ? 2 : 0,
-      leading: Container(
-        margin: EdgeInsets.all(context.w(8)),
-        decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), shape: BoxShape.circle),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: IconButton(
-            icon: Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: context.w(20)),
-            onPressed: () => Navigator.pop(context),
+      backgroundColor: _isScrolled ? theme.scaffoldBackgroundColor.withOpacity(0.9) : Colors.transparent,
+      elevation: 0,
+      leading: Padding(
+        padding: const EdgeInsets.all(8),
+        child: ClipOval(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.35),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
           ),
         ),
       ),
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: EdgeInsets.only(left: context.w(60), right: context.w(60), bottom: context.w(20)),
+        titlePadding: const EdgeInsets.only(left: 60, right: 20, bottom: 16),
         title: AnimatedOpacity(
           opacity: _isScrolled ? 1.0 : 0.0,
           duration: const Duration(milliseconds: 200),
           child: Text(
             widget.artist.name,
             style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: context.sp(18),
-              shadows: const [Shadow(offset: Offset(0, 1), blurRadius: 3, color: Colors.black26)],
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+              color: theme.colorScheme.onSurface,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -231,80 +245,92 @@ class _AlbumsListScreenState extends State<AlbumsListScreen>
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    theme.colorScheme.primary.withOpacity(0.8),
-                    theme.colorScheme.secondary.withOpacity(0.6),
-                    theme.colorScheme.tertiary.withOpacity(0.4),
-                  ],
+            // Ambient Backdrop Image with Blur
+            CachedImage(
+              imageUrl: widget.artist.imageUrl,
+              memCacheWidth: 600,
+              memCacheHeight: 400,
+              fit: BoxFit.cover,
+            ),
+            BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.3),
+                      Colors.black.withOpacity(0.6),
+                      theme.scaffoldBackgroundColor,
+                    ],
+                    stops: const [0.0, 0.6, 1.0],
+                  ),
                 ),
               ),
             ),
+            // Artist Center Details
             Positioned(
-              top: context.w(100),
-              left: 0,
-              right: 0,
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: SlideTransition(
-                  position: _slideAnimation,
-                  child: Column(
+              top: 70,
+              left: 20,
+              right: 20,
+              child: Column(
+                children: [
+                  Hero(
+                    tag: widget.artistHeroTag,
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.4),
+                            blurRadius: 18,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: CachedImage(
+                          imageUrl: widget.artist.imageUrl,
+                          memCacheWidth: 250,
+                          memCacheHeight: 250,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    widget.artist.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                      shadows: [
+                        Shadow(offset: Offset(0, 2), blurRadius: 6, color: Colors.black54),
+                      ],
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Hero(
-                        tag: widget.artistHeroTag,
-                        child: Container(
-                          width: context.w(120),
-                          height: context.w(120),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 4),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))],
-                          ),
-                          child: ClipOval(
-                            child: CachedImage(
-                              imageUrl: widget.artist.imageUrl,
-                              errorWidget: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(colors: [theme.colorScheme.primary, theme.colorScheme.secondary]),
-                                ),
-                                child: Icon(Icons.person_rounded, size: context.w(60), color: Colors.white.withOpacity(0.8)),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: context.w(16)),
-                      Text(
-                        widget.artist.name,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: context.sp(24),
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
-                          shadows: const [Shadow(offset: Offset(0, 2), blurRadius: 8, color: Colors.black54)],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: context.w(8)),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: context.w(12), vertical: context.w(6)),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(context.w(20)),
-                          border: Border.all(color: Colors.white.withOpacity(0.3)),
-                        ),
-                        child: Text(
-                          '${_albumsToDisplay.length} Release${_albumsToDisplay.length == 1 ? '' : 's'}',
-                          style: TextStyle(color: Colors.white, fontSize: context.sp(14), fontWeight: FontWeight.w600),
-                        ),
-                      ),
+                      _buildWhiteBadge('${_albums.length} Releases'),
+                      const SizedBox(width: 8),
+                      _buildWhiteBadge('$totalSongs Tracks'),
+                      if (totalViews > 0) ...[
+                        const SizedBox(width: 8),
+                        _buildWhiteBadge('$compactViews Views', icon: IconsaxPlusLinear.eye),
+                      ],
                     ],
                   ),
-                ),
+                ],
               ),
             ),
           ],
@@ -313,191 +339,252 @@ class _AlbumsListScreenState extends State<AlbumsListScreen>
     );
   }
 
-  Widget _buildAlbumGrid(SongProvider songProvider) {
+  Widget _buildAlbumGrid(SongProvider songProvider, ThemeData theme, bool isDark) {
     return SliverPadding(
-      padding: EdgeInsets.fromLTRB(context.w(20), context.w(32), context.w(20), context.w(100)),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
       sliver: SliverGrid(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.75,
-          crossAxisSpacing: context.w(16),
-          mainAxisSpacing: context.w(20),
+          childAspectRatio: 0.72,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 18,
         ),
         delegate: SliverChildBuilderDelegate(
-              (context, index) {
-            final album = _albumsToDisplay[index];
-            return FadeTransition(
-              opacity: _fadeAnimation,
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: _buildAlbumCard(context, album, songProvider),
-              ),
-            );
+          (context, index) {
+            final album = _albums[index];
+            return _buildVinylAlbumCard(context, album, songProvider, theme, isDark);
           },
-          childCount: _albumsToDisplay.length,
+          childCount: _albums.length,
         ),
       ),
     );
   }
 
-  Widget _buildAlbumCard(BuildContext context, Album album, SongProvider songProvider) {
-    final theme = Theme.of(context);
+  Widget _buildVinylAlbumCard(
+    BuildContext context,
+    Album album,
+    SongProvider songProvider,
+    ThemeData theme,
+    bool isDark,
+  ) {
     final albumHeroTag = 'album-${album.id}';
     final isSinglesAlbum = album.id == singlesAlbumId;
 
     final songsInAlbum = isSinglesAlbum
-        ? songProvider.allSongs.where((s) => s.artistId == album.artistId && s.albumId == singlesAlbumId).toList()
+        ? songProvider.allSongs
+            .where((s) => s.artistId == album.artistId && s.albumId == singlesAlbumId)
+            .toList()
         : songProvider.getSongsByAlbum(album.id);
-
-    final totalViews = songsInAlbum.fold<int>(0, (sum, song) => sum + song.viewCount);
 
     return OpenContainer(
       transitionType: ContainerTransitionType.fadeThrough,
-      transitionDuration: const Duration(milliseconds: 600),
+      transitionDuration: const Duration(milliseconds: 450),
       closedElevation: 0,
       openElevation: 0,
-      closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(context.w(20))),
+      closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       closedColor: Colors.transparent,
       openColor: Colors.transparent,
       closedBuilder: (context, openContainer) {
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(context.w(20)),
-            boxShadow: [BoxShadow(color: theme.colorScheme.shadow.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 8))],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: openContainer,
-              borderRadius: BorderRadius.circular(context.w(20)),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Hero(
-                    tag: albumHeroTag,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(context.w(20)),
-                      child: CachedImage(
-                        imageUrl: album.coverImageUrl,
-                        errorWidget: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [theme.colorScheme.primary.withOpacity(0.6), theme.colorScheme.secondary.withOpacity(0.4)],
+        return InkWell(
+          onTap: openContainer,
+          borderRadius: BorderRadius.circular(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 3D Vinyl Stack Effect
+              Expanded(
+                child: Stack(
+                  children: [
+                    // Peeking Vinyl Disc Background
+                    Positioned(
+                      top: 4,
+                      bottom: 4,
+                      right: 0,
+                      child: Container(
+                        width: 65,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black87,
+                          border: Border.all(color: Colors.grey.shade800, width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(3, 2),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: theme.colorScheme.primary,
+                              border: Border.all(color: Colors.white, width: 2),
                             ),
                           ),
-                          child: Icon(
-                            isSinglesAlbum ? Icons.music_note : Icons.album_rounded,
-                            size: context.w(64),
-                            color: Colors.white.withOpacity(0.8),
+                        ),
+                      ),
+                    ),
+                    // Front Album Sleeve
+                    Positioned(
+                      top: 0,
+                      bottom: 0,
+                      left: 0,
+                      right: 18,
+                      child: Hero(
+                        tag: albumHeroTag,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: isSinglesAlbum
+                                ? Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          theme.colorScheme.primary,
+                                          theme.colorScheme.secondary,
+                                        ],
+                                      ),
+                                    ),
+                                    child: const Center(
+                                      child: Icon(
+                                        IconsaxPlusBold.music,
+                                        size: 48,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : CachedImage(
+                                    imageUrl: album.coverImageUrl,
+                                    memCacheWidth: 350,
+                                    memCacheHeight: 350,
+                                  ),
                           ),
                         ),
                       ),
                     ),
+                    // Standalone Release Badge if applicable
+                    if (isSinglesAlbum)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'Singles',
+                            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Album Title & Meta
+              Text(
+                album.title,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: theme.colorScheme.onSurface,
+                  letterSpacing: -0.2,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 3),
+              Row(
+                children: [
+                  Text(
+                    '${songsInAlbum.length} ${songsInAlbum.length == 1 ? 'track' : 'tracks'}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(context.w(20)),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.transparent, Colors.black.withOpacity(0.8)],
-                        stops: const [0.0, 0.5, 1.0],
+                  if (album.year != null) ...[
+                    Text(
+                      ' • ${album.year}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurface.withOpacity(0.5),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    bottom: context.w(16),
-                    left: context.w(16),
-                    right: context.w(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          album.title,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: context.sp(16),
-                            letterSpacing: -0.3,
-                            shadows: const [Shadow(offset: Offset(0, 1), blurRadius: 4, color: Colors.black54)],
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(height: context.w(6)),
-                        _AlbumMetadataRow(album: album, songCount: songsInAlbum.length, totalViews: totalViews, fontSize: context.sp(12))
-                      ],
-                    ),
-                  ),
+                  ],
                 ],
               ),
-            ),
+            ],
           ),
         );
       },
       openBuilder: (context, _) => SongsListScreen(album: album, albumHeroTag: albumHeroTag),
     );
   }
-}
 
-class _AlbumMetadataRow extends StatelessWidget {
-  const _AlbumMetadataRow({
-    required this.album,
-    required this.songCount,
-    required this.totalViews,
-    required this.fontSize,
-  });
-
-  final Album album;
-  final int songCount;
-  final int totalViews;
-  final double fontSize;
-
-  @override
-  Widget build(BuildContext context) {
-    final compactFormat = NumberFormat.compact().format(totalViews);
-
-    String yearAndVol = '';
-    if (album.volume != null) yearAndVol += 'Vol ${album.volume}';
-    if (album.year != null) {
-      if (yearAndVol.isNotEmpty) yearAndVol += ' • ';
-      yearAndVol += '${album.year}';
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$songCount ${songCount == 1 ? 'song' : 'songs'}',
-          style: TextStyle(color: Colors.white, fontSize: fontSize, fontWeight: FontWeight.w600),
-        ),
-        if(yearAndVol.isNotEmpty || totalViews > 0)
-          SizedBox(height: fontSize * 0.3),
-        Row(
-          children: [
-            if(yearAndVol.isNotEmpty)
-              Text(
-                yearAndVol,
-                style: TextStyle(color: Colors.white70, fontSize: fontSize, fontWeight: FontWeight.w500),
-              ),
-            if (yearAndVol.isNotEmpty && totalViews > 0)
-              Text(
-                ' • ',
-                style: TextStyle(color: Colors.white70, fontSize: fontSize, fontWeight: FontWeight.w500),
-              ),
-            if (totalViews > 0) ...[
-              Icon(Icons.visibility_outlined, size: fontSize + 2, color: Colors.white.withOpacity(0.8)),
-              SizedBox(width: fontSize * 0.3),
-              Text(
-                compactFormat,
-                style: TextStyle(color: Colors.white, fontSize: fontSize, fontWeight: FontWeight.w600),
-              )
-            ]
+  Widget _buildBadge(ThemeData theme, String text, {IconData? icon}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 13, color: theme.colorScheme.primary),
+            const SizedBox(width: 4),
           ],
-        ),
-      ],
+          Text(
+            text,
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWhiteBadge(String text, {IconData? icon}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 13, color: Colors.white),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            text,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+          ),
+        ],
+      ),
     );
   }
 }

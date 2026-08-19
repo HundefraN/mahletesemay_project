@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -80,7 +79,7 @@ class HistoryScreen extends StatelessWidget {
                       final historyEntry = history[index];
                       final song = songProvider.allSongs.firstWhere(
                             (s) => s.id == historyEntry.songId,
-                        orElse: () => Song(id: '', title: 'Not Found', artistName: '', artistId: '', albumId: '', albumTitle: '', lyrics: '', viewCount: 0, createdAt: Timestamp.now()),
+                        orElse: () => Song(id: '', title: 'Not Found', artistName: '', artistId: '', albumId: '', albumTitle: '', lyrics: '', viewCount: 0, createdAt: DateTime.now()),
                       );
 
                       if (song.title == 'Not Found') return const SizedBox.shrink();

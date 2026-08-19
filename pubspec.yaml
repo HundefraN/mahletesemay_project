@@ -15,9 +15,9 @@ dependencies:
   provider: ^6.1.2
   google_fonts: ^6.2.1
   animations: ^2.0.11
-  cloud_firestore: ^6.0.0
-  firebase_auth: ^6.0.1
-  cloudinary_public: ^0.23.1
+  firebase_core: ^3.12.0
+  firebase_messaging: ^15.2.0
+  supabase_flutter: ^2.8.0
   image_picker: ^1.1.2
   shared_preferences: ^2.2.3
   shimmer: ^3.0.0
@@ -41,6 +41,8 @@ dependencies:
   flutter_staggered_animations: ^1.1.1
   connectivity_plus: ^6.1.5
   flutter_local_notifications: ^19.4.0
+  # Used directly for timezone-aware notification scheduling.
+  timezone: ^0.10.1
   intl: ^0.20.2
   timeago: ^3.6.1
   url_launcher: ^6.3.0
@@ -51,11 +53,10 @@ dependencies:
   flutter_animate: ^4.5.2
   fl_chart: ^1.0.0
   device_info_plus: ^11.5.0
-  firebase_app_check: ^0.4.0
   nanoid: ^1.0.0
-  cloud_functions: ^6.0.0
   flutter_slidable: ^4.0.1
   reorderable_list: ^0.0.1
+  dio: ^5.4.0
   flutter_dotenv: ^6.0.0
   pitch_detector_dart: ^0.0.7
   flutter_timezone: ^3.0.1
@@ -66,28 +67,27 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
 flutter_native_splash:
-
-  background_image: "assets/images/transparent_background.png"
-
+  color: "#0A1E3F"
+  color_dark: "#0A1E3F"
   image: assets/logo/logo.png
-
   android_12:
     image: assets/logo/logo.png
-    color: "#FFFFFF"
-    color_dark: "#121212"
+    color: "#0A1E3F"
+    color_dark: "#0A1E3F"
 
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/logo/logo.png"
-
+  adaptive_icon_background: "#0A1E3F"
   adaptive_icon_foreground: "assets/logo/logo.png"
-  adaptive_icon_background: "#00000000"
-  remove_alpha_ios: false
+  remove_alpha_ios: true
+  min_sdk_android: 21
 
 flutter:
   generate: true
   uses-material-design: true
   assets:
+    - .env
     - assets/logo/logo.png
     - assets/images/

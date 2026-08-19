@@ -1,15 +1,17 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
+
 import '../../models/artist_model.dart';
+import '../../providers/auth_proveider.dart';
 import '../../services/firebase_service.dart';
-import '../providers/auth_proveider.dart';
-import '../services/coudinary_service.dart';
-import '../widgets/custom_snackbar.dart';
+import '../../services/supabase_storage_service.dart';
 import '../../utils/permission_helper.dart';
+import '../../widgets/custom_snackbar.dart';
+import 'widgets/admin_ui_kit.dart';
 
 class EditArtistScreen extends StatefulWidget {
   final Artist artist;
@@ -38,40 +40,54 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
     _existingImageUrl = widget.artist.imageUrl;
   }
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
   Future<void> _pickAndCropImage() async {
     final hasPermission = await PermissionHelper.requestPhotoAccess(context);
     if (!hasPermission) return;
 
-    final imagePicker = ImagePicker();
-    final pickedFile = await imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    try {
+      final imagePicker = ImagePicker();
+      final pickedFile = await imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 80);
 
-    if (pickedFile != null) {
-      final croppedFile = await ImageCropper().cropImage(
-        sourcePath: pickedFile.path,
-        uiSettings: [
-          AndroidUiSettings(
-              toolbarTitle: 'Crop Image',
-              toolbarColor: Theme.of(context).colorScheme.primary,
-              toolbarWidgetColor: Colors.white,
-              initAspectRatio: CropAspectRatioPreset.square,
-              lockAspectRatio: true),
-          IOSUiSettings(
-            title: 'Crop Image',
-            aspectRatioLockEnabled: true,
-            aspectRatioPresets: [
-              CropAspectRatioPreset.original,
-              CropAspectRatioPreset.square,
-              CropAspectRatioPresetCustom(), 
+      if (pickedFile != null) {
+        CroppedFile? croppedFile;
+        try {
+          croppedFile = await ImageCropper().cropImage(
+            sourcePath: pickedFile.path,
+            aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+            uiSettings: [
+              AndroidUiSettings(
+                toolbarTitle: 'Crop Artist Photo',
+                toolbarColor: Theme.of(context).colorScheme.primary,
+                toolbarWidgetColor: Colors.white,
+                initAspectRatio: CropAspectRatioPreset.square,
+                lockAspectRatio: true,
+              ),
+              IOSUiSettings(
+                title: 'Crop Artist Photo',
+                aspectRatioLockEnabled: true,
+              ),
             ],
-          ),
-        ],
-      );
+          );
+        } catch (e) {
+          debugPrint('Crop error: $e');
+        }
 
-      if (croppedFile != null) {
-        setState(() {
-          _pickedImage = File(croppedFile.path);
-          _uploadProgress = 0.0;
-        });
+        if (mounted) {
+          setState(() {
+            _pickedImage = File(croppedFile?.path ?? pickedFile.path);
+            _uploadProgress = 0.0;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomSnackbar.show(context, 'Error picking image: $e', isError: true);
       }
     }
   }
@@ -79,156 +95,275 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
   void _submit() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isSaving = true);
-      String finalImageUrl = _existingImageUrl;
+      try {
+        String finalImageUrl = _existingImageUrl;
 
-      if (_pickedImage != null) {
-        final uploadedUrl = await CloudinaryService.uploadImage(_pickedImage!, onProgress: (count, total) => setState(() => _uploadProgress = count / total));
-        if (uploadedUrl != null) {
-          finalImageUrl = uploadedUrl;
-        } else {
-          CustomSnackbar.show(context, 'Image upload failed. Please try again.', isError: true);
+        if (_pickedImage != null) {
+          final uploadedUrl = await SupabaseStorageService.uploadImage(
+            _pickedImage!,
+            onProgress: (count, total) => setState(() => _uploadProgress = count / total),
+          );
+          if (uploadedUrl != null) {
+            finalImageUrl = uploadedUrl;
+          } else {
+            if (mounted) {
+              CustomSnackbar.show(context, 'Image upload failed.', isError: true);
+            }
+            setState(() => _isSaving = false);
+            return;
+          }
+        }
+
+        final Map<String, dynamic> updatedData = {
+          'name': _nameController.text.trim(),
+          'imageUrl': finalImageUrl,
+          'region': _region,
+        };
+
+        await _firebaseService.updateArtist(widget.artist.id, updatedData);
+
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        if (authProvider.currentModerator != null) {
+          _firebaseService.logActivity(
+            moderatorId: authProvider.currentUser!.uid,
+            moderatorName: authProvider.currentModerator!.fullName,
+            action: 'UPDATE_ARTIST',
+            details: 'Updated artist: ${_nameController.text.trim()}',
+          );
+        }
+
+        if (mounted) {
           setState(() => _isSaving = false);
-          return;
+          Navigator.pop(context, true);
+          CustomSnackbar.show(context, 'Artist updated successfully!');
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isSaving = false);
+          CustomSnackbar.show(context, 'Failed to update artist: $e', isError: true);
         }
       }
+    }
+  }
 
-      final Map<String, dynamic> updatedData = {
-        'name': _nameController.text,
-        'imageUrl': finalImageUrl,
-        'region': _region,
-      };
+  Future<void> _deleteArtist() async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Delete Artist?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        content: Text('Are you sure you want to delete "${widget.artist.name}"? This will impact attached albums and songs.'),
+        actions: [
+          TextButton(child: const Text('Cancel'), onPressed: () => Navigator.of(context).pop(false)),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AdminUiKit.roseRed,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Delete'),
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
 
-      await _firebaseService.updateArtist(widget.artist.id, updatedData);
+    if (shouldDelete == true) {
+      setState(() => _isSaving = true);
+      try {
+        await _firebaseService.deleteArtists([widget.artist.id]);
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        if (authProvider.currentUser != null) {
+          _firebaseService.logActivity(
+            moderatorId: authProvider.currentUser!.uid,
+            moderatorName: authProvider.currentModerator?.fullName ?? 'Admin',
+            action: 'DELETE_ARTIST',
+            details: 'Deleted artist: ${widget.artist.name}',
+          );
+        }
 
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      if (authProvider.currentModerator != null) {
-        _firebaseService.logActivity(
-          moderatorId: authProvider.currentUser!.uid,
-          moderatorName: authProvider.currentModerator!.fullName,
-          action: 'UPDATE_ARTIST',
-          details: 'Edited artist: ${_nameController.text.trim()}',
-        );
-      }
-
-      setState(() => _isSaving = false);
-
-      if (mounted) {
-        Navigator.pop(context, true);
-        CustomSnackbar.show(context, 'Artist updated successfully!');
+        if (mounted) {
+          Navigator.pop(context, true);
+          CustomSnackbar.show(context, 'Artist deleted.');
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isSaving = false);
+          CustomSnackbar.show(context, 'Error deleting artist: $e', isError: true);
+        }
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: AppBar(title: Text('Edit ${widget.artist.name}')),
-      body: _isSaving
-          ? _buildLoadingIndicator()
-          : Form(
+      backgroundColor: isDark ? const Color(0xFF070E1B) : const Color(0xFFF5F7FB),
+      appBar: AppBar(
+        title: Text(
+          'Edit Artist',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 17),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, color: AdminUiKit.roseRed, size: 20),
+            tooltip: 'Delete Artist',
+            onPressed: _deleteArtist,
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
+      body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          physics: const BouncingScrollPhysics(),
           children: [
-            _buildSectionCard(
-              context,
-              title: 'Artist Details',
-              icon: MdiIcons.accountDetails,
-              children: [
-                TextFormField(
-                  controller: _nameController,
-                  decoration: _inputDecoration('Artist Name', Icons.person_outline),
-                  validator: (value) => value!.isEmpty ? 'Please enter a name' : null,
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: _region,
-                  decoration: _inputDecoration('Region', Icons.public),
-                  items: ['Ethiopian', 'Worldwide']
-                      .map((label) => DropdownMenuItem(child: Text(label), value: label))
-                      .toList(),
-                  onChanged: (value) => setState(() => _region = value!),
-                ),
-              ],
+            // Section 1: Info
+            const AdminSectionHeader(
+              title: 'Artist Information',
+              icon: Icons.person_rounded,
+              padding: EdgeInsets.only(top: 4, bottom: 6),
             ),
-            const SizedBox(height: 20),
-            _buildSectionCard(
-              context,
-              title: 'Artist Image',
-              icon: MdiIcons.imageEdit,
-              children: [
-                _buildImagePreview(),
-                const SizedBox(height: 16),
-                Center(
-                  child: ElevatedButton.icon(
-                    onPressed: _pickAndCropImage,
-                    icon: const Icon(Icons.photo_library_outlined),
-                    label: Text(_pickedImage == null ? 'Change Image' : 'Select a Different Image'),
+            AdminGlassCard(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _nameController,
+                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13.5),
+                    decoration: _inputDecoration('Artist Full Name *', Icons.person_outline_rounded),
+                    validator: (value) => value!.trim().isEmpty ? 'Please enter artist name' : null,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton.icon(
-              onPressed: _submit,
-              icon: const Icon(Icons.save_alt_outlined),
-              label: const Text('Save Changes'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    value: _region,
+                    decoration: _inputDecoration('Geographical Region', Icons.public_rounded),
+                    items: ['Ethiopian', 'Worldwide']
+                        .map((label) => DropdownMenuItem(
+                              value: label,
+                              child: Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 13)),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() => _region = value!);
+                    },
+                  ),
+                ],
               ),
             ),
+
+            const SizedBox(height: 12),
+
+            // Section 2: Photo
+            const AdminSectionHeader(
+              title: 'Artist Photo',
+              icon: Icons.add_a_photo_rounded,
+              padding: EdgeInsets.only(top: 4, bottom: 6),
+            ),
+            AdminGlassCard(
+              padding: const EdgeInsets.all(12),
+              child: _buildAvatarPicker(context),
+            ),
+
+            const SizedBox(height: 16),
+
+            AdminPrimaryButton(
+              label: 'Save Artist Changes',
+              icon: Icons.save_rounded,
+              isLoading: _isSaving,
+              onPressed: _submit,
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLoadingIndicator() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
+  Widget _buildAvatarPicker(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (_pickedImage != null || _existingImageUrl.isNotEmpty) {
+      return Column(
+        children: [
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: AdminUiKit.goldAccent, width: 2),
+            ),
+            child: ClipOval(
+              child: _pickedImage != null
+                  ? Image.file(_pickedImage!, width: 100, height: 100, fit: BoxFit.cover)
+                  : Image.network(
+                      _existingImageUrl,
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: Colors.grey.shade300,
+                        child: const Icon(Icons.person, size: 40),
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton.icon(
+                onPressed: _pickAndCropImage,
+                icon: const Icon(Icons.change_circle_rounded, size: 16),
+                label: Text('Change', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
+              ),
+              if (_pickedImage != null) ...[
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: () => setState(() => _pickedImage = null),
+                  icon: const Icon(Icons.undo_rounded, size: 16),
+                  label: Text('Revert', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
+                ),
+              ],
+            ],
+          ),
+        ],
+      );
+    }
+
+    return InkWell(
+      onTap: _pickAndCropImage,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        height: 110,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.02),
+          border: Border.all(color: isDark ? Colors.white24 : Colors.black12, width: 1.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text("Saving data...", style: TextStyle(fontSize: 18)),
-            const SizedBox(height: 20),
-            if (_uploadProgress > 0 && _uploadProgress < 1) ...[
-              LinearProgressIndicator(
-                value: _uploadProgress,
-                minHeight: 10,
-                borderRadius: BorderRadius.circular(10),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AdminUiKit.royalBlue.withOpacity(0.12),
               ),
-              const SizedBox(height: 10),
-              Text('${(_uploadProgress * 100).toStringAsFixed(0)}% uploaded'),
-            ] else ...[
-              const CircularProgressIndicator(),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionCard(BuildContext context, {required String title, required IconData icon, required List<Widget> children}) {
-    final theme = Theme.of(context);
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: theme.colorScheme.primary),
-                const SizedBox(width: 12),
-                Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-              ],
+              child: const Icon(Icons.add_a_photo_rounded, size: 24, color: AdminUiKit.royalBlue),
             ),
-            const Divider(height: 24),
-            ...children,
+            const SizedBox(height: 6),
+            Text(
+              'Tap to upload photo',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: isDark ? Colors.white70 : Colors.black87,
+              ),
+            ),
           ],
         ),
       ),
@@ -238,45 +373,11 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-      prefixIcon: Icon(icon),
+      labelStyle: GoogleFonts.plusJakartaSans(fontSize: 12.5),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      prefixIcon: Icon(icon, size: 18),
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     );
   }
-
-  Widget _buildImagePreview() {
-    Widget imageWidget;
-    if (_pickedImage != null) {
-      imageWidget = Image.file(_pickedImage!, fit: BoxFit.cover, width: double.infinity, height: 200);
-    } else if (_existingImageUrl.isNotEmpty) {
-      imageWidget = Image.network(_existingImageUrl, fit: BoxFit.cover, width: double.infinity, height: 200);
-    } else {
-      imageWidget = const SizedBox(
-        height: 150,
-        child: Center(child: Icon(Icons.person, size: 60, color: Colors.grey)),
-      );
-    }
-    return Center(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: SizedBox(
-          height: 200,
-          width: 200,
-          child: imageWidget,
-        ),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-}
-class CropAspectRatioPresetCustom implements CropAspectRatioPresetData {
-  @override
-  (int, int)? get data => (2, 3);
-
-  @override
-  String get name => '2x3 (customized)';
 }

@@ -9,6 +9,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/auth_proveider.dart';
 
+import '../admin/portal_home_screen.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -61,14 +63,15 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         switch (result) {
           case SignInResult.success:
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            }
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const PortalHomeScreen()),
+            );
             break;
           case SignInResult.pendingApproval:
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (_) => const WaitingForApprovalScreen()),
+              MaterialPageRoute(builder: (_) => WaitingForApprovalScreen()),
             );
             break;
           case SignInResult.failed:
@@ -106,12 +109,26 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(24),
+                    width: 100,
+                    height: 100,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFDFB76C).withOpacity(0.3),
+                          blurRadius: 24,
+                          spreadRadius: 2,
+                        ),
+                      ],
                     ),
-                    child: Icon(Icons.shield_moon_rounded, size: 80, color: Colors.white),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/logo/logo.png',
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ).animate().fadeIn(duration: 500.ms).scale(begin: const Offset(0.8, 0.8)),
 
                   const SizedBox(height: 24),

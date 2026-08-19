@@ -3,25 +3,42 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mahlete_semay_project/utils/constants.dart';
-import 'package:mahlete_semay_project/widgets/cached_image.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../models/song_model.dart';
+import '../../widgets/cached_image.dart';
 import '../../widgets/custom_snackbar.dart';
 
-enum LyricSelectionMode { all, snippet, words }
+enum ShareTemplate {
+  spotifyGlass,
+  minimalistQuote,
+  neonAurora,
+  vinylShowcase,
+  amharicGold,
+}
+
+enum AspectRatioPreset {
+  story(9 / 16, '9:16 (Story)'),
+  square(1 / 1, '1:1 (Square)'),
+  portrait(4 / 5, '4:5 (Post)');
+
+  final double ratio;
+  final String label;
+  const AspectRatioPreset(this.ratio, this.label);
+}
 
 class ShareImagePreviewScreen extends StatefulWidget {
   final Song song;
   final String albumCoverUrl;
+  final List<String>? initialSelectedLines;
 
   const ShareImagePreviewScreen({
     super.key,
     required this.song,
     required this.albumCoverUrl,
+    this.initialSelectedLines,
   });
 
   @override
@@ -29,361 +46,844 @@ class ShareImagePreviewScreen extends StatefulWidget {
 }
 
 class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
-  final GlobalKey _globalKey = GlobalKey();
+  final GlobalKey _captureKey = GlobalKey();
   bool _isSharing = false;
 
-  LyricSelectionMode _selectionMode = LyricSelectionMode.all;
-  int _startingLineIndex = 0;
-  String _customWordsSelection = '';
-  late List<String> _lyricsLines;
+  late List<String> _allLines;
+  late List<String> _selectedLines;
 
-  dynamic _background;
-  bool _useAlbumArt = true;
-  Color _textColor = Colors.white;
-  bool _showTitleAndArtist = true;
-  bool _showAppNameFooter = true;
+  ShareTemplate _selectedTemplate = ShareTemplate.spotifyGlass;
+  AspectRatioPreset _aspectRatio = AspectRatioPreset.story;
 
-  Offset _textOffset = Offset.zero;
-  double _scale = 1.0;
-  double _rotation = 0.0;
-  bool _isTransforming = false;
-
-  double _baseScale = 1.0;
-  double _baseRotation = 0.0;
-
-  TextStyle _fontStyle = GoogleFonts.montserrat();
+  String _fontFamily = 'Poppins';
   TextAlign _textAlign = TextAlign.center;
+  bool _showBranding = true;
+  bool _showSongInfo = true;
+  Color _customTextColor = Colors.white;
 
   @override
   void initState() {
     super.initState();
-    _lyricsLines = widget.song.lyrics.split('\n').where((line) => line.trim().isNotEmpty).toList();
-    if (widget.albumCoverUrl.isEmpty) {
-      _useAlbumArt = false;
-      _background = const Color(0xff0D47A1);
+    _allLines = widget.song.lyrics
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+
+    if (widget.initialSelectedLines != null && widget.initialSelectedLines!.isNotEmpty) {
+      _selectedLines = List.from(widget.initialSelectedLines!);
+    } else {
+      // Default to first 4 lines
+      _selectedLines = _allLines.take(4).toList();
     }
   }
 
-  String get _displayedLyrics {
-    switch (_selectionMode) {
-      case LyricSelectionMode.all: return widget.song.lyrics;
-      case LyricSelectionMode.snippet:
-        String snippet = _lyricsLines.skip(_startingLineIndex).take(8).join('\n');
-        if (_lyricsLines.length > _startingLineIndex + 8) snippet += '\n...';
-        return snippet;
-      case LyricSelectionMode.words: return _customWordsSelection;
+  TextStyle _getGoogleFontStyle({double fontSize = 18, FontWeight fontWeight = FontWeight.w600, Color? color}) {
+    final effectiveColor = color ?? _customTextColor;
+    switch (_fontFamily) {
+      case 'Lora':
+        return GoogleFonts.lora(fontSize: fontSize, fontWeight: fontWeight, color: effectiveColor, height: 1.6);
+      case 'Montserrat':
+        return GoogleFonts.montserrat(fontSize: fontSize, fontWeight: fontWeight, color: effectiveColor, height: 1.5);
+      case 'Playfair Display':
+        return GoogleFonts.playfairDisplay(fontSize: fontSize, fontWeight: fontWeight, color: effectiveColor, height: 1.5);
+      case 'Outfit':
+        return GoogleFonts.outfit(fontSize: fontSize, fontWeight: fontWeight, color: effectiveColor, height: 1.5);
+      case 'Noto Serif Ethiopic':
+        return GoogleFonts.notoSerifEthiopic(fontSize: fontSize, fontWeight: fontWeight, color: effectiveColor, height: 1.6);
+      case 'Poppins':
+      default:
+        return GoogleFonts.poppins(fontSize: fontSize, fontWeight: fontWeight, color: effectiveColor, height: 1.5);
     }
   }
 
-  Future<void> _shareImage() async {
+  Future<void> _shareGeneratedImage() async {
     if (_isSharing) return;
     setState(() => _isSharing = true);
+
     try {
-      RenderRepaintBoundary boundary = _globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      ui.Image image = await boundary.toImage(pixelRatio: 2.5);
-      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      Uint8List pngBytes = byteData!.buffer.asUint8List();
+      // Wait one frame to ensure RepaintBoundary is clean
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      final boundary = _captureKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) {
+        throw Exception('Unable to capture render object');
+      }
+
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) {
+        throw Exception('Failed to generate PNG data');
+      }
+
+      final Uint8List pngBytes = byteData.buffer.asUint8List();
       final tempDir = await getTemporaryDirectory();
-      final file = await File('${tempDir.path}/lyrics_share.png').create();
+      final filePath = '${tempDir.path}/lyrics_${DateTime.now().millisecondsSinceEpoch}.png';
+      final file = await File(filePath).create();
       await file.writeAsBytes(pngBytes);
+
       final xFile = XFile(file.path);
-      await Share.shareXFiles([xFile], text: 'Check out the lyrics for "${widget.song.title}" by ${widget.song.artistName}!');
+      await Share.shareXFiles(
+        [xFile],
+        text: '🎵 "${widget.song.title}" - ${widget.song.artistName}\n#MahleteSemay',
+      );
     } catch (e) {
-      if(mounted) CustomSnackbar.show(context, 'Could not share image. Please try again.', isError: true);
+      if (mounted) {
+        CustomSnackbar.show(context, 'Could not create image. Please try again.', isError: true);
+      }
     } finally {
-      if(mounted) setState(() => _isSharing = false);
+      if (mounted) {
+        setState(() => _isSharing = false);
+      }
     }
   }
 
-  void _showWordSelector() async {
-    final result = await showDialog<String>(context: context, builder: (context) => _WordSelectorDialog(lyrics: widget.song.lyrics));
-    if (result != null && result.isNotEmpty) {
-      setState(() { _selectionMode = LyricSelectionMode.words; _customWordsSelection = result; });
-    }
-  }
+  void _openLineSelector() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final theme = Theme.of(context);
+            final isDark = theme.brightness == Brightness.dark;
 
-  void _showColorPicker({bool isText = false}) {
-    Color pickerColor = isText ? _textColor : ((_background is Color) ? _background : Colors.blueGrey);
-    showDialog(context: context, builder: (context) => AlertDialog(title: Text(isText ? 'Pick a Text Color' : 'Pick a Background Color'), content: SingleChildScrollView(child: ColorPicker(pickerColor: pickerColor, onColorChanged: (color) => pickerColor = color)), actions: [TextButton(child: const Text('Select'), onPressed: () { setState(() { if (isText) { _textColor = pickerColor; } else { _useAlbumArt = false; _background = pickerColor; } }); Navigator.of(context).pop(); })]));
+            return BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.75,
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: isDark ? theme.colorScheme.surface.withOpacity(0.95) : Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.08)),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Select Lines to Share', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                        TextButton(
+                          onPressed: () {
+                            setModalState(() {
+                              _selectedLines.clear();
+                            });
+                          },
+                          child: const Text('Clear'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tap consecutive lines to highlight lyrics (${_selectedLines.length} selected)',
+                      style: TextStyle(fontSize: 12.5, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: _allLines.length,
+                        itemBuilder: (context, index) {
+                          final line = _allLines[index];
+                          final isSelected = _selectedLines.contains(line);
+
+                          return InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                if (isSelected) {
+                                  _selectedLines.remove(line);
+                                } else {
+                                  _selectedLines.add(line);
+                                }
+                              });
+                              setState(() {});
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 3),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? theme.colorScheme.primary.withOpacity(0.15)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? theme.colorScheme.primary.withOpacity(0.4)
+                                      : Colors.grey.withOpacity(0.12),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                                    color: isSelected ? theme.colorScheme.primary : Colors.grey,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      line,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
+                                        color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: const Text('Apply Selection', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0F0F1A) : Colors.grey.shade100,
       appBar: AppBar(
-        title: const Text('Customize & Share'),
+        title: const Text('Share Studio', style: TextStyle(fontWeight: FontWeight.w800)),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           _isSharing
-              ? const Padding(padding: EdgeInsets.only(right: 16.0), child: SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.0)))
-              : IconButton(icon: const Icon(Icons.share), onPressed: _shareImage, tooltip: 'Share Image'),
+              ? const Padding(
+                  padding: EdgeInsets.only(right: 16),
+                  child: Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    ),
+                  ),
+                )
+              : IconButton(
+                  icon: const Icon(IconsaxPlusBold.export_1),
+                  tooltip: 'Share Image',
+                  onPressed: _shareGeneratedImage,
+                ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
+      body: Column(
+        children: [
+          // Aspect Ratio & Line Pick Bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: AspectRatioPreset.values.map((preset) {
+                        final isSelected = _aspectRatio == preset;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(preset.label, style: const TextStyle(fontSize: 12)),
+                            selected: isSelected,
+                            onSelected: (val) => setState(() => _aspectRatio = preset),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                ActionChip(
+                  avatar: const Icon(IconsaxPlusBold.textalign_left, size: 16),
+                  label: Text('${_selectedLines.length} lines'),
+                  onPressed: _openLineSelector,
+                ),
+              ],
+            ),
+          ),
+
+          // Main Canvas Preview Area
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: AspectRatio(
+                  aspectRatio: _aspectRatio.ratio,
                   child: RepaintBoundary(
-                    key: _globalKey,
-                    child: AspectRatio(
-                      aspectRatio: 9 / 16,
-                      child: Stack(
-                        children: [
-                          Positioned.fill(child: ClipRRect(borderRadius: BorderRadius.circular(12), child: _buildBackground())),
-                          _buildGradientOverlay(),
-                          _buildLyricsContent(),
-                          _buildCenterGuides(),
-                        ],
-                      ),
+                    key: _captureKey,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: _buildTemplateCanvas(),
                     ),
                   ),
                 ),
               ),
             ),
-            _buildControlPanel(),
-          ],
-        ),
+          ),
+
+          // Template & Style Toolbar
+          _buildControlToolbar(theme, isDark),
+        ],
       ),
     );
   }
 
-  Widget _buildBackground() {
-    if (_useAlbumArt) return CachedImage(imageUrl: widget.albumCoverUrl, fit: BoxFit.cover);
-    if (_background is Color) return Container(color: _background);
-    if (_background is Gradient) return Container(decoration: BoxDecoration(gradient: _background));
-    return Container();
-  }
-
-  Widget _buildGradientOverlay() => Container(decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), gradient: LinearGradient(colors: [Colors.black.withOpacity(0.3), Colors.transparent, Colors.black.withOpacity(0.8)], begin: Alignment.topCenter, end: Alignment.bottomCenter, stops: const [0, 0.5, 1])));
-
-  Widget _buildLyricsText() {
-    TextStyle baseStyle = _fontStyle.copyWith(color: _textColor, fontWeight: FontWeight.w500, shadows: [Shadow(blurRadius: 4, color: Colors.black.withOpacity(0.5))]);
-    if (_selectionMode == LyricSelectionMode.all) {
-      return FittedBox(fit: BoxFit.contain, child: Text(_displayedLyrics, textAlign: _textAlign, style: baseStyle.copyWith(height: 1.5)));
+  Widget _buildTemplateCanvas() {
+    switch (_selectedTemplate) {
+      case ShareTemplate.minimalistQuote:
+        return _buildMinimalistQuoteTemplate();
+      case ShareTemplate.neonAurora:
+        return _buildNeonAuroraTemplate();
+      case ShareTemplate.vinylShowcase:
+        return _buildVinylShowcaseTemplate();
+      case ShareTemplate.amharicGold:
+        return _buildAmharicGoldTemplate();
+      case ShareTemplate.spotifyGlass:
+      default:
+        return _buildSpotifyGlassTemplate();
     }
-    return Text(_displayedLyrics, textAlign: _textAlign, style: baseStyle.copyWith(fontSize: 22, height: 1.6));
   }
 
-  Widget _buildLyricsContent() {
-    final theme = Theme.of(context);
-    return LayoutBuilder(builder: (context, constraints) {
-      return Stack(
-        children: [
-          if (_showTitleAndArtist)
-            Positioned(
-              top: 24,
-              left: 24,
-              right: 24,
-              child: Column(
-                children: [
-                  Text(widget.song.title, style: theme.textTheme.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold, shadows: [const Shadow(blurRadius: 4, color: Colors.black54)]), textAlign: TextAlign.center),
-                  Text(widget.song.artistName, style: theme.textTheme.titleMedium?.copyWith(color: Colors.white70), textAlign: TextAlign.center),
+  // Template 1: Spotify Glassmorphism
+  Widget _buildSpotifyGlassTemplate() {
+    final lyricsText = _selectedLines.join('\n');
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Blurred Album Backdrop
+        if (widget.albumCoverUrl.isNotEmpty)
+          CachedImage(
+            imageUrl: widget.albumCoverUrl,
+            fit: BoxFit.cover,
+            memCacheWidth: 600,
+            memCacheHeight: 900,
+          )
+        else
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF1DB954), Color(0xFF191414)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+
+        // Dark Frost Ambient
+        BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.35),
+                  Colors.black.withOpacity(0.75),
                 ],
               ),
             ),
-          Positioned.fill(
-            child: GestureDetector(
-              onScaleStart: (details) {
-                setState(() => _isTransforming = true);
-                _baseScale = _scale;
-                _baseRotation = _rotation;
-              },
-              onScaleUpdate: (details) {
-                setState(() {
-                  _scale = _baseScale * details.scale;
-                  _rotation = _baseRotation + details.rotation;
-                  _textOffset += details.focalPointDelta;
-                });
-              },
-              onScaleEnd: (details) {
-                setState(() => _isTransforming = false);
-              },
-              child: Transform(
-                transform: Matrix4.identity()
-                  ..translate(_textOffset.dx + constraints.maxWidth / 2, _textOffset.dy + constraints.maxHeight / 2)
-                  ..rotateZ(_rotation)
-                  ..scale(_scale)
-                  ..translate(-constraints.maxWidth / 2, -constraints.maxHeight / 2),
-                alignment: Alignment.center,
-                child: Container(
-                  constraints: BoxConstraints(maxWidth: constraints.maxWidth - 48),
-                  child: _buildLyricsText(),
+          ),
+        ),
+
+        // Content
+        Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Top Song Badge
+              if (_showSongInfo)
+                Row(
+                  children: [
+                    if (widget.albumCoverUrl.isNotEmpty)
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 8)],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: CachedImage(
+                            imageUrl: widget.albumCoverUrl,
+                            memCacheWidth: 150,
+                            memCacheHeight: 150,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.song.title,
+                            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            widget.song.artistName,
+                            style: GoogleFonts.poppins(color: Colors.white70, fontSize: 13),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(IconsaxPlusBold.musicnote, color: Colors.greenAccent.shade400, size: 24),
+                  ],
+                ),
+
+              // Lyrics Text Center
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Text(
+                      lyricsText.isEmpty ? widget.song.lyrics : lyricsText,
+                      textAlign: _textAlign,
+                      style: _getGoogleFontStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Footer Watermark
+              if (_showBranding)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(IconsaxPlusBold.music, size: 16, color: Colors.greenAccent.shade400),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Mahlete Semay',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white.withOpacity(0.85),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Template 2: Minimalist Quote
+  Widget _buildMinimalistQuoteTemplate() {
+    final lyricsText = _selectedLines.join('\n');
+
+    return Container(
+      color: const Color(0xFF141416),
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Big Serif Quotation Mark
+          Text(
+            '“',
+            style: GoogleFonts.playfairDisplay(fontSize: 56, color: Colors.white38, height: 0.8),
+          ),
+
+          // Central Lyrics in Serif
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                child: Text(
+                  lyricsText.isEmpty ? widget.song.lyrics : lyricsText,
+                  textAlign: _textAlign,
+                  style: GoogleFonts.lora(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withOpacity(0.95),
+                    fontStyle: FontStyle.italic,
+                    height: 1.8,
+                  ),
                 ),
               ),
             ),
           ),
-          if (_showAppNameFooter)
-            Positioned(
-              bottom: 24,
-              left: 24,
-              right: 24,
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(Icons.music_note, color: theme.colorScheme.secondary, size: 24),
-                const SizedBox(width: 8),
-                Text("Mahlete Semay", style: TextStyle(color: theme.colorScheme.secondary, fontWeight: FontWeight.bold)),
-              ]),
-            ),
-        ],
-      );
-    });
-  }
 
-  Widget _buildCenterGuides() {
-    final bool isCentered = _textOffset.dx.abs() < 5 && _textOffset.dy.abs() < 5;
-    return Visibility(
-      visible: _isTransforming,
-      child: IgnorePointer(
-        child: Stack(
-          children: [
-            Align(alignment: Alignment.center, child: Container(width: 1, height: double.infinity, color: isCentered ? Colors.greenAccent : Colors.white.withOpacity(0.5))),
-            Align(alignment: Alignment.center, child: Container(height: 1, width: double.infinity, color: isCentered ? Colors.greenAccent : Colors.white.withOpacity(0.5))),
+          // Divider Line & Song Info
+          if (_showSongInfo) ...[
+            Container(height: 1, color: Colors.white12),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.song.title,
+                      style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                    ),
+                    Text(
+                      widget.song.artistName,
+                      style: GoogleFonts.outfit(fontSize: 12, color: Colors.white60),
+                    ),
+                  ],
+                ),
+                if (_showBranding)
+                  Text(
+                    'MAHLETE SEMAY',
+                    style: GoogleFonts.outfit(fontSize: 10, letterSpacing: 2, fontWeight: FontWeight.w800, color: Colors.white38),
+                  ),
+              ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildControlPanel() {
-    return DefaultTabController(
-      length: 3,
-      child: Container(
-        decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor, border: Border(top: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1.0))),
-        child: Column(
-          children: [
-            const TabBar(
-              tabs: [Tab(icon: Icon(Icons.text_fields), text: 'Lyrics'), Tab(icon: Icon(Icons.style_outlined), text: 'Style'), Tab(icon: Icon(Icons.palette_outlined), text: 'Background')],
+  // Template 3: Neon Aurora Gradient
+  Widget _buildNeonAuroraTemplate() {
+    final lyricsText = _selectedLines.join('\n');
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF2E0854),
+            Color(0xFF180B3B),
+            Color(0xFF0D1B44),
+          ],
+        ),
+      ),
+      padding: const EdgeInsets.all(28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_showSongInfo)
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF9D4EDD).withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFC77DFF).withOpacity(0.5)),
+                  ),
+                  child: Text(
+                    widget.song.title,
+                    style: const TextStyle(color: Color(0xFFE0AAFF), fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                ),
+              ],
             ),
-            SizedBox(
-              height: 120,
-              child: TabBarView(
-                children: [
-                  _buildLyricsControlTab(),
-                  _buildStyleControlTab(),
-                  _buildBackgroundControlTab(),
-                ],
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                child: Text(
+                  lyricsText.isEmpty ? widget.song.lyrics : lyricsText,
+                  textAlign: _textAlign,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    height: 1.6,
+                    shadows: [
+                      Shadow(color: const Color(0xFF00F5D4).withOpacity(0.5), blurRadius: 16),
+                      Shadow(color: const Color(0xFF7B2CBF).withOpacity(0.6), blurRadius: 20),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+          if (_showBranding)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '•  ${widget.song.artistName}  |  Mahlete Semay  •',
+                  style: GoogleFonts.montserrat(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ),
+        ],
       ),
     );
   }
 
-  Widget _buildLyricsControlTab() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-          _buildControlButton(icon: Icons.fullscreen, label: 'All Lyrics', isActive: _selectionMode == LyricSelectionMode.all, onTap: () => setState(() => _selectionMode = LyricSelectionMode.all)),
-          _buildControlButton(icon: Icons.view_headline, label: 'Snippet', isActive: _selectionMode == LyricSelectionMode.snippet, onTap: () => setState(() => _selectionMode = LyricSelectionMode.snippet)),
-          _buildControlButton(icon: Icons.format_quote, label: 'Words', isActive: _selectionMode == LyricSelectionMode.words, onTap: _showWordSelector),
-        ]),
-        if (_selectionMode == LyricSelectionMode.snippet)
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            IconButton(icon: const Icon(Icons.keyboard_arrow_up), onPressed: () => setState(() => _startingLineIndex = (_startingLineIndex - 1).clamp(0, _lyricsLines.length -1)), tooltip: 'Previous Line'),
-            IconButton(icon: const Icon(Icons.keyboard_arrow_down), onPressed: () => setState(() => _startingLineIndex = (_startingLineIndex + 1).clamp(0, _lyricsLines.length -1)), tooltip: 'Next Line'),
-          ]),
-      ],
+  // Template 4: Vinyl Showcase Record
+  Widget _buildVinylShowcaseTemplate() {
+    final lyricsText = _selectedLines.join('\n');
+
+    return Container(
+      color: const Color(0xFF1E1C1A),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          // Vinyl Disc Top Artwork
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black,
+                  border: Border.all(color: Colors.grey.shade800, width: 2),
+                  boxShadow: [BoxShadow(color: Colors.black54, blurRadius: 10)],
+                ),
+                child: Center(
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFFD4AF37),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (_showSongInfo)
+            Text(
+              '${widget.song.title} — ${widget.song.artistName}',
+              style: GoogleFonts.outfit(color: const Color(0xFFD4AF37), fontSize: 13, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                child: Text(
+                  lyricsText.isEmpty ? widget.song.lyrics : lyricsText,
+                  textAlign: _textAlign,
+                  style: GoogleFonts.lora(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFFF1E9D2),
+                    height: 1.7,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (_showBranding)
+            Text(
+              'MAHLETE SEMAY VINYL COLLECTION',
+              style: GoogleFonts.outfit(fontSize: 9, letterSpacing: 2, color: Colors.white30, fontWeight: FontWeight.w800),
+            ),
+        ],
+      ),
     );
   }
 
-  Widget _buildStyleControlTab() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildControlButton(icon: Icons.format_align_left, label: 'Left', isActive: _textAlign == TextAlign.left, onTap: () => setState(() => _textAlign = TextAlign.left)),
-            _buildControlButton(icon: Icons.format_align_center, label: 'Center', isActive: _textAlign == TextAlign.center, onTap: () => setState(() => _textAlign = TextAlign.center)),
-            _buildControlButton(icon: Icons.format_align_right, label: 'Right', isActive: _textAlign == TextAlign.right, onTap: () => setState(() => _textAlign = TextAlign.right)),
-            _buildControlButton(icon: _showTitleAndArtist ? Icons.title : Icons.text_fields, label: 'Title', isActive: _showTitleAndArtist, onTap: () => setState(() => _showTitleAndArtist = !_showTitleAndArtist)),
-            _buildControlButton(icon: _showAppNameFooter ? Icons.info : Icons.info_outline, label: 'Footer', isActive: _showAppNameFooter, onTap: () => setState(() => _showAppNameFooter = !_showAppNameFooter)),
-          ],
-        ),
-        const Divider(height: 1, indent: 16, endIndent: 16),
-        SizedBox(
-          height: 50,
-          child: ListView(
+  // Template 5: Amharic Gold Heritage
+  Widget _buildAmharicGoldTemplate() {
+    final lyricsText = _selectedLines.join('\n');
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF231F20),
+        border: Border.all(color: const Color(0xFFC5A059), width: 3),
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFFC5A059)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              widget.song.title,
+              style: GoogleFonts.notoSerifEthiopic(color: const Color(0xFFC5A059), fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                child: Text(
+                  lyricsText.isEmpty ? widget.song.lyrics : lyricsText,
+                  textAlign: _textAlign,
+                  style: GoogleFonts.notoSerifEthiopic(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFFF5E6CC),
+                    height: 1.8,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (_showBranding)
+            Text(
+              '${widget.song.artistName} • ማህሌተ ሰማይ',
+              style: GoogleFonts.notoSerifEthiopic(color: const Color(0xFFC5A059), fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // Bottom Control Toolbar
+  Widget _buildControlToolbar(ThemeData theme, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF161626) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Template Selector Pills
+          Text('Templates', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: fontPresets.entries.map((entry) => Center(child: TextButton(onPressed: () => setState(() => _fontStyle = entry.value), child: Text(entry.key, style: entry.value.copyWith(color: _fontStyle.fontFamily == entry.value.fontFamily ? Theme.of(context).colorScheme.primary : null))))).toList(),
+            child: Row(
+              children: [
+                _buildTemplatePill(ShareTemplate.spotifyGlass, 'Spotify Glass', IconsaxPlusBold.music),
+                _buildTemplatePill(ShareTemplate.minimalistQuote, 'Minimalist', IconsaxPlusBold.quote_down),
+                _buildTemplatePill(ShareTemplate.neonAurora, 'Neon Aurora', IconsaxPlusBold.flash_1),
+                _buildTemplatePill(ShareTemplate.vinylShowcase, 'Vinyl Record', IconsaxPlusBold.music_circle),
+                _buildTemplatePill(ShareTemplate.amharicGold, 'Gold Heritage', IconsaxPlusBold.crown),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Toggles & Alignment Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Alignment buttons
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.format_align_left, color: _textAlign == TextAlign.left ? theme.colorScheme.primary : Colors.grey),
+                    onPressed: () => setState(() => _textAlign = TextAlign.left),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.format_align_center, color: _textAlign == TextAlign.center ? theme.colorScheme.primary : Colors.grey),
+                    onPressed: () => setState(() => _textAlign = TextAlign.center),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.format_align_right, color: _textAlign == TextAlign.right ? theme.colorScheme.primary : Colors.grey),
+                    onPressed: () => setState(() => _textAlign = TextAlign.right),
+                  ),
+                ],
+              ),
+
+              // Branding & Header Toggles
+              Row(
+                children: [
+                  FilterChip(
+                    label: const Text('Title', style: TextStyle(fontSize: 11)),
+                    selected: _showSongInfo,
+                    onSelected: (val) => setState(() => _showSongInfo = val),
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    label: const Text('Logo', style: TextStyle(fontSize: 11)),
+                    selected: _showBranding,
+                    onSelected: (val) => setState(() => _showBranding = val),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTemplatePill(ShareTemplate template, String label, IconData icon) {
+    final isSelected = _selectedTemplate == template;
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InkWell(
+        onTap: () => setState(() => _selectedTemplate = template),
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? theme.colorScheme.primary.withOpacity(0.15) : Colors.grey.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 16, color: isSelected ? theme.colorScheme.primary : Colors.grey),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildBackgroundControlTab() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 16), children: [
-        if (widget.albumCoverUrl.isNotEmpty) _buildBgOption(onTap: () => setState(() => _useAlbumArt = true), isActive: _useAlbumArt, child: ClipOval(child: CachedImage(imageUrl: widget.albumCoverUrl, width: 40, height: 40))),
-        ...gradientPresets.map((gradient) => _buildBgOption(onTap: () => setState(() { _useAlbumArt = false; _background = gradient; }), isActive: !_useAlbumArt && _background == gradient, child: Container(width: 40, height: 40, decoration: BoxDecoration(gradient: gradient, shape: BoxShape.circle)))),
-        ...solidColorPresets.map((color) => _buildBgOption(onTap: () => setState(() { _useAlbumArt = false; _background = color; }), isActive: !_useAlbumArt && _background == color, child: Container(width: 40, height: 40, decoration: BoxDecoration(color: color, shape: BoxShape.circle)))),
-        _buildBgOption(onTap: () => _showColorPicker(), isActive: !_useAlbumArt && _background is Color && !solidColorPresets.contains(_background), child: Container(width: 40, height: 40, decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Colors.red, Colors.yellow, Colors.blue])), child: const Icon(Icons.color_lens_outlined, color: Colors.white))),
-        _buildBgOption(onTap: () => _showColorPicker(isText: true), isActive: false, child: Container(width: 40, height: 40, decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white), child: Icon(Icons.format_color_text, color: _textColor == Colors.white ? Colors.black : _textColor))),
-      ]),
-    );
-  }
-
-  Widget _buildControlButton({required IconData icon, required String label, required VoidCallback onTap, bool isActive = false}) {
-    final activeColor = Theme.of(context).colorScheme.primary;
-    final inactiveColor = Theme.of(context).textTheme.bodySmall?.color;
-    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(8), child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: isActive ? activeColor : inactiveColor), const SizedBox(height: 4), Text(label, style: TextStyle(color: isActive ? activeColor : inactiveColor, fontSize: 12, fontWeight: isActive ? FontWeight.bold : FontWeight.normal))])));
-  }
-
-  Widget _buildBgOption({required VoidCallback onTap, required Widget child, bool isActive = false}) {
-    return GestureDetector(onTap: onTap, child: Container(margin: const EdgeInsets.symmetric(horizontal: 6), width: 44, height: 44, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: isActive ? Theme.of(context).colorScheme.primary : Colors.grey.shade600, width: isActive ? 2.5 : 1.0)), child: child));
-  }
-}
-
-class _WordSelectorDialog extends StatefulWidget {
-  final String lyrics;
-  const _WordSelectorDialog({required this.lyrics});
-
-  @override
-  State<_WordSelectorDialog> createState() => _WordSelectorDialogState();
-}
-
-class _WordSelectorDialogState extends State<_WordSelectorDialog> {
-  late List<String> _words;
-  final Set<int> _selectedIndices = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _words = widget.lyrics.split(RegExp(r'(?<=\s)'));
-  }
-
-  void _onWordTap(int index) {
-    setState(() {
-      if (_selectedIndices.contains(index)) {
-        _selectedIndices.remove(index);
-      } else {
-        _selectedIndices.add(index);
-      }
-    });
-  }
-
-  void _onDone() {
-    List<int> sortedIndices = _selectedIndices.toList()..sort();
-    String result = sortedIndices.map((index) => _words[index]).join();
-    Navigator.pop(context, result);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return AlertDialog(
-      title: const Text('Tap to Select Words'),
-      content: SizedBox(width: double.maxFinite, child: SingleChildScrollView(child: Wrap(spacing: 0.0, runSpacing: 6.0, children: List.generate(_words.length, (index) { if (_words[index].trim().isEmpty) { return Text(_words[index]); } final isSelected = _selectedIndices.contains(index); return InkWell(onTap: () => _onWordTap(index), borderRadius: BorderRadius.circular(4), child: Container(padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2), decoration: BoxDecoration(color: isSelected ? theme.colorScheme.primaryContainer : Colors.transparent, borderRadius: BorderRadius.circular(4)), child: Text(_words[index], style: TextStyle(color: isSelected ? theme.colorScheme.onPrimaryContainer : null)))); })))),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        FilledButton(onPressed: _onDone, child: const Text('Done')),
-      ],
+      ),
     );
   }
 }

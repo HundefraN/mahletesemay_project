@@ -1,30 +1,34 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:mahlete_semay_project/main.dart';
+import 'package:mahlete_semay_project/models/album_model.dart';
+import 'package:mahlete_semay_project/models/vocal_plan_model.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('Album and VocalPlan serialization sanity test', () {
+    final album = Album(
+      id: 'alb_1',
+      title: 'Zelesegna',
+      artistId: 'art_1',
+      artistName: 'Mahlete Semay',
+      coverImageUrl: 'https://example.com/cover.jpg',
+      year: 2024,
+      volume: 1,
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    final map = album.toSupabase();
+    expect(map['title'], 'Zelesegna');
+    expect(map['year'], 2024);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    final day = VocalExerciseDay(
+      id: 'day_1',
+      dayNumber: 1,
+      title: 'Warm Up',
+      description: 'Breathing exercises',
+      audioUrl: 'https://example.com/audio.mp3',
+      isRestDay: false,
+    );
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    final dayMap = day.toSupabase('male_daily');
+    expect(dayMap['plan_id'], 'male_daily');
+    expect(dayMap['day_number'], 1);
   });
 }

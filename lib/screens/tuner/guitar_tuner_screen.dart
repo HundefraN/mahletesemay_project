@@ -7,8 +7,8 @@ import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
-import 'package:pitch_detector_dart/pitch_detector.dart';
 import 'package:audioplayers/audioplayers.dart';
+import '../../services/pitch_service.dart';
 import '../../utils/generated_tones.dart';
 import '../../utils/responsive_sizer.dart';
 import '../../widgets/custom_snackbar.dart';
@@ -20,6 +20,7 @@ class GuitarString {
   final double frequency;
   final String label;
   final bool isWound;
+  final double gauge;
 
   const GuitarString({
     required this.index,
@@ -28,6 +29,7 @@ class GuitarString {
     required this.frequency,
     required this.label,
     this.isWound = false,
+    this.gauge = 1.0,
   });
 
   String get fullNote => '$noteName$octave';
@@ -56,7 +58,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
     with TickerProviderStateMixin {
   static final List<TuningPreset> _presets = [
     TuningPreset(
-      name: 'Standard (EADGBE)',
+      name: 'Standard (E A D G B E)',
       description: 'Classic 6-string guitar standard tuning',
       strings: const [
         GuitarString(
@@ -65,46 +67,52 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
             octave: 2,
             frequency: 82.41,
             label: '6th (Low E)',
-            isWound: true),
+            isWound: true,
+            gauge: 3.4),
         GuitarString(
             index: 1,
             noteName: 'A',
             octave: 2,
             frequency: 110.00,
             label: '5th (A)',
-            isWound: true),
+            isWound: true,
+            gauge: 2.8),
         GuitarString(
             index: 2,
             noteName: 'D',
             octave: 3,
             frequency: 146.83,
             label: '4th (D)',
-            isWound: true),
+            isWound: true,
+            gauge: 2.2),
         GuitarString(
             index: 3,
             noteName: 'G',
             octave: 3,
             frequency: 196.00,
             label: '3rd (G)',
-            isWound: false),
+            isWound: false,
+            gauge: 1.6),
         GuitarString(
             index: 4,
             noteName: 'B',
             octave: 3,
             frequency: 246.94,
             label: '2nd (B)',
-            isWound: false),
+            isWound: false,
+            gauge: 1.2),
         GuitarString(
             index: 5,
             noteName: 'E',
             octave: 4,
             frequency: 329.63,
             label: '1st (High E)',
-            isWound: false),
+            isWound: false,
+            gauge: 0.9),
       ],
     ),
     TuningPreset(
-      name: 'Drop D (DADGBE)',
+      name: 'Drop D (D A D G B E)',
       description: 'Heavy rock / metal tuning with low D string',
       strings: const [
         GuitarString(
@@ -113,42 +121,48 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
             octave: 2,
             frequency: 73.42,
             label: '6th (Low D)',
-            isWound: true),
+            isWound: true,
+            gauge: 3.4),
         GuitarString(
             index: 1,
             noteName: 'A',
             octave: 2,
             frequency: 110.00,
             label: '5th (A)',
-            isWound: true),
+            isWound: true,
+            gauge: 2.8),
         GuitarString(
             index: 2,
             noteName: 'D',
             octave: 3,
             frequency: 146.83,
             label: '4th (D)',
-            isWound: true),
+            isWound: true,
+            gauge: 2.2),
         GuitarString(
             index: 3,
             noteName: 'G',
             octave: 3,
             frequency: 196.00,
             label: '3rd (G)',
-            isWound: false),
+            isWound: false,
+            gauge: 1.6),
         GuitarString(
             index: 4,
             noteName: 'B',
             octave: 3,
             frequency: 246.94,
             label: '2nd (B)',
-            isWound: false),
+            isWound: false,
+            gauge: 1.2),
         GuitarString(
             index: 5,
             noteName: 'E',
             octave: 4,
             frequency: 329.63,
             label: '1st (High E)',
-            isWound: false),
+            isWound: false,
+            gauge: 0.9),
       ],
     ),
     TuningPreset(
@@ -161,46 +175,106 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
             octave: 2,
             frequency: 77.78,
             label: '6th (Eb)',
-            isWound: true),
+            isWound: true,
+            gauge: 3.4),
         GuitarString(
             index: 1,
             noteName: 'G#',
             octave: 2,
             frequency: 103.83,
             label: '5th (Ab)',
-            isWound: true),
+            isWound: true,
+            gauge: 2.8),
         GuitarString(
             index: 2,
             noteName: 'C#',
             octave: 3,
             frequency: 138.59,
             label: '4th (Db)',
-            isWound: true),
+            isWound: true,
+            gauge: 2.2),
         GuitarString(
             index: 3,
             noteName: 'F#',
             octave: 3,
             frequency: 185.00,
             label: '3rd (Gb)',
-            isWound: false),
+            isWound: false,
+            gauge: 1.6),
         GuitarString(
             index: 4,
             noteName: 'A#',
             octave: 3,
             frequency: 233.08,
             label: '2nd (Bb)',
-            isWound: false),
+            isWound: false,
+            gauge: 1.2),
         GuitarString(
             index: 5,
             noteName: 'D#',
             octave: 4,
             frequency: 311.13,
             label: '1st (Eb)',
-            isWound: false),
+            isWound: false,
+            gauge: 0.9),
       ],
     ),
     TuningPreset(
-      name: 'Open D (DADF#AD)',
+      name: 'DADGAD (Celtic Modal)',
+      description: 'Modal fingerstyle resonant acoustic tuning',
+      strings: const [
+        GuitarString(
+            index: 0,
+            noteName: 'D',
+            octave: 2,
+            frequency: 73.42,
+            label: '6th (Low D)',
+            isWound: true,
+            gauge: 3.4),
+        GuitarString(
+            index: 1,
+            noteName: 'A',
+            octave: 2,
+            frequency: 110.00,
+            label: '5th (A)',
+            isWound: true,
+            gauge: 2.8),
+        GuitarString(
+            index: 2,
+            noteName: 'D',
+            octave: 3,
+            frequency: 146.83,
+            label: '4th (D)',
+            isWound: true,
+            gauge: 2.2),
+        GuitarString(
+            index: 3,
+            noteName: 'G',
+            octave: 3,
+            frequency: 196.00,
+            label: '3rd (G)',
+            isWound: false,
+            gauge: 1.6),
+        GuitarString(
+            index: 4,
+            noteName: 'A',
+            octave: 3,
+            frequency: 220.00,
+            label: '2nd (A)',
+            isWound: false,
+            gauge: 1.2),
+        GuitarString(
+            index: 5,
+            noteName: 'D',
+            octave: 4,
+            frequency: 293.66,
+            label: '1st (High D)',
+            isWound: false,
+            gauge: 0.9),
+      ],
+    ),
+    TuningPreset(
+      name: 'Open D (D A D F# A D)',
       description: 'Acoustic fingerstyle open resonant chord',
       strings: const [
         GuitarString(
@@ -209,46 +283,52 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
             octave: 2,
             frequency: 73.42,
             label: '6th (Low D)',
-            isWound: true),
+            isWound: true,
+            gauge: 3.4),
         GuitarString(
             index: 1,
             noteName: 'A',
             octave: 2,
             frequency: 110.00,
             label: '5th (A)',
-            isWound: true),
+            isWound: true,
+            gauge: 2.8),
         GuitarString(
             index: 2,
             noteName: 'D',
             octave: 3,
             frequency: 146.83,
             label: '4th (D)',
-            isWound: true),
+            isWound: true,
+            gauge: 2.2),
         GuitarString(
             index: 3,
             noteName: 'F#',
             octave: 3,
             frequency: 185.00,
             label: '3rd (F#)',
-            isWound: false),
+            isWound: false,
+            gauge: 1.6),
         GuitarString(
             index: 4,
             noteName: 'A',
             octave: 3,
             frequency: 220.00,
             label: '2nd (A)',
-            isWound: false),
+            isWound: false,
+            gauge: 1.2),
         GuitarString(
             index: 5,
             noteName: 'D',
             octave: 4,
             frequency: 293.66,
             label: '1st (High D)',
-            isWound: false),
+            isWound: false,
+            gauge: 0.9),
       ],
     ),
     TuningPreset(
-      name: 'Open G (DGDGBD)',
+      name: 'Open G (D G D G B D)',
       description: 'Keith Richards / Blues slide guitar tuning',
       strings: const [
         GuitarString(
@@ -257,42 +337,48 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
             octave: 2,
             frequency: 73.42,
             label: '6th (Low D)',
-            isWound: true),
+            isWound: true,
+            gauge: 3.4),
         GuitarString(
             index: 1,
             noteName: 'G',
             octave: 2,
             frequency: 98.00,
             label: '5th (G)',
-            isWound: true),
+            isWound: true,
+            gauge: 2.8),
         GuitarString(
             index: 2,
             noteName: 'D',
             octave: 3,
             frequency: 146.83,
             label: '4th (D)',
-            isWound: true),
+            isWound: true,
+            gauge: 2.2),
         GuitarString(
             index: 3,
             noteName: 'G',
             octave: 3,
             frequency: 196.00,
             label: '3rd (G)',
-            isWound: false),
+            isWound: false,
+            gauge: 1.6),
         GuitarString(
             index: 4,
             noteName: 'B',
             octave: 3,
             frequency: 246.94,
             label: '2nd (B)',
-            isWound: false),
+            isWound: false,
+            gauge: 1.2),
         GuitarString(
             index: 5,
             noteName: 'D',
             octave: 4,
             frequency: 293.66,
             label: '1st (High D)',
-            isWound: false),
+            isWound: false,
+            gauge: 0.9),
       ],
     ),
   ];
@@ -302,15 +388,14 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
   bool _isAutoMode = true;
 
   final AudioRecorder _audioRecorder = AudioRecorder();
-  final PitchDetector _pitchDetector =
-      PitchDetector(audioSampleRate: 44100, bufferSize: 2048);
   final AudioPlayer _soundPlayer = AudioPlayer();
   StreamSubscription<Uint8List>? _streamSub;
   final List<int> _audioBuffer = [];
   static const int _targetBufferBytes = 4096;
+  static const int _hopBufferBytes = 1024;
 
   final List<double> _pitchHistory = [];
-  static const int _historyCapacity = 5;
+  static const int _historyCapacity = 3;
   double _filteredPitch = 0.0;
   int _autoStringCandidate = -1;
   int _autoStringCandidateCount = 0;
@@ -319,16 +404,14 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
   double _currentPitch = 0.0;
   double _centsOffset = 0.0;
   bool _isInTune = false;
-  bool _wasInTuneLastFrame = false;
 
   int _inTuneHoldCount = 0;
-  static const int _requiredHoldFrames = 3;
+  static const int _requiredHoldFrames = 4;
   double _rangeHoldProgress = 0.0;
   bool _beepTriggeredForCurrentHold = false;
 
   late AnimationController _pulseController;
   late AnimationController _stringVibrationController;
-  late AnimationController _needleController;
   double _animatedCents = 0.0;
 
   @override
@@ -338,18 +421,13 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
 
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
 
     _stringVibrationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 120),
+      duration: const Duration(milliseconds: 90),
     )..repeat(reverse: true);
-
-    _needleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
 
     _initMicAndStartTuner();
   }
@@ -360,7 +438,6 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
     _soundPlayer.dispose();
     _pulseController.dispose();
     _stringVibrationController.dispose();
-    _needleController.dispose();
     super.dispose();
   }
 
@@ -410,23 +487,26 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
       );
 
       _isListening = true;
-      _streamSub = stream.listen((data) async {
+      _streamSub = stream.listen((data) {
         _audioBuffer.addAll(data);
 
         while (_audioBuffer.length >= _targetBufferBytes) {
           final chunk =
               Uint8List.fromList(_audioBuffer.sublist(0, _targetBufferBytes));
-          _audioBuffer.removeRange(0, _targetBufferBytes);
+          // Hop forward with 75% overlap for ultra-responsive ~23ms updates
+          _audioBuffer.removeRange(0, _hopBufferBytes);
 
+          // Fast RMS signal energy calculation
           double sumSquares = 0;
-          for (int i = 0; i < chunk.length; i += 2) {
-            int sample = chunk[i] | (chunk[i + 1] << 8);
-            if (sample >= 32768) sample -= 65536;
+          final byteData = ByteData.sublistView(chunk);
+          final samples = chunk.length ~/ 2;
+          for (int i = 0; i < samples; i++) {
+            final sample = byteData.getInt16(i * 2, Endian.little);
             sumSquares += sample * sample;
           }
-          final rms = math.sqrt(sumSquares / (chunk.length / 2));
+          final rms = math.sqrt(sumSquares / samples);
 
-          if (rms < 85.0) {
+          if (rms < 25.0) {
             _pitchHistory.clear();
             _filteredPitch = 0.0;
             _inTuneHoldCount = 0;
@@ -446,14 +526,13 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
           }
 
           try {
-            final result = await _pitchDetector.getPitchFromIntBuffer(chunk);
-            if (result.pitched &&
-                result.pitch >= 55.0 &&
-                result.pitch <= 1100.0) {
+            // High-precision YIN+ pitch detection with subharmonic check
+            final result = PitchService.detectPitchFromPcm16(chunk, sampleRate: 44100);
+            if (result.pitch >= 40.0 && result.pitch <= 1200.0 && result.clarity >= 0.40) {
               _processPitch(result.pitch);
             }
           } catch (e) {
-            debugPrint('Pitch detection error: $e');
+            debugPrint('GuitarTuner: Pitch detection error: $e');
           }
         }
       });
@@ -471,23 +550,28 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
       _pitchHistory.removeAt(0);
     }
 
-    List<double> sortedPitches = List.from(_pitchHistory)..sort();
-    double medianPitch = sortedPitches[sortedPitches.length ~/ 2];
+    final sortedPitches = List<double>.from(_pitchHistory)..sort();
+    final medianPitch = sortedPitches[sortedPitches.length ~/ 2];
 
     if (_filteredPitch == 0.0 || (_filteredPitch - medianPitch).abs() > 35.0) {
       _filteredPitch = medianPitch;
     } else {
-      _filteredPitch = _filteredPitch * 0.60 + medianPitch * 0.40;
+      _filteredPitch = _filteredPitch * 0.45 + medianPitch * 0.55;
     }
 
     if (_isAutoMode) {
-      double minDiff = double.infinity;
+      double minScore = double.infinity;
       int bestIdx = _selectedStringIndex;
+
       for (int i = 0; i < _currentPreset.strings.length; i++) {
         final string = _currentPreset.strings[i];
-        final diff = (_filteredPitch - string.frequency).abs();
-        if (diff < minDiff) {
-          minDiff = diff;
+        final semitoneDist = (12.0 * (math.log(_filteredPitch / string.frequency) / math.ln2)).abs();
+        
+        // Hysteresis boost: prioritize current string to avoid flitting between strings during tuning
+        final score = (i == _selectedStringIndex) ? semitoneDist * 0.65 : semitoneDist;
+        
+        if (score < minScore) {
+          minScore = score;
           bestIdx = i;
         }
       }
@@ -495,7 +579,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
       if (bestIdx != _selectedStringIndex) {
         if (_autoStringCandidate == bestIdx) {
           _autoStringCandidateCount++;
-          if (_autoStringCandidateCount >= 3) {
+          if (_autoStringCandidateCount >= 2) {
             _selectedStringIndex = bestIdx;
             _autoStringCandidateCount = 0;
           }
@@ -508,20 +592,22 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
       }
     }
 
-    GuitarString targetString = _currentPreset.strings[_selectedStringIndex];
+    final targetString = _currentPreset.strings[_selectedStringIndex];
 
     double cents =
         1200.0 * (math.log(_filteredPitch / targetString.frequency) / math.ln2);
     cents = cents.clamp(-50.0, 50.0);
 
-    if (cents.abs() < 0.8) cents = 0.0;
+    if (cents.abs() < 0.3) cents = 0.0;
 
     final bool currentlyInTune = cents.abs() <= 3.5;
 
     if (currentlyInTune) {
       _inTuneHoldCount++;
-      _rangeHoldProgress = (_inTuneHoldCount / _requiredHoldFrames).clamp(0.0, 1.0);
-      if (_inTuneHoldCount >= _requiredHoldFrames && !_beepTriggeredForCurrentHold) {
+      _rangeHoldProgress =
+          (_inTuneHoldCount / _requiredHoldFrames).clamp(0.0, 1.0);
+      if (_inTuneHoldCount >= _requiredHoldFrames &&
+          !_beepTriggeredForCurrentHold) {
         HapticFeedback.mediumImpact();
         _playTunedPitchBeep(targetString.frequency);
         _beepTriggeredForCurrentHold = true;
@@ -531,12 +617,13 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
       _rangeHoldProgress = 0.0;
       _beepTriggeredForCurrentHold = false;
     }
-    _wasInTuneLastFrame = currentlyInTune;
+
+    // Smooth spring interpolation for the gauge needle
+    _animatedCents = _animatedCents * 0.40 + cents * 0.60;
 
     setState(() {
       _currentPitch = _filteredPitch;
       _centsOffset = cents;
-      _animatedCents = cents;
       _isInTune = currentlyInTune;
     });
   }
@@ -552,6 +639,8 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
 
   void _selectString(int index) {
     HapticFeedback.lightImpact();
+    final str = _currentPreset.strings[index];
+    _playTunedPitchBeep(str.frequency);
     setState(() {
       _selectedStringIndex = index;
       _isAutoMode = false;
@@ -584,14 +673,14 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
     } else if (_isInTune) {
       statusColor = const Color(0xFF00E676);
     } else if (_centsOffset < -3.5) {
-      statusColor = const Color(0xFFFF3D00);
+      statusColor = const Color(0xFFFF3D00); // Too flat
     } else {
-      statusColor = const Color(0xFF7C4DFF);
+      statusColor = const Color(0xFF7C4DFF); // Too sharp
     }
 
     return Scaffold(
       backgroundColor:
-          isDark ? const Color(0xFF090B10) : const Color(0xFFF4F6FC),
+          isDark ? const Color(0xFF080A0F) : const Color(0xFFF4F6FC),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -669,9 +758,10 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
       body: SafeArea(
         child: Column(
           children: [
+            // Preset Selector
             Padding(
               padding: EdgeInsets.symmetric(
-                  horizontal: context.w(20), vertical: context.w(4)),
+                  horizontal: context.w(20), vertical: context.w(2)),
               child: Container(
                 padding: EdgeInsets.symmetric(
                     horizontal: context.w(16), vertical: context.w(2)),
@@ -712,14 +802,14 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                               preset.name,
                               style: GoogleFonts.outfit(
                                 fontWeight: FontWeight.bold,
-                                fontSize: context.sp(14),
+                                fontSize: context.sp(13),
                                 color: theme.colorScheme.onSurface,
                               ),
                             ),
                             Text(
                               preset.description,
                               style: TextStyle(
-                                fontSize: context.sp(11),
+                                fontSize: context.sp(10.5),
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
@@ -740,7 +830,9 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                 ),
               ),
             ),
-            SizedBox(height: context.w(12)),
+            SizedBox(height: context.w(6)),
+
+            // Gauge & Frequency Readout
             Expanded(
               flex: 5,
               child: Center(
@@ -749,11 +841,11 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                   children: [
                     if (_isInTune)
                       ScaleTransition(
-                        scale: Tween<double>(begin: 0.95, end: 1.12)
+                        scale: Tween<double>(begin: 0.95, end: 1.10)
                             .animate(_pulseController),
                         child: Container(
-                          width: context.w(250),
-                          height: context.w(250),
+                          width: context.w(230),
+                          height: context.w(230),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             boxShadow: [
@@ -761,14 +853,14 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                                 color:
                                     const Color(0xFF00E676).withOpacity(0.35),
                                 blurRadius: 60,
-                                spreadRadius: 20,
+                                spreadRadius: 15,
                               ),
                             ],
                           ),
                         ),
                       ),
                     CustomPaint(
-                      size: Size(context.w(270), context.w(270)),
+                      size: Size(context.w(250), context.w(250)),
                       painter: RadialPitchGaugePainter(
                         cents: _animatedCents,
                         hasPitch: _currentPitch > 0,
@@ -787,7 +879,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                             Text(
                               targetString.noteName,
                               style: GoogleFonts.syne(
-                                fontSize: context.sp(56),
+                                fontSize: context.sp(52),
                                 fontWeight: FontWeight.w800,
                                 color: statusColor,
                                 height: 1.0,
@@ -796,7 +888,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                             Text(
                               '${targetString.octave}',
                               style: GoogleFonts.outfit(
-                                fontSize: context.sp(22),
+                                fontSize: context.sp(20),
                                 fontWeight: FontWeight.w800,
                                 color: statusColor.withOpacity(0.8),
                               ),
@@ -805,10 +897,10 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                         ),
                         SizedBox(height: context.w(4)),
                         AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
+                          duration: const Duration(milliseconds: 150),
                           padding: EdgeInsets.symmetric(
                               horizontal: context.w(14),
-                              vertical: context.w(5)),
+                              vertical: context.w(4)),
                           decoration: BoxDecoration(
                             color: statusColor.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(context.w(20)),
@@ -825,23 +917,23 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                                         ? 'TOO FLAT ▼'
                                         : 'TOO SHARP ▲',
                             style: GoogleFonts.outfit(
-                              fontSize: context.sp(11),
+                              fontSize: context.sp(10.5),
                               fontWeight: FontWeight.w900,
                               color: statusColor,
                               letterSpacing: 1.2,
                             ),
                           ),
                         ),
-                        SizedBox(height: context.w(8)),
+                        SizedBox(height: context.w(6)),
                         Text(
                           _currentPitch > 0
-                              ? '${_currentPitch.toStringAsFixed(1)} Hz  /  ${targetString.frequency.toStringAsFixed(1)} Hz'
+                              ? '${_currentPitch.toStringAsFixed(1)} Hz / ${targetString.frequency.toStringAsFixed(1)} Hz'
                               : 'Target: ${targetString.frequency.toStringAsFixed(1)} Hz',
                           style: GoogleFonts.outfit(
-                            fontSize: context.sp(11.5),
+                            fontSize: context.sp(11),
                             fontWeight: FontWeight.w600,
                             color: theme.colorScheme.onSurfaceVariant
-                                .withOpacity(0.75),
+                                .withOpacity(0.8),
                           ),
                         ),
                       ],
@@ -850,6 +942,8 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                 ),
               ),
             ),
+
+            // Cents indicator & hold meter
             Padding(
               padding: EdgeInsets.symmetric(horizontal: context.w(36)),
               child: Row(
@@ -863,7 +957,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                         ? '${_centsOffset > 0 ? "+" : ""}${_centsOffset.toStringAsFixed(1)} CENTS'
                         : '0.0 CENTS',
                     style: GoogleFonts.outfit(
-                      fontSize: context.sp(13),
+                      fontSize: context.sp(12.5),
                       fontWeight: FontWeight.w800,
                       color: statusColor,
                       letterSpacing: 0.8,
@@ -875,65 +969,33 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                 ],
               ),
             ),
-            SizedBox(height: context.w(6)),
+            SizedBox(height: context.w(4)),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: context.w(36)),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        _beepTriggeredForCurrentHold
-                            ? Icons.check_circle_rounded
-                            : Icons.timelapse_rounded,
-                        size: context.w(14),
-                        color: _beepTriggeredForCurrentHold
-                            ? const Color(0xFF00E676)
-                            : (isDark ? Colors.white38 : Colors.black38),
-                      ),
-                      SizedBox(width: context.w(6)),
-                      Text(
-                        _beepTriggeredForCurrentHold
-                            ? 'TUNED ✓'
-                            : _rangeHoldProgress > 0
-                                ? 'HOLD ${(_rangeHoldProgress * 100).toInt()}%'
-                                : 'RANGE HOLD',
-                        style: GoogleFonts.outfit(
-                          fontSize: context.sp(10),
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.0,
-                          color: _beepTriggeredForCurrentHold
-                              ? const Color(0xFF00E676)
-                              : (isDark ? Colors.white54 : Colors.black45),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: context.w(4)),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(context.w(4)),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 120),
-                      height: context.w(5),
-                      child: LinearProgressIndicator(
-                        value: _rangeHoldProgress,
-                        backgroundColor: isDark
-                            ? const Color(0xFF1A1F2C)
-                            : const Color(0xFFE2E7F0),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          _beepTriggeredForCurrentHold
-                              ? const Color(0xFF00E676)
-                              : statusColor,
-                        ),
-                      ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(context.w(4)),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 100),
+                  height: context.w(4),
+                  child: LinearProgressIndicator(
+                    value: _rangeHoldProgress,
+                    backgroundColor: isDark
+                        ? const Color(0xFF1A1F2C)
+                        : const Color(0xFFE2E7F0),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      _beepTriggeredForCurrentHold
+                          ? const Color(0xFF00E676)
+                          : statusColor,
                     ),
                   ),
-                ],
+                ),
               ),
             ),
             SizedBox(height: context.w(6)),
+
+            // String choice chips
             SizedBox(
-              height: context.w(44),
+              height: context.w(40),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: EdgeInsets.symmetric(horizontal: context.w(16)),
@@ -943,14 +1005,14 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                   final isSelected = idx == _selectedStringIndex;
 
                   return Padding(
-                    padding: EdgeInsets.symmetric(horizontal: context.w(4)),
+                    padding: EdgeInsets.symmetric(horizontal: context.w(3)),
                     child: ChoiceChip(
                       selected: isSelected,
                       showCheckmark: false,
                       label: Text(
                         '${str.fullNote} (${str.label.split(" ").first})',
                         style: GoogleFonts.outfit(
-                          fontSize: context.sp(12),
+                          fontSize: context.sp(11.5),
                           fontWeight: FontWeight.bold,
                           color: isSelected
                               ? Colors.black
@@ -967,12 +1029,14 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                 },
               ),
             ),
-            SizedBox(height: context.w(10)),
+            SizedBox(height: context.w(8)),
+
+            // Ultra-Realistic 3D Guitar Headstock Canvas & Interactive Pegs
             Expanded(
               flex: 6,
               child: Padding(
                 padding: EdgeInsets.symmetric(
-                    horizontal: context.w(16), vertical: context.w(6)),
+                    horizontal: context.w(16), vertical: context.w(4)),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final double headstockWidth =
@@ -999,6 +1063,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                             );
                           },
                         ),
+                        // Interactive tap areas for each peg key
                         SizedBox(
                           width: headstockWidth,
                           height: headstockHeight,
@@ -1043,8 +1108,8 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
         onTap: () => _selectString(index),
         behavior: HitTestBehavior.opaque,
         child: Container(
-          width: context.w(70),
-          height: context.w(55),
+          width: context.w(68),
+          height: context.w(52),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isSelected
@@ -1064,7 +1129,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
               Text(
                 string.fullNote,
                 style: GoogleFonts.syne(
-                  fontSize: context.sp(13),
+                  fontSize: context.sp(12.5),
                   fontWeight: FontWeight.w800,
                   color: isSelected
                       ? Theme.of(context).colorScheme.primary
@@ -1110,9 +1175,9 @@ class RadialPitchGaugePainter extends CustomPainter {
 
     final Paint trackPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 10
+      ..strokeWidth = 9
       ..strokeCap = StrokeCap.round
-      ..color = isDark ? const Color(0xFF1A202C) : const Color(0xFFE2E8F0);
+      ..color = isDark ? const Color(0xFF161B26) : const Color(0xFFE2E8F0);
 
     const double startAngle = 135 * math.pi / 180;
     const double sweepAngle = 270 * math.pi / 180;
@@ -1131,7 +1196,7 @@ class RadialPitchGaugePainter extends CustomPainter {
 
       final Paint activeArcPaint = Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 10
+        ..strokeWidth = 9
         ..strokeCap = StrokeCap.round
         ..color = statusColor;
 
@@ -1153,8 +1218,8 @@ class RadialPitchGaugePainter extends CustomPainter {
       final bool isCenter = i == 0;
       final bool isMajor = i % 20 == 0 || isCenter;
 
-      final double tickLength = isCenter ? 16 : (isMajor ? 12 : 8);
-      tickPaint.strokeWidth = isCenter ? 3.5 : (isMajor ? 2.0 : 1.2);
+      final double tickLength = isCenter ? 15 : (isMajor ? 11 : 7);
+      tickPaint.strokeWidth = isCenter ? 3.0 : (isMajor ? 1.8 : 1.0);
       tickPaint.color = isCenter
           ? const Color(0xFF00E676)
           : (isDark ? Colors.white38 : Colors.black38);
@@ -1175,23 +1240,23 @@ class RadialPitchGaugePainter extends CustomPainter {
         startAngle + ((cents.clamp(-50.0, 50.0) + 50) / 100.0) * sweepAngle;
 
     final Offset needleTip = Offset(
-      center + (radius - 22) * math.cos(needleAngle),
-      center + (radius - 22) * math.sin(needleAngle),
+      center + (radius - 20) * math.cos(needleAngle),
+      center + (radius - 20) * math.sin(needleAngle),
     );
 
     final Paint needlePaint = Paint()
       ..color =
           hasPitch ? statusColor : (isDark ? Colors.white30 : Colors.black26)
-      ..strokeWidth = 3.5
+      ..strokeWidth = 3.0
       ..strokeCap = StrokeCap.round;
 
     canvas.drawLine(centerOffset, needleTip, needlePaint);
 
-    canvas.drawCircle(centerOffset, 8, Paint()..color = statusColor);
+    canvas.drawCircle(centerOffset, 7, Paint()..color = statusColor);
     canvas.drawCircle(
       centerOffset,
-      4,
-      Paint()..color = isDark ? const Color(0xFF090B10) : Colors.white,
+      3.5,
+      Paint()..color = isDark ? const Color(0xFF080A0F) : Colors.white,
     );
   }
 
@@ -1205,6 +1270,7 @@ class RadialPitchGaugePainter extends CustomPainter {
   }
 }
 
+/// Ultra-Realistic Photo-rendered Guitar Headstock, Binding, Inlays, Tuners, and Strings Painter
 class UltraRealisticHeadstockPainter extends CustomPainter {
   final int selectedIndex;
   final List<GuitarString> strings;
@@ -1227,23 +1293,7 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
     final double w = size.width;
     final double h = size.height;
 
-    final Paint mahoganyShader = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: isDark
-            ? [
-                const Color(0xFF261410),
-                const Color(0xFF1A0C09),
-                const Color(0xFF0D0604),
-              ]
-            : [
-                const Color(0xFF5C2D1F),
-                const Color(0xFF3B1A11),
-                const Color(0xFF240F0A),
-              ],
-      ).createShader(Rect.fromLTWH(0, 0, w, h));
-
+    // 1. Headstock Silhouette & Contour
     final Path headstockPath = Path();
     headstockPath.moveTo(w * 0.28, h * 0.98);
     headstockPath.lineTo(w * 0.22, h * 0.16);
@@ -1253,57 +1303,177 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
     headstockPath.lineTo(w * 0.72, h * 0.98);
     headstockPath.close();
 
+    // 2. Ambient Drop Shadow behind Headstock
     canvas.drawPath(
       headstockPath,
       Paint()
-        ..color = Colors.black.withOpacity(0.45)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+        ..color = Colors.black.withOpacity(0.5)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14),
     );
 
-    canvas.drawPath(headstockPath, mahoganyShader);
+    // 3. Flame Maple / Sunburst Wood Grain Base Shader
+    final Rect headstockRect = Rect.fromLTWH(0, 0, w, h);
+    final Paint woodShader = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(0.0, -0.2),
+        radius: 0.85,
+        colors: isDark
+            ? [
+                const Color(0xFF422116), // Warm amber burst center
+                const Color(0xFF26120C), // Mahogany mid
+                const Color(0xFF0F0604), // Dark sunburst rim
+              ]
+            : [
+                const Color(0xFF8B4513), // Rich vintage amber
+                const Color(0xFF5C260E), // Burnt sienna
+                const Color(0xFF240E06), // Deep walnut edge
+              ],
+        stops: const [0.0, 0.55, 1.0],
+      ).createShader(headstockRect);
 
-    final Paint edgeBevel = Paint()
+    canvas.drawPath(headstockPath, woodShader);
+
+    // 4. Subtle Organic Flame Maple Grain Stripes
+    final Paint grainPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5
+      ..strokeWidth = 1.8
+      ..color = Colors.black.withOpacity(0.12);
+
+    for (double y = h * 0.10; y < h * 0.80; y += h * 0.045) {
+      final Path grainLine = Path();
+      grainLine.moveTo(w * 0.24, y);
+      grainLine.cubicTo(
+        w * 0.38, y + 4.0 * math.sin(y * 10),
+        w * 0.62, y - 3.0 * math.cos(y * 8),
+        w * 0.76, y,
+      );
+      canvas.save();
+      canvas.clipPath(headstockPath);
+      canvas.drawPath(grainLine, grainPaint);
+      canvas.restore();
+    }
+
+    // 5. Nitrocellulose Lacquer Curved Gloss Reflection Highlight
+    final Path glossPath = Path();
+    glossPath.moveTo(w * 0.26, h * 0.16);
+    glossPath.quadraticBezierTo(w * 0.40, h * 0.08, w * 0.50, h * 0.16);
+    glossPath.lineTo(w * 0.44, h * 0.70);
+    glossPath.lineTo(w * 0.30, h * 0.70);
+    glossPath.close();
+
+    final Paint glossPaint = Paint()
       ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
         colors: [
-          Colors.white.withOpacity(0.35),
-          Colors.amber.withOpacity(0.15),
-          Colors.black.withOpacity(0.7),
+          Colors.white.withOpacity(0.22),
+          Colors.white.withOpacity(0.03),
+          Colors.transparent,
         ],
-      ).createShader(Rect.fromLTWH(0, 0, w, h));
-    canvas.drawPath(headstockPath, edgeBevel);
+      ).createShader(headstockRect);
 
-    final Path trussRodPath = Path();
-    trussRodPath.moveTo(w * 0.46, h * 0.65);
-    trussRodPath.lineTo(w * 0.54, h * 0.65);
-    trussRodPath.lineTo(w * 0.52, h * 0.75);
-    trussRodPath.lineTo(w * 0.48, h * 0.75);
-    trussRodPath.close();
-    canvas.drawPath(trussRodPath, Paint()..color = const Color(0xFF111111));
+    canvas.save();
+    canvas.clipPath(headstockPath);
+    canvas.drawPath(glossPath, glossPaint);
+    canvas.restore();
+
+    // 6. Multi-ply Vintage Aged Ivory Binding with Purfling Accent
+    final Paint bindingOuter = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.5
+      ..color = const Color(0xFFF3EAD3); // Aged ivory
+    canvas.drawPath(headstockPath, bindingOuter);
+
+    final Paint purflingInner = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..color = const Color(0xFF1E140F); // Black inner pinstripe
+    canvas.drawPath(headstockPath, purflingInner);
+
+    // 7. Pearloid Crown/Diamond Inlay & Golden Logo
+    final Path pearlDiamond = Path();
+    pearlDiamond.moveTo(w * 0.50, h * 0.20);
+    pearlDiamond.lineTo(w * 0.54, h * 0.26);
+    pearlDiamond.lineTo(w * 0.50, h * 0.32);
+    pearlDiamond.lineTo(w * 0.46, h * 0.26);
+    pearlDiamond.close();
+
+    final Paint pearlPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFFFFFFFF),
+          Color(0xFFD4E6F1),
+          Color(0xFFE8DAEF),
+          Color(0xFFD5F5E3),
+          Color(0xFFFCF3CF),
+        ],
+      ).createShader(Rect.fromLTWH(w * 0.46, h * 0.20, w * 0.08, h * 0.12));
+
+    canvas.drawPath(pearlDiamond, pearlPaint);
     canvas.drawPath(
-        trussRodPath,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..color = Colors.white24
-          ..strokeWidth = 1.0);
+      pearlDiamond,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8
+        ..color = Colors.black45,
+    );
 
-    final Rect fretboardRect = Rect.fromLTRB(w * 0.27, h * 0.82, w * 0.73, h);
+    // 8. 3-Ply Bell-Shaped Truss Rod Cover with Bevelled Screws
+    final Path trussCover = Path();
+    trussCover.moveTo(w * 0.47, h * 0.64);
+    trussCover.lineTo(w * 0.53, h * 0.64);
+    trussCover.lineTo(w * 0.52, h * 0.74);
+    trussCover.lineTo(w * 0.48, h * 0.74);
+    trussCover.close();
+
+    canvas.drawPath(trussCover, Paint()..color = const Color(0xFF0F0F0F));
+    canvas.drawPath(
+      trussCover,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2
+        ..color = const Color(0xFFEAEAEA),
+    );
+
+    // Truss screws
+    final Paint screwPaint = Paint()..color = const Color(0xFFB0BEC5);
+    canvas.drawCircle(Offset(w * 0.50, h * 0.655), 1.6, screwPaint);
+    canvas.drawCircle(Offset(w * 0.50, h * 0.725), 1.6, screwPaint);
+
+    // 9. Dense Ebony Fretboard below Nut
+    final Rect fretboardRect = Rect.fromLTRB(w * 0.27, h * 0.81, w * 0.73, h);
     final Paint ebonyPaint = Paint()
       ..shader = const LinearGradient(
-        colors: [Color(0xFF181514), Color(0xFF0C0A09)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF1E1A17), Color(0xFF0D0B0A)],
       ).createShader(fretboardRect);
     canvas.drawRect(fretboardRect, ebonyPaint);
 
+    // 10. Hand-Carved Slotted Bone Nut with Individual String Grooves
     final Rect nutRect =
-        Rect.fromLTRB(w * 0.265, h * 0.78, w * 0.735, h * 0.82);
+        Rect.fromLTRB(w * 0.265, h * 0.77, w * 0.735, h * 0.81);
     final Paint boneNutPaint = Paint()
       ..shader = const LinearGradient(
-        colors: [Color(0xFFEDE8D8), Color(0xFFC7C1B0)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFFFFFBEA), Color(0xFFD6CEBA), Color(0xFFAFA794)],
       ).createShader(nutRect);
-    canvas.drawRRect(RRect.fromRectAndRadius(nutRect, const Radius.circular(3)),
-        boneNutPaint);
 
+    final RRect roundedNut =
+        RRect.fromRectAndRadius(nutRect, const Radius.circular(2.5));
+    canvas.drawRRect(roundedNut, boneNutPaint);
+    canvas.drawRRect(
+      roundedNut,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8
+        ..color = Colors.black45,
+    );
+
+    // 11. 3D Tuning Machines (Peg Posts, Hex Bushings, and Keystone Buttons)
     final List<Offset> pegPositions = [
       Offset(w * 0.20, h * 0.22),
       Offset(w * 0.20, h * 0.42),
@@ -1315,7 +1485,14 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
 
     final Paint chromeGradient = Paint()
       ..shader = const LinearGradient(
-        colors: [Color(0xFFFFFFFF), Color(0xFF9E9E9E), Color(0xFF424242)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFFFFFFFF),
+          Color(0xFFCFD8DC),
+          Color(0xFF78909C),
+          Color(0xFF37474F),
+        ],
       ).createShader(Rect.fromLTWH(0, 0, w, h));
 
     for (int i = 0; i < pegPositions.length; i++) {
@@ -1324,44 +1501,79 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
       final bool isSelected = i == selectedIndex;
 
       final double keyX = isLeft ? pos.dx - 32 : pos.dx + 32;
+
+      // Shaft connection
       canvas.drawLine(
         pos,
         Offset(keyX, pos.dy),
         Paint()
-          ..color = const Color(0xFFB0BEC5)
-          ..strokeWidth = 4.0,
+          ..color = const Color(0xFF90A4AE)
+          ..strokeWidth = 3.8
+          ..strokeCap = StrokeCap.round,
       );
 
-      final RRect paddleRRect = RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(keyX, pos.dy), width: 14, height: 22),
-        const Radius.circular(6),
+      // Keystone Pearloid Button
+      final RRect buttonRRect = RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset(keyX, pos.dy), width: 15, height: 24),
+        const Radius.circular(5),
       );
-      canvas.drawRRect(paddleRRect, chromeGradient);
 
-      canvas.drawCircle(pos, 11, chromeGradient);
-      canvas.drawCircle(
-        pos,
-        11,
+      final Paint buttonPaint = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isSelected
+              ? [
+                  statusColor.withOpacity(0.9),
+                  statusColor,
+                  statusColor.withOpacity(0.7),
+                ]
+              : [
+                  const Color(0xFFFFF9E6),
+                  const Color(0xFFE8DEC0),
+                  const Color(0xFFC7BBA0),
+                ],
+        ).createShader(buttonRRect.outerRect);
+
+      canvas.drawRRect(buttonRRect, buttonPaint);
+      canvas.drawRRect(
+        buttonRRect,
         Paint()
           ..style = PaintingStyle.stroke
           ..color = isSelected ? statusColor : Colors.black45
-          ..strokeWidth = isSelected ? 2.5 : 1.0,
+          ..strokeWidth = 1.0,
       );
 
-      canvas.drawCircle(pos, 3.5, Paint()..color = const Color(0xFF111111));
+      // Hex Bushing Base
+      canvas.drawCircle(
+        pos,
+        12.5,
+        Paint()
+          ..color = const Color(0xFF607D8B)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+      );
+      canvas.drawCircle(pos, 11.5, chromeGradient);
 
+      // Peg post cylinder
+      canvas.drawCircle(pos, 7.5, Paint()..color = const Color(0xFFCFD8DC));
+      canvas.drawCircle(pos, 5.0, Paint()..color = const Color(0xFF37474F));
+      canvas.drawCircle(pos, 2.5, Paint()..color = const Color(0xFF111111));
+
+      // Active halo on selected peg
       if (isSelected) {
         canvas.drawCircle(
           pos,
-          15,
+          16,
           Paint()
             ..style = PaintingStyle.stroke
-            ..color = statusColor.withOpacity(0.7)
-            ..strokeWidth = 2.0,
+            ..color = statusColor.withOpacity(0.8)
+            ..strokeWidth = 2.0
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
         );
       }
     }
 
+    // 12. Highly Textured Strings with Winding Coils, Standing Waves & Shadows
     final double stringNutStartX = w * 0.29;
     final double stringNutSpacing = (w * 0.42) / 5;
 
@@ -1369,54 +1581,80 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
       final bool isSelected = i == selectedIndex;
       final string = strings[i];
       final double nutX = stringNutStartX + (i * stringNutSpacing);
-      final Offset nutPos = Offset(nutX, h * 0.78);
+      final Offset nutPos = Offset(nutX, h * 0.77);
       final Offset pegPos = pegPositions[i];
 
-      final double gaugeThickness = 3.4 - (i * 0.45);
+      final double gauge = string.gauge;
 
-      Color stringColor =
-          string.isWound ? const Color(0xFFD4A359) : const Color(0xFFE0E6ED);
+      // Drop shadow from string onto headstock face
+      final Paint shadowPaint = Paint()
+        ..color = Colors.black.withOpacity(0.38)
+        ..strokeWidth = gauge + 0.8
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      canvas.drawLine(
+        Offset(nutPos.dx + 2, nutPos.dy + 3),
+        Offset(pegPos.dx + 2, pegPos.dy + 3),
+        shadowPaint,
+      );
 
+      // Bronze wound texture for 6th, 5th, 4th strings vs Steel for 1st, 2nd, 3rd
+      Color coreColor;
       if (isSelected) {
-        stringColor = statusColor;
+        coreColor = statusColor;
+      } else if (string.isWound) {
+        coreColor = const Color(0xFFD49E50); // Warm phosphor bronze
+      } else {
+        coreColor = const Color(0xFFE6ECF2); // Polished nickel steel
       }
 
       final Paint stringPaint = Paint()
-        ..color = stringColor
-        ..strokeWidth = isSelected ? gaugeThickness + 0.8 : gaugeThickness
+        ..color = coreColor
+        ..strokeWidth = isSelected ? gauge + 0.9 : gauge
         ..strokeCap = StrokeCap.round;
 
+      // Glow effect if selected string
       if (isSelected) {
         canvas.drawLine(
           nutPos,
           pegPos,
           Paint()
-            ..color = statusColor.withOpacity(0.5)
-            ..strokeWidth = gaugeThickness + 5.0
+            ..color = statusColor.withOpacity(0.6)
+            ..strokeWidth = gauge + 6.0
             ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
         );
       }
 
+      // Harmonic standing wave vibration when sound is detected
       if (isSelected && isVibrating) {
-        final double vibOffset = math.sin(vibrationPhase * math.pi * 2) * 3.0;
-        final Path vibPath = Path();
-        vibPath.moveTo(nutPos.dx, nutPos.dy);
-        vibPath.quadraticBezierTo(
-          (nutPos.dx + pegPos.dx) / 2 + vibOffset,
+        final double waveAmp =
+            math.sin(vibrationPhase * math.pi * 2) * 3.5;
+        final Path wavePath = Path();
+        wavePath.moveTo(nutPos.dx, nutPos.dy);
+        wavePath.quadraticBezierTo(
+          (nutPos.dx + pegPos.dx) / 2 + waveAmp,
           (nutPos.dy + pegPos.dy) / 2,
           pegPos.dx,
           pegPos.dy,
         );
-        canvas.drawPath(vibPath, stringPaint);
+        canvas.drawPath(wavePath, stringPaint);
       } else {
         canvas.drawLine(nutPos, pegPos, stringPaint);
       }
 
+      // Straight string extension across fretboard below nut
       canvas.drawLine(
         nutPos,
         Offset(nutX, h),
         stringPaint,
       );
+
+      // Coiled wire loops wrapped around peg post
+      final Paint coilPaint = Paint()
+        ..color = coreColor.withOpacity(0.85)
+        ..strokeWidth = math.max(1.0, gauge * 0.6)
+        ..style = PaintingStyle.stroke;
+      canvas.drawCircle(pegPos, 8.5, coilPaint);
+      canvas.drawCircle(pegPos, 9.8, coilPaint);
     }
   }
 

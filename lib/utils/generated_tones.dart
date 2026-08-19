@@ -145,7 +145,6 @@ class GeneratedTones {
     final stepLength = numSamples ~/ frequencies.length;
 
     for (int i = 0; i < numSamples; i++) {
-      final t = i / sampleRate;
       final stepIdx = (i ~/ stepLength).clamp(0, frequencies.length - 1);
       final freq = frequencies[stepIdx];
 

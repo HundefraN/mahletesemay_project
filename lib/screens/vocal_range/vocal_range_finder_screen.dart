@@ -8,7 +8,6 @@ import 'package:mahlete_semay_project/utils/constants.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
 import 'package:mahlete_semay_project/widgets/vocal_piano_roll.dart';
 import 'package:mahlete_semay_project/utils/permission_helper.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:confetti/confetti.dart';
@@ -35,10 +34,13 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
   String _lowestNoteFound = '';
   String _highestNoteFound = '';
 
-  double _stabilityProgress = 0.0;
+  // Real-time dynamic glide tracking
   String _candidateNote = '';
+  double _candidatePitch = 0.0;
   int _stableFrames = 0;
-  static const int _requiredStableFrames = 6;
+  // ~1.2 seconds of stable sustain (at ~23ms frames = ~12 frames)
+  static const int _requiredStableFrames = 12;
+  double _stabilityProgress = 0.0;
 
   @override
   void initState() {
@@ -61,63 +63,100 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
         _currentStep != GuidedStep.highNote) return;
 
     final pitchData = _pitchService.pitchData;
-    if (pitchData.pitch == 0.0 || pitchData.note.isEmpty) {
+    if (pitchData.pitch <= 0.0 || pitchData.note.isEmpty) {
       if (_stableFrames > 0) {
         setState(() {
-          _stableFrames = 0;
-          _stabilityProgress = 0.0;
-          _candidateNote = '';
+          _stableFrames = max(0, _stableFrames - 1);
+          _stabilityProgress =
+              (_stableFrames / _requiredStableFrames).clamp(0.0, 1.0);
         });
       }
       return;
     }
 
-    if (pitchData.note == _candidateNote) {
-      _stableFrames++;
-    } else {
-      _candidateNote = pitchData.note;
-      _stableFrames = 1;
+    final detectedPitch = pitchData.pitch;
+    final detectedNote = pitchData.note;
+
+    if (_currentStep == GuidedStep.lowNote) {
+      // For lowest note: dynamically track lower notes as user glides down
+      if (_candidatePitch == 0.0 || detectedPitch < _candidatePitch * 1.03) {
+        if (detectedNote == _candidateNote) {
+          _stableFrames++;
+        } else {
+          _candidateNote = detectedNote;
+          _candidatePitch = detectedPitch;
+          _stableFrames = 1;
+        }
+      } else if (detectedNote == _candidateNote) {
+        _stableFrames++;
+      } else {
+        _stableFrames = max(1, _stableFrames - 1);
+      }
+    } else if (_currentStep == GuidedStep.highNote) {
+      // For highest note: dynamically track higher notes as user glides up
+      if (_candidatePitch == 0.0 || detectedPitch > _candidatePitch * 0.97) {
+        if (detectedNote == _candidateNote) {
+          _stableFrames++;
+        } else {
+          _candidateNote = detectedNote;
+          _candidatePitch = detectedPitch;
+          _stableFrames = 1;
+        }
+      } else if (detectedNote == _candidateNote) {
+        _stableFrames++;
+      } else {
+        _stableFrames = max(1, _stableFrames - 1);
+      }
     }
 
-    final progress = min(1.0, _stableFrames / _requiredStableFrames);
+    final progress = (_stableFrames / _requiredStableFrames).clamp(0.0, 1.0);
 
     setState(() {
       _stabilityProgress = progress;
     });
 
+    // Auto-lock when sustained steadily for 1.2 seconds
     if (_stableFrames >= _requiredStableFrames) {
-      _lockNote(pitchData.note, pitchData.pitch);
+      _lockNote(_candidateNote, _candidatePitch);
     }
   }
 
   void _lockNote(String note, double pitch) {
+    if (note.isEmpty || pitch <= 0) return;
+
     if (_currentStep == GuidedStep.lowNote) {
       _pitchService.playPitchBeep(pitch);
       setState(() {
         _lowestNoteFound = note;
         _lowestPitchFound = pitch;
         _candidateNote = '';
+        _candidatePitch = 0.0;
         _stableFrames = 0;
         _stabilityProgress = 0.0;
         _currentStep = GuidedStep.highNote;
       });
-      CustomSnackbar.show(context, 'Lowest note locked: $note!',
-          isError: false);
+      CustomSnackbar.show(
+        context,
+        'Lowest note locked: $note! Now glide to your highest note.',
+        isError: false,
+      );
     } else if (_currentStep == GuidedStep.highNote) {
       _pitchService.playPitchBeep(pitch);
       setState(() {
         _highestNoteFound = note;
         _highestPitchFound = pitch;
         _candidateNote = '';
+        _candidatePitch = 0.0;
         _stableFrames = 0;
         _stabilityProgress = 0.0;
         _currentStep = GuidedStep.results;
       });
       _pitchService.stopListening();
       _confettiController.play();
+      _pitchService.playSuccessBeep();
       CustomSnackbar.show(
         context,
-        'Highest note locked: $note! Range analysis complete.',
+        'Highest note locked: $note! Vocal Range Analysis Complete.',
         isError: false,
       );
     }
@@ -162,6 +201,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
       _lowestNoteFound = '';
       _highestNoteFound = '';
       _candidateNote = '';
+      _candidatePitch = 0.0;
       _stableFrames = 0;
       _stabilityProgress = 0.0;
     });
@@ -255,13 +295,20 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
           theme: theme,
           stepTitle: "Step 1: Find Your Lowest Note",
           stepInstruction:
-              "Sing or hum down to your lowest comfortable note and hold it steady.",
+              "Hum or sing downwards to your lowest comfortable pitch and hold it steady.",
           currentLowest: _lowestNoteFound,
           currentHighest: _highestNoteFound,
           onLockManual: () {
             final pitchData = _pitchService.pitchData;
-            if (pitchData.note.isNotEmpty && pitchData.pitch > 0) {
-              _lockNote(pitchData.note, pitchData.pitch);
+            final noteToLock = _candidateNote.isNotEmpty
+                ? _candidateNote
+                : pitchData.note;
+            final pitchToLock = _candidatePitch > 0
+                ? _candidatePitch
+                : pitchData.pitch;
+
+            if (noteToLock.isNotEmpty && pitchToLock > 0) {
+              _lockNote(noteToLock, pitchToLock);
             } else {
               CustomSnackbar.show(
                 context,
@@ -276,13 +323,20 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
           theme: theme,
           stepTitle: "Step 2: Find Your Highest Note",
           stepInstruction:
-              "Glide up to your highest comfortable note (chest or head voice) and hold it steady.",
+              "Glide upwards to your highest comfortable note (chest or head voice) and hold it steady.",
           currentLowest: _lowestNoteFound,
           currentHighest: _highestNoteFound,
           onLockManual: () {
             final pitchData = _pitchService.pitchData;
-            if (pitchData.note.isNotEmpty && pitchData.pitch > 0) {
-              _lockNote(pitchData.note, pitchData.pitch);
+            final noteToLock = _candidateNote.isNotEmpty
+                ? _candidateNote
+                : pitchData.note;
+            final pitchToLock = _candidatePitch > 0
+                ? _candidatePitch
+                : pitchData.pitch;
+
+            if (noteToLock.isNotEmpty && pitchToLock > 0) {
+              _lockNote(noteToLock, pitchToLock);
             } else {
               CustomSnackbar.show(
                 context,
@@ -354,15 +408,15 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
             const SizedBox(height: 32),
             Card(
               elevation: 0,
-              color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+              color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
                   color: theme.colorScheme.outline.withOpacity(0.1),
                 ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
+              child: const Padding(
+                padding: EdgeInsets.all(20.0),
                 child: Column(
                   children: [
                     _StepInfoRow(
@@ -371,7 +425,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                       subtitle: 'Sing down to your lowest steady pitch',
                       color: Colors.blueAccent,
                     ),
-                    const Divider(height: 28),
+                    Divider(height: 28),
                     _StepInfoRow(
                       number: '2',
                       title: 'Highest Note',
@@ -423,6 +477,9 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
         final currentPitch = pitchData.pitch;
         final currentNote = pitchData.note;
 
+        final displayNote = _candidateNote.isNotEmpty ? _candidateNote : currentNote;
+        final displayPitch = _candidatePitch > 0 ? _candidatePitch : currentPitch;
+
         return SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.all(20.0),
@@ -456,8 +513,8 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
 
               // Modern Equalizer Visualizer Visual Card
               _ModernEqualizerCard(
-                pitch: currentPitch,
-                note: currentNote,
+                pitch: displayPitch,
+                note: displayNote,
                 stabilityProgress: _stabilityProgress,
               ),
 
@@ -481,7 +538,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                           const SizedBox(width: 6),
                           Text(
                             _stabilityProgress > 0
-                                ? "Hold pitch steady..."
+                                ? "Hold note steady..."
                                 : "Listening...",
                             style: theme.textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.w600,
@@ -510,7 +567,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                           value: value,
                           minHeight: 10,
                           backgroundColor:
-                              theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                              theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
                           valueColor: AlwaysStoppedAnimation<Color>(
                             value >= 1.0
                                 ? Colors.greenAccent.shade700
@@ -531,7 +588,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                   Expanded(
                     child: _CapturedNoteCard(
                       label: "Lowest Note",
-                      note: currentLowest,
+                      note: currentLowest.isNotEmpty ? currentLowest : (_currentStep == GuidedStep.lowNote && displayNote.isNotEmpty ? displayNote : '--'),
                       color: Colors.blueAccent,
                     ),
                   ),
@@ -539,7 +596,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                   Expanded(
                     child: _CapturedNoteCard(
                       label: "Highest Note",
-                      note: currentHighest,
+                      note: currentHighest.isNotEmpty ? currentHighest : (_currentStep == GuidedStep.highNote && displayNote.isNotEmpty ? displayNote : '--'),
                       color: Colors.purpleAccent,
                     ),
                   ),
@@ -553,10 +610,10 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                 width: double.infinity,
                 height: 50,
                 child: OutlinedButton.icon(
-                  onPressed: currentNote.isNotEmpty ? onLockManual : null,
+                  onPressed: displayNote.isNotEmpty ? onLockManual : null,
                   icon: const Icon(Icons.check_circle_outline_rounded),
                   label: Text(
-                      'Lock Note (${currentNote.isEmpty ? "--" : currentNote})'),
+                      'Lock Note (${displayNote.isEmpty ? "--" : displayNote})'),
                   style: OutlinedButton.styleFrom(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -702,7 +759,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
             highestNote: _highestNoteFound,
             voiceTypeRange: voiceRangeInfo,
           ).animate().fadeIn(delay: 200.ms),
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
@@ -718,16 +775,32 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                   ),
                 ),
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _shareResults,
+                  icon: const Icon(Icons.share_rounded),
+                  label: const Text('Share Results'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                  ),
+                ),
+              ),
             ],
           ).animate().fadeIn(delay: 300.ms),
-          const SizedBox(height: 128),
+          const SizedBox(height: 60),
         ],
       ),
     );
   }
 }
 
-// Modern Equalizer Display Component replacing the circular dial gauge
+// Modern Equalizer Display Component
 class _ModernEqualizerCard extends StatelessWidget {
   final double pitch;
   final String note;
@@ -748,7 +821,7 @@ class _ModernEqualizerCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant.withOpacity(0.4),
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isActive

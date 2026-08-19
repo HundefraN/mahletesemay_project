@@ -16,6 +16,14 @@ import 'package:mahlete_semay_project/widgets/vocal_piano_roll.dart';
 
 enum TrainerState { idle, playing, listening, finished }
 
+class PitchPoint {
+  final double cents;
+  final double pitch;
+  final bool hasPitch;
+  final DateTime time;
+  PitchPoint({required this.cents, required this.pitch, required this.hasPitch, required this.time});
+}
+
 class PitchTrainerScreen extends StatefulWidget {
   const PitchTrainerScreen({super.key});
 
@@ -31,25 +39,24 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
 
   TrainerState _state = TrainerState.idle;
   final List<String> _targetNotes = [
-    'C3',
-    'E3',
-    'G3',
-    'C4',
-    'D4',
-    'E4',
-    'F4',
-    'G4',
-    'A4',
-    'B4',
-    'C5'
+    'C3', 'D3', 'E3', 'F3', 'G3', 'A3', 'B3',
+    'C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4',
+    'C5', 'D5', 'E5', 'G5'
   ];
-  int _currentNoteIndex = 3; // Default to C4
+  int _currentNoteIndex = 7; // Default to C4
   String get _targetNote => _targetNotes[_currentNoteIndex];
 
+  bool _autoTransposeOctaves = true;
   double _centsDifference = 0.0;
+  String _effectiveSungNote = '';
+  int _detectedOctaveOffset = 0;
+
   Timer? _inTuneTimer;
   double _inTuneProgress = 0.0;
   int _streakCount = 0;
+
+  final List<PitchPoint> _pitchFlowHistory = [];
+  static const int _maxPitchHistory = 120;
 
   late AnimationController _pulseController;
   late AnimationController _waveController;
@@ -99,31 +106,51 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
 
     final pitchData = _pitchService.pitchData;
     if (pitchData.pitch <= 0.0) {
+      _addPitchPoint(0.0, 0.0, false);
       if (_centsDifference != 0.0) {
         setState(() {
           _centsDifference = 0.0;
+          _effectiveSungNote = '';
+          _detectedOctaveOffset = 0;
         });
       }
       return;
     }
 
     final targetPitch = _pitchService.getPitchFromNote(_targetNote);
-    final cents =
-        _pitchService.getCentsDifference(targetPitch, pitchData.pitch);
+    double cents = 0.0;
+    int octaveOffset = 0;
 
-    setState(() => _centsDifference = cents);
+    if (_autoTransposeOctaves) {
+      // Auto-transpose to comfortable singer octave
+      cents = _pitchService.getOctaveWrappedCentsDifference(targetPitch, pitchData.pitch);
+      final rawCents = _pitchService.getCentsDifference(targetPitch, pitchData.pitch);
+      octaveOffset = ((rawCents - cents) / 1200.0).round();
+    } else {
+      // Exact octave required
+      cents = _pitchService.getCentsDifference(targetPitch, pitchData.pitch);
+      octaveOffset = 0;
+    }
 
-    // Pitch match accuracy tolerance: +-15 cents
-    if (cents.abs() < 15) {
+    _addPitchPoint(cents, pitchData.pitch, true);
+
+    setState(() {
+      _centsDifference = cents;
+      _effectiveSungNote = pitchData.note;
+      _detectedOctaveOffset = octaveOffset;
+    });
+
+    // Pitch match accuracy tolerance: +-20 cents for natural vocal vibrato
+    if (cents.abs() <= 20) {
       if (_inTuneTimer == null || !_inTuneTimer!.isActive) {
         _inTuneTimer =
-            Timer.periodic(const Duration(milliseconds: 40), (timer) {
+            Timer.periodic(const Duration(milliseconds: 35), (timer) {
           if (!mounted) {
             timer.cancel();
             return;
           }
           setState(() {
-            _inTuneProgress = (_inTuneProgress + 0.04).clamp(0.0, 1.0);
+            _inTuneProgress = (_inTuneProgress + 0.035).clamp(0.0, 1.0);
           });
 
           if (_inTuneProgress >= 1.0) {
@@ -135,14 +162,27 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
       _inTuneTimer?.cancel();
       if (mounted && _inTuneProgress > 0) {
         setState(() {
-          _inTuneProgress = (_inTuneProgress - 0.06).clamp(0.0, 1.0);
+          _inTuneProgress = (_inTuneProgress - 0.045).clamp(0.0, 1.0);
         });
       }
     }
   }
 
+  void _addPitchPoint(double cents, double pitch, bool hasPitch) {
+    _pitchFlowHistory.add(PitchPoint(
+      cents: cents,
+      pitch: pitch,
+      hasPitch: hasPitch,
+      time: DateTime.now(),
+    ));
+    if (_pitchFlowHistory.length > _maxPitchHistory) {
+      _pitchFlowHistory.removeAt(0);
+    }
+  }
+
   void _startPractice() async {
     _reset(keepState: true);
+    _pitchFlowHistory.clear();
     setState(() => _state = TrainerState.playing);
     _pulseController.repeat(reverse: true);
 
@@ -202,7 +242,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
     _pitchService.stopListening();
     _pulseController.stop();
     _confettiController.play();
-    _pitchService.playNoteBeep(_targetNote);
+    _pitchService.playSuccessBeep();
     if (mounted) {
       setState(() {
         _state = TrainerState.finished;
@@ -221,6 +261,8 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
         if (!keepState) _state = TrainerState.idle;
         _centsDifference = 0;
         _inTuneProgress = 0;
+        _effectiveSungNote = '';
+        _detectedOctaveOffset = 0;
       });
     }
   }
@@ -229,6 +271,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
     if (_state == TrainerState.idle) {
       setState(() {
         _currentNoteIndex = index;
+        _pitchFlowHistory.clear();
       });
       _playReferenceToneOnly();
     }
@@ -310,20 +353,24 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
                           children: [
                             // Status Card Banner
                             _buildHeaderStatusCard(theme, isDark),
-                            SizedBox(height: context.w(16)),
+                            SizedBox(height: context.w(14)),
 
-                            // Target Note Card & Frequency Readout
+                            // Target Note Card & Octave Controls
                             _buildTargetNoteSelector(
                               theme,
                               targetPitch: targetPitch,
                               detectedPitch: detectedPitch,
                               detectedNote: detectedNote,
                             ),
-                            SizedBox(height: context.w(20)),
+                            SizedBox(height: context.w(14)),
+
+                            // Real-time Pitch Flow Roll (Yousician Style)
+                            _buildLivePitchFlowCard(theme, isDark),
+                            SizedBox(height: context.w(14)),
 
                             // Interactive Cents Arc Gauge Visualizer
                             _buildVisualizerGaugeCard(theme, isDark),
-                            SizedBox(height: context.w(20)),
+                            SizedBox(height: context.w(14)),
 
                             // Vocal Piano Roll Live Keyboard Feedback
                             VocalPianoRoll(
@@ -334,7 +381,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
                                   ? detectedNote
                                   : _targetNote,
                             ),
-                            SizedBox(height: context.w(16)),
+                            SizedBox(height: context.w(14)),
 
                             // Note Selector Carousel Chips
                             _buildNoteChipsPicker(theme),
@@ -389,7 +436,9 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
         break;
       case TrainerState.listening:
         text = 'Sing into Microphone';
-        subtext = 'Adjust your voice pitch to match target';
+        subtext = _detectedOctaveOffset != 0
+            ? 'Singing in Octave with pitch transposition'
+            : 'Adjust your voice pitch to match target';
         icon = Icons.mic_rounded;
         accentColor = Colors.amber.shade700;
         break;
@@ -410,7 +459,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(context.w(16)),
+      padding: EdgeInsets.all(context.w(14)),
       decoration: BoxDecoration(
         color: accentColor.withOpacity(0.12),
         borderRadius: BorderRadius.circular(22),
@@ -474,7 +523,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
     ).animate().fadeIn().slideY(begin: -0.1);
   }
 
-  /// Big Display Target Note with Next/Previous Controls & Frequency Readout
+  /// Big Display Target Note with Next/Previous Controls & Octave Transposition Toggle
   Widget _buildTargetNoteSelector(
     ThemeData theme, {
     required double targetPitch,
@@ -484,7 +533,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
     final canChange = _state == TrainerState.idle;
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
@@ -545,7 +594,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
                   Text(
                     _targetNote,
                     style: GoogleFonts.poppins(
-                      fontSize: 52,
+                      fontSize: 48,
                       fontWeight: FontWeight.w800,
                       height: 1.1,
                       color: theme.colorScheme.onSurface,
@@ -570,71 +619,121 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
             ],
           ),
 
-          // Real-time Mic Readout bar while singing
-          if (_state == TrainerState.listening) ...[
-            const SizedBox(height: 12),
-            Divider(color: theme.colorScheme.outline.withOpacity(0.1)),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildMetricColumn(
-                  theme,
-                  label: 'SUNG NOTE',
-                  value: detectedNote.isNotEmpty ? detectedNote : '...',
-                  color: Colors.amber.shade800,
+          // Transposition Mode & Metric column
+          const SizedBox(height: 8),
+          Divider(color: theme.colorScheme.outline.withOpacity(0.1)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  setState(() => _autoTransposeOctaves = !_autoTransposeOctaves);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _autoTransposeOctaves
+                            ? Icons.tune_rounded
+                            : Icons.lock_outline_rounded,
+                        size: 14,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _autoTransposeOctaves ? 'Any Octave (Auto)' : 'Exact Octave',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                Container(
-                  height: 24,
-                  width: 1,
-                  color: theme.colorScheme.outline.withOpacity(0.2),
+              ),
+              if (_state == TrainerState.listening && detectedPitch > 0)
+                Text(
+                  _detectedOctaveOffset == 0
+                      ? 'Exact Octave Match'
+                      : 'Octave ${_detectedOctaveOffset > 0 ? "+$_detectedOctaveOffset" : "$_detectedOctaveOffset"} Match',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade700,
+                  ),
                 ),
-                _buildMetricColumn(
-                  theme,
-                  label: 'SUNG FREQ',
-                  value: detectedPitch > 0
-                      ? '${detectedPitch.toStringAsFixed(1)} Hz'
-                      : '--- Hz',
-                  color: theme.colorScheme.primary,
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMetricColumn(ThemeData theme,
-      {required String label, required String value, required Color color}) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.0,
-            color: theme.colorScheme.onSurface.withOpacity(0.5),
-          ),
+  /// Live Scrolling Vocal Pitch Flow Visualizer (Yousician Style)
+  Widget _buildLivePitchFlowCard(ThemeData theme, bool isDark) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: theme.colorScheme.outline.withOpacity(0.12)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'REAL-TIME PITCH FLOW',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+                Text(
+                  _state == TrainerState.listening ? 'LIVE MIC' : 'STANDBY',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: _state == TrainerState.listening
+                        ? Colors.green
+                        : Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 110,
+              width: double.infinity,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: CustomPaint(
+                  painter: _PitchFlowPainter(
+                    history: _pitchFlowHistory,
+                    isListening: _state == TrainerState.listening,
+                    isDark: isDark,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: GoogleFonts.poppins(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
   /// Precision Gauge Card displaying Cents, Arc Needle, and Hold Progress
   Widget _buildVisualizerGaugeCard(ThemeData theme, bool isDark) {
     final absCents = _centsDifference.abs();
-    final isInTune = absCents < 15 && _state == TrainerState.listening;
+    final isInTune = absCents <= 20 && _state == TrainerState.listening;
 
     String hintMessage = 'READY';
     Color hintColor = theme.colorScheme.onSurface.withOpacity(0.5);
@@ -665,7 +764,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
         side: BorderSide(color: theme.colorScheme.outline.withOpacity(0.12)),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 18.0, horizontal: 16.0),
+        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
         child: Column(
           children: [
             // Status Feedback Tag
@@ -686,11 +785,11 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
             // Canvas Dynamic Meter Painter
             SizedBox(
-              height: 100,
+              height: 80,
               width: double.infinity,
               child: CustomPaint(
                 painter: _GaugeVisualizerPainter(
@@ -885,6 +984,90 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
   }
 }
 
+/// Real-Time Scrolling Vocal Pitch Curve Painter (Yousician Flow Style)
+class _PitchFlowPainter extends CustomPainter {
+  final List<PitchPoint> history;
+  final bool isListening;
+  final bool isDark;
+
+  _PitchFlowPainter({
+    required this.history,
+    required this.isListening,
+    required this.isDark,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bgPaint = Paint()
+      ..color = isDark ? const Color(0xFF0F131D) : const Color(0xFFF1F4F9);
+    canvas.drawRect(Offset.zero & size, bgPaint);
+
+    final midY = size.height / 2;
+
+    // In-tune target corridor (corresponds to +-20 cents)
+    final corridorHalfHeight = (20 / 50.0) * (size.height / 2);
+    final targetCorridorPaint = Paint()
+      ..color = const Color(0xFF00E676).withOpacity(0.15)
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(
+      Rect.fromLTRB(0, midY - corridorHalfHeight, size.width, midY + corridorHalfHeight),
+      targetCorridorPaint,
+    );
+
+    // Target Center Line
+    final centerLinePaint = Paint()
+      ..color = const Color(0xFF00E676).withOpacity(0.6)
+      ..strokeWidth = 1.5;
+    canvas.drawLine(Offset(0, midY), Offset(size.width, midY), centerLinePaint);
+
+    if (history.isEmpty) return;
+
+    // Draw user pitch curve
+    final path = Path();
+    final pointCount = history.length;
+    final stepX = size.width / 120.0;
+    bool hasStarted = false;
+
+    final glowPaint = Paint()
+      ..color = const Color(0xFFFFB300).withOpacity(0.8)
+      ..strokeWidth = 3.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    for (int i = 0; i < pointCount; i++) {
+      final pt = history[i];
+      if (!pt.hasPitch) {
+        hasStarted = false;
+        continue;
+      }
+
+      final x = size.width - ((pointCount - 1 - i) * stepX);
+      final clampedCents = pt.cents.clamp(-50.0, 50.0);
+      // Invert Y so positive cents (sharp) is higher up
+      final y = midY - (clampedCents / 50.0) * (size.height / 2 - 8);
+
+      if (!hasStarted) {
+        path.moveTo(x, y);
+        hasStarted = true;
+      } else {
+        path.lineTo(x, y);
+      }
+
+      // Draw active head cursor
+      if (i == pointCount - 1) {
+        final headColor = pt.cents.abs() <= 20 ? const Color(0xFF00E676) : const Color(0xFFFFB300);
+        canvas.drawCircle(Offset(x, y), 5.5, Paint()..color = headColor);
+        canvas.drawCircle(Offset(x, y), 8.0, Paint()..color = headColor.withOpacity(0.35));
+      }
+    }
+
+    canvas.drawPath(path, glowPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PitchFlowPainter oldDelegate) => true;
+}
+
 /// Dynamic Custom Painter for Pitch Gauge and Soundwave Spectrum
 class _GaugeVisualizerPainter extends CustomPainter {
   final double centsDifference;
@@ -917,8 +1100,8 @@ class _GaugeVisualizerPainter extends CustomPainter {
       trackPaint,
     );
 
-    // In-Tune Sweet Spot Zone Window (+-15 Cents)
-    final sweetSpotWidth = (30 / 100.0) * size.width;
+    // In-Tune Sweet Spot Zone Window (+-20 Cents)
+    final sweetSpotWidth = (40 / 100.0) * size.width;
     final sweetSpotPaint = Paint()
       ..color = Colors.green.withOpacity(0.2)
       ..style = PaintingStyle.fill;
@@ -942,7 +1125,7 @@ class _GaugeVisualizerPainter extends CustomPainter {
     for (int cents = -50; cents <= 50; cents += 10) {
       final x = center.dx + (cents / 50.0) * (size.width / 2 - 20);
       final isCenter = cents == 0;
-      final tickHeight = isCenter ? 28.0 : (cents % 25 == 0 ? 18.0 : 10.0);
+      final tickHeight = isCenter ? 28.0 : (cents % 20 == 0 ? 18.0 : 10.0);
 
       canvas.drawLine(
         Offset(x, center.dy - tickHeight / 2),
@@ -955,35 +1138,13 @@ class _GaugeVisualizerPainter extends CustomPainter {
       );
     }
 
-    // Dynamic Live Soundwave spectrum when microphone listening
-    if (state == TrainerState.listening) {
-      final wavePaint = Paint()
-        ..color = theme.colorScheme.primary.withOpacity(0.15)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
-
-      final path = Path();
-      for (double x = 0; x <= size.width; x += 4) {
-        final y = center.dy +
-            math.sin((x / size.width * 4 * math.pi) +
-                    (waveAnimationValue * 2 * math.pi)) *
-                8;
-        if (x == 0) {
-          path.moveTo(x, y);
-        } else {
-          path.lineTo(x, y);
-        }
-      }
-      canvas.drawPath(path, wavePaint);
-    }
-
     // Dynamic Pointer Needle Indicator
     if (state == TrainerState.listening || state == TrainerState.finished) {
       final clampedCents = centsDifference.clamp(-50.0, 50.0);
       final indicatorX =
           center.dx + (clampedCents / 50.0) * (size.width / 2 - 20);
 
-      final isMatched = centsDifference.abs() < 15;
+      final isMatched = centsDifference.abs() <= 20;
       final pointerColor = isMatched ? Colors.green : Colors.amber.shade800;
 
       // Glowing Needle Line

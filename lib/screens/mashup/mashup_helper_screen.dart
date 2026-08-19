@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../models/song_model.dart';
 import '../../providers/song_provider.dart';
+import '../../services/search_service.dart';
 import '../lyrics/song_detail_screen.dart';
 
 final GlobalKey<_MashupCategoryListState> mashupTab1Key =
@@ -498,47 +499,25 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
   }
 
   void _onSearchChanged(String query) {
-    if (query.isEmpty) {
+    if (query.trim().isEmpty) {
       setState(() {
-        _searchQuery = query;
+        _searchQuery = "";
         _searchResults = [];
       });
       return;
     }
-    final queryLower = query.toLowerCase();
-    final Map<String, SearchResult> resultsMap = {};
-    for (var song in widget.regionalSongs) {
-      if (song.lyrics.toLowerCase().contains(queryLower)) {
-        final matchIndex = song.lyrics.toLowerCase().indexOf(queryLower);
-        final start = (matchIndex - 20).clamp(0, song.lyrics.length);
-        final end =
-            (matchIndex + queryLower.length + 30).clamp(0, song.lyrics.length);
-        String snippet = song.lyrics.substring(start, end);
-        if (start > 0) snippet = '...$snippet';
-        if (end < song.lyrics.length) snippet = '$snippet...';
-        resultsMap[song.id] = SearchResult(
-            item: song,
-            matchType: MatchType.lyric,
-            matchSnippet: snippet.replaceAll('\n', ' '));
-      }
-      if (song.artistName.toLowerCase().contains(queryLower)) {
-        resultsMap.putIfAbsent(
-            song.id,
-            () => SearchResult(
-                item: song,
-                matchType: MatchType.artist,
-                matchSnippet: song.artistName));
-      }
-      if (song.title.toLowerCase().contains(queryLower)) {
-        resultsMap[song.id] = SearchResult(
-            item: song,
-            matchType: MatchType.title,
-            matchSnippet: song.artistName);
-      }
-    }
+
+    final results = SearchService().searchLocal(
+      query: query,
+      songs: widget.regionalSongs,
+      artists: [],
+      albums: [],
+      category: SearchCategory.songs,
+    );
+
     setState(() {
       _searchQuery = query;
-      _searchResults = resultsMap.values.toList();
+      _searchResults = results;
     });
   }
 

@@ -31,13 +31,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   final List<_OnboardingInfo> _pages = [
     _OnboardingInfo(
-      'Welcome to Your Vocal Companion',
-      'Everything you need to grow as a worship singer, all in one place.',
+      'Welcome to Mahlete Semay',
+      'Your complete vocal companion to grow as a Zemari, all in one place.',
       Icons.music_note_rounded,
     ),
     _OnboardingInfo(
-      'Find Any Lyric',
-      'Access a vast, searchable library of song lyrics, complete with artist and album details.',
+      'Find Any Mezmur',
+      'Access a vast, searchable library of Mezmur lyrics, complete with artist and album details.',
       Icons.text_fields_rounded,
     ),
     _OnboardingInfo(
@@ -46,8 +46,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       Icons.fitness_center_rounded,
     ),
     _OnboardingInfo(
-      'Master the Stage',
-      'Discover lessons, mashup ideas, and performance tips to elevate your ministry.',
+      'Master Your Service',
+      'Discover vocal lessons, scale guides, and performance tips to elevate your spiritual service.',
       Icons.school_rounded,
     ),
   ];
@@ -173,8 +173,16 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       color: theme.colorScheme.primary.withOpacity(0.2),
                       width: 2),
                 ),
-                child:
-                    Icon(item.icon, size: 72, color: theme.colorScheme.primary),
+                child: item.icon == Icons.music_note_rounded
+                    ? ClipOval(
+                        child: Image.asset(
+                          'assets/logo/logo.png',
+                          width: 72,
+                          height: 72,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Icon(item.icon, size: 72, color: theme.colorScheme.primary),
               ),
             ),
             const SizedBox(height: 32),

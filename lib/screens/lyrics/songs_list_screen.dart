@@ -1,18 +1,16 @@
 import 'dart:ui';
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:animations/animations.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'song_detail_screen.dart';
 import '../../models/album_model.dart';
 import '../../models/artist_model.dart';
 import '../../models/song_model.dart';
 import '../../providers/song_provider.dart';
 import '../../utils/constants.dart';
-import '../../utils/responsive_sizer.dart';
 import '../../widgets/cached_image.dart';
+import 'song_detail_screen.dart';
 
 class SongsListScreen extends StatefulWidget {
   final Album album;
@@ -28,42 +26,42 @@ class SongsListScreen extends StatefulWidget {
   State<SongsListScreen> createState() => _SongsListScreenState();
 }
 
-class _SongsListScreenState extends State<SongsListScreen>
-    with TickerProviderStateMixin {
+class _SongsListScreenState extends State<SongsListScreen> {
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
   bool _isScrolled = false;
-  double _imageScale = 1.0;
-  List<Song> _songsInAlbum = [];
+  String _searchQuery = '';
+  List<Song> _allSongs = [];
 
   @override
   void initState() {
     super.initState();
     _loadSongs();
-
-    _scrollController.addListener(() {
-      final offset = _scrollController.offset;
-      final shouldBeScrolled = offset > 100;
-      final newScale = offset < 0 ? (1.0 - (offset / 250)) : 1.0;
-
-      if (shouldBeScrolled != _isScrolled || (newScale - _imageScale).abs() > 0.01) {
-        setState(() {
-          _isScrolled = shouldBeScrolled;
-          _imageScale = newScale;
-        });
+    _scrollController.addListener(_onScroll);
+    _searchController.addListener(() {
+      final query = _searchController.text.trim().toLowerCase();
+      if (query != _searchQuery) {
+        setState(() => _searchQuery = query);
       }
     });
+  }
+
+  void _onScroll() {
+    final scrolled = _scrollController.hasClients && _scrollController.offset > 140;
+    if (scrolled != _isScrolled) {
+      setState(() => _isScrolled = scrolled);
+    }
   }
 
   void _loadSongs() {
     final songProvider = Provider.of<SongProvider>(context, listen: false);
     final isSinglesAlbum = widget.album.id == singlesAlbumId;
-    _songsInAlbum = isSinglesAlbum
+    _allSongs = isSinglesAlbum
         ? songProvider.allSongs
-        .where((s) =>
-    (s.artistId == widget.album.artistId ||
-        s.artistId == singlesArtistId) &&
-        s.albumId == singlesAlbumId)
-        .toList()
+            .where((s) =>
+                (s.artistId == widget.album.artistId || s.artistId == singlesArtistId) &&
+                s.albumId == singlesAlbumId)
+            .toList()
         : songProvider.getSongsByAlbum(widget.album.id);
   }
 
@@ -77,183 +75,73 @@ class _SongsListScreenState extends State<SongsListScreen>
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
-  }
-
-  Widget _getCoverForSong(Song song, SongProvider songProvider) {
-    final theme = Theme.of(context);
-    String coverUrl = '';
-
-    if (song.albumId == singlesAlbumId) {
-      if (song.artistId != singlesArtistId) {
-        final artist = songProvider.artists.firstWhere(
-              (a) => a.id == song.artistId,
-          orElse: () => Artist(id: '', name: '', imageUrl: '', region: ''),
-        );
-        coverUrl = artist.imageUrl;
-      }
-    } else {
-      final album = songProvider.allAlbums.firstWhere(
-            (a) => a.id == song.albumId,
-        orElse: () =>
-            Album(id: '', title: '', artistId: '', artistName: '', coverImageUrl: ''),
-      );
-      coverUrl = album.coverImageUrl;
-    }
-
-    if (coverUrl.isNotEmpty) {
-      return CachedImage(imageUrl: coverUrl);
-    } else {
-      return Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              theme.colorScheme.primary.withOpacity(0.5),
-              theme.colorScheme.secondary.withOpacity(0.5),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Icon(Icons.music_note,
-            color: Colors.white.withOpacity(0.8), size: 28),
-      );
-    }
   }
 
   String _getCoverUrlForSong(Song song, SongProvider songProvider) {
     if (song.albumId == singlesAlbumId) {
       if (song.artistId != singlesArtistId) {
         final artist = songProvider.artists.firstWhere(
-              (a) => a.id == song.artistId,
+          (a) => a.id == song.artistId,
           orElse: () => Artist(id: '', name: '', imageUrl: '', region: ''),
         );
         return artist.imageUrl;
       }
       return '';
-    } else {
-      final album = songProvider.allAlbums.firstWhere(
-            (a) => a.id == song.albumId,
-        orElse: () =>
-            Album(id: '', title: '', artistId: '', artistName: '', coverImageUrl: ''),
-      );
-      return album.coverImageUrl;
     }
+    return widget.album.coverImageUrl;
   }
 
   @override
   Widget build(BuildContext context) {
+    final songProvider = Provider.of<SongProvider>(context);
     final theme = Theme.of(context);
     final isTablet = MediaQuery.of(context).size.width > 720;
+    final isDark = theme.brightness == Brightness.dark;
 
-    if (isTablet) {
-      return _buildTabletContent(theme);
-    }
+    final filteredSongs = _searchQuery.isEmpty
+        ? _allSongs
+        : _allSongs.where((s) => s.title.toLowerCase().contains(_searchQuery)).toList();
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       extendBodyBehindAppBar: true,
       body: CustomScrollView(
         controller: _scrollController,
         physics: const BouncingScrollPhysics(),
         slivers: [
-          _buildSliverAppBar(theme),
-          _buildSongList(),
+          _buildSliverAppBar(theme, isDark),
+          _buildSearchBar(theme, isDark),
+          _buildSongList(filteredSongs, songProvider, theme, isDark, isTablet),
         ],
       ),
     );
   }
 
-  Widget _buildTabletContent(ThemeData theme) {
-    return Column(
-      children: [
-        _buildTabletHeader(theme),
-        Expanded(child: _buildSongList()),
-      ],
-    );
-  }
-
-  Widget _buildTabletHeader(ThemeData theme) {
-    return SizedBox(
-      height: 150,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Hero(
-            tag: widget.albumHeroTag,
-            child: CachedImage(
-              imageUrl: widget.album.coverImageUrl,
-              errorWidget: Container(color: theme.colorScheme.primary),
-            ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [ Colors.black.withOpacity(0.1), Colors.black.withOpacity(0.8)],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.album.title,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: context.sp(28),
-                    fontWeight: FontWeight.w900,
-                    shadows: const [Shadow(offset: Offset(0, 2), blurRadius: 8, color: Colors.black54)],
-                  ),
-                ),
-                SizedBox(height: context.w(8)),
-                Text(
-                  '${_songsInAlbum.length} Song${_songsInAlbum.length == 1 ? '' : 's'}',
-                  style: TextStyle(color: Colors.white70, fontSize: context.sp(16), fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  SliverAppBar _buildSliverAppBar(ThemeData theme) {
+  SliverAppBar _buildSliverAppBar(ThemeData theme, bool isDark) {
     final isSinglesAlbum = widget.album.id == singlesAlbumId;
 
     return SliverAppBar(
-      expandedHeight: context.w(380),
+      expandedHeight: 320,
       pinned: true,
       stretch: true,
-      backgroundColor: _isScrolled
-          ? theme.colorScheme.surface.withOpacity(0.95)
-          : Colors.transparent,
-      elevation: _isScrolled ? 4 : 0,
+      backgroundColor: _isScrolled ? theme.scaffoldBackgroundColor.withOpacity(0.92) : Colors.transparent,
+      elevation: 0,
       leading: Padding(
-        padding: EdgeInsets.all(context.w(8)),
+        padding: const EdgeInsets.all(8),
         child: ClipOval(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
-                color: theme.colorScheme.background.withOpacity(0.5),
+                color: Colors.black.withOpacity(0.35),
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  )
-                ],
               ),
               child: IconButton(
-                icon: Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white, size: context.w(20)),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
@@ -261,17 +149,17 @@ class _SongsListScreenState extends State<SongsListScreen>
         ),
       ),
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: EdgeInsets.only(
-            left: context.w(60),
-            right: context.w(60),
-            bottom: context.w(16)),
+        titlePadding: const EdgeInsets.only(left: 56, right: 20, bottom: 16),
         title: AnimatedOpacity(
           opacity: _isScrolled ? 1.0 : 0.0,
-          duration: const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 200),
           child: Text(
             widget.album.title,
-            style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600, fontSize: context.sp(16)),
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+              color: theme.colorScheme.onSurface,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -279,104 +167,135 @@ class _SongsListScreenState extends State<SongsListScreen>
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Hero(
-              tag: widget.albumHeroTag,
-              child: Transform.scale(
-                scale: _imageScale,
-                alignment: Alignment.center,
-                child: isSinglesAlbum
-                    ? Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        theme.colorScheme.primary,
-                        theme.colorScheme.secondary
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+            // Background Artwork
+            if (!isSinglesAlbum && widget.album.coverImageUrl.isNotEmpty)
+              CachedImage(
+                imageUrl: widget.album.coverImageUrl,
+                fit: BoxFit.cover,
+                memCacheWidth: 600,
+                memCacheHeight: 400,
+              )
+            else
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                )
-                    : CachedImage(
-                  imageUrl: widget.album.coverImageUrl,
-                  fit: BoxFit.cover,
                 ),
               ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.black.withOpacity(0.1),
-                    Colors.black.withOpacity(0.6),
-                    Colors.black.withOpacity(0.9)
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: const [0.0, 0.4, 1.0],
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: context.w(80),
-              left: context.w(24),
-              right: context.w(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.album.title,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: context.sp(34),
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        const Shadow(
-                            offset: Offset(0, 3),
-                            blurRadius: 12,
-                            color: Colors.black87)
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: context.w(10)),
-                  Row(
-                    children: [
-                      Text(
-                        widget.album.artistName,
-                        style: GoogleFonts.poppins(
-                          color: Colors.white70,
-                          fontSize: context.sp(16),
-                          fontWeight: FontWeight.w500,
-                          shadows: [
-                            const Shadow(
-                                offset: Offset(0, 1),
-                                blurRadius: 6,
-                                color: Colors.black54)
-                          ],
-                        ),
-                      ),
-                      SizedBox(width: context.w(10)),
-                      Container(
-                        width: context.w(4),
-                        height: context.w(4),
-                        decoration: const BoxDecoration(
-                            color: Colors.white70, shape: BoxShape.circle),
-                      ),
-                      SizedBox(width: context.w(10)),
-                      Text(
-                        '${_songsInAlbum.length} ${_songsInAlbum.length == 1 ? 'song' : 'songs'}',
-                        style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: context.sp(14),
-                            fontWeight: FontWeight.w500),
-                      ),
+
+            // Ambient Blur & Gradient
+            BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.2),
+                      Colors.black.withOpacity(0.6),
+                      theme.scaffoldBackgroundColor,
                     ],
+                    stops: const [0.0, 0.5, 1.0],
+                  ),
+                ),
+              ),
+            ),
+
+            // Artwork & Info Center
+            Positioned(
+              top: 60,
+              left: 20,
+              right: 20,
+              child: Row(
+                children: [
+                  Hero(
+                    tag: widget.albumHeroTag,
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.4),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: isSinglesAlbum
+                            ? Container(
+                                color: theme.colorScheme.primary,
+                                child: const Center(
+                                  child: Icon(IconsaxPlusBold.music, size: 48, color: Colors.white),
+                                ),
+                              )
+                            : CachedImage(
+                                imageUrl: widget.album.coverImageUrl,
+                                memCacheWidth: 300,
+                                memCacheHeight: 300,
+                              ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 18),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.album.title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.3,
+                            shadows: [
+                              Shadow(offset: Offset(0, 2), blurRadius: 6, color: Colors.black54),
+                            ],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          widget.album.artistName,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.85),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white.withOpacity(0.3)),
+                          ),
+                          child: Text(
+                            '${_allSongs.length} ${_allSongs.length == 1 ? 'Track' : 'Tracks'}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
-              )
-                  .animate()
-                  .fadeIn(delay: 200.ms, duration: 600.ms)
-                  .slideY(begin: 0.25, curve: Curves.easeOutCubic),
+              ),
             ),
           ],
         ),
@@ -384,22 +303,76 @@ class _SongsListScreenState extends State<SongsListScreen>
     );
   }
 
-  Widget _buildSongList() {
-    final isTablet = MediaQuery.of(context).size.width > 720;
+  SliverToBoxAdapter _buildSearchBar(ThemeData theme, bool isDark) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? theme.cardColor.withOpacity(0.5) : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.colorScheme.onSurface.withOpacity(0.06),
+            ),
+          ),
+          child: TextField(
+            controller: _searchController,
+            style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
+            decoration: InputDecoration(
+              hintText: 'Search tracks in this album...',
+              hintStyle: TextStyle(
+                color: theme.colorScheme.onSurface.withOpacity(0.45),
+                fontSize: 13.5,
+              ),
+              prefixIcon: Icon(
+                IconsaxPlusLinear.search_normal_1,
+                color: theme.colorScheme.primary,
+                size: 18,
+              ),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      onPressed: () => _searchController.clear(),
+                    )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-    if (_songsInAlbum.isEmpty) {
+  Widget _buildSongList(
+    List<Song> songs,
+    SongProvider songProvider,
+    ThemeData theme,
+    bool isDark,
+    bool isTablet,
+  ) {
+    if (songs.isEmpty) {
       return SliverFillRemaining(
+        hasScrollBody: false,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.music_off_rounded, size: context.w(64), color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
-              SizedBox(height: context.w(16)),
+              Icon(
+                IconsaxPlusBold.music_filter,
+                size: 48,
+                color: theme.colorScheme.onSurface.withOpacity(0.3),
+              ),
+              const SizedBox(height: 12),
               Text(
-                "No songs found in this album.",
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: context.sp(16)),
+                _searchQuery.isNotEmpty
+                    ? 'No tracks match "$_searchQuery"'
+                    : 'No songs available in this album',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
               ),
             ],
           ),
@@ -407,230 +380,208 @@ class _SongsListScreenState extends State<SongsListScreen>
       );
     }
 
-    if (isTablet) {
-      return ListView.builder(
-        padding: EdgeInsets.fromLTRB(context.w(20), context.w(24), context.w(20), context.w(100)),
-        itemCount: _songsInAlbum.length,
-        itemBuilder: (context, index) {
-          final song = _songsInAlbum[index];
-          final songHeroTag = 'song-list-${song.id}';
-          return _buildSongTile(context, song, index, songHeroTag)
-              .animate()
-              .fadeIn(duration: 500.ms, delay: (100 * index).ms)
-              .slideY(begin: 0.15, curve: Curves.easeOutCubic);
-        },
-      );
-    }
-
     return SliverPadding(
-      padding: EdgeInsets.fromLTRB(context.w(20), context.w(24), context.w(20), context.w(100)),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
-              (context, index) {
-            final song = _songsInAlbum[index];
-            final songHeroTag = 'song-list-${song.id}';
-            return _buildSongTile(context, song, index, songHeroTag)
-                .animate()
-                .fadeIn(duration: 500.ms, delay: (100 * index).ms)
-                .slideY(begin: 0.15, curve: Curves.easeOutCubic);
+          (context, index) {
+            final song = songs[index];
+            final songHeroTag = 'song-${song.id}';
+            final coverUrl = _getCoverUrlForSong(song, songProvider);
+
+            return _SongTile(
+              song: song,
+              index: index + 1,
+              coverUrl: coverUrl,
+              heroTag: songHeroTag,
+              isDark: isDark,
+            );
           },
-          childCount: _songsInAlbum.length,
+          childCount: songs.length,
         ),
-      ),
-    );
-  }
-
-  Widget _buildSongTile(BuildContext context, Song song, int index, String songHeroTag) {
-    final theme = Theme.of(context);
-    final isSinglesAlbum = widget.album.id == singlesAlbumId;
-    final songProvider = Provider.of<SongProvider>(context, listen: false);
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: context.w(12)),
-      child: OpenContainer(
-        transitionType: ContainerTransitionType.fadeThrough,
-        transitionDuration: const Duration(milliseconds: 500),
-        closedElevation: 0,
-        openElevation: 0,
-        closedColor: Colors.transparent,
-        openColor: Colors.transparent,
-        openBuilder: (context, _) => SongDetailScreen(
-          song: song,
-          heroTag: songHeroTag,
-          albumCoverUrl: isSinglesAlbum
-              ? _getCoverUrlForSong(song, songProvider)
-              : widget.album.coverImageUrl,
-        ),
-        closedBuilder: (context, openContainer) {
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(context.w(16)),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                height: context.w(72),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(context.w(16)),
-                  color: theme.colorScheme.surface.withOpacity(0.25),
-                  border: Border.all(
-                      color: theme.colorScheme.primary.withOpacity(0.1)),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4))
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: openContainer,
-                    borderRadius: BorderRadius.circular(context.w(16)),
-                    splashColor: theme.colorScheme.primary.withOpacity(0.2),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: context.w(16)),
-                      child: Row(
-                        children: [
-                          Hero(
-                            tag: songHeroTag,
-                            child: Container(
-                              width: context.w(52),
-                              height: context.w(52),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(colors: [
-                                  theme.colorScheme.primary.withOpacity(0.25),
-                                  theme.colorScheme.secondary.withOpacity(0.25)
-                                ]),
-                                border: Border.all(
-                                    color: theme.colorScheme.primary
-                                        .withOpacity(0.4),
-                                    width: 2),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: theme.colorScheme.primary
-                                        .withOpacity(0.3),
-                                    blurRadius: 12,
-                                  )
-                                ],
-                              ),
-                              child: ClipOval(
-                                child: isSinglesAlbum
-                                    ? _getCoverForSong(song, songProvider)
-                                    : CachedImage(
-                                    imageUrl: widget.album.coverImageUrl),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: context.w(16)),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(song.title,
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: -0.2,
-                                        fontSize: context.sp(15)),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis),
-                                const SizedBox(height: 2),
-                                _SongMetadataRow(
-                                    song: song, fontSize: context.sp(12)),
-                              ],
-                            ),
-                          ),
-                          Consumer<SongProvider>(
-                            builder: (context, provider, child) {
-                              return Container(
-                                width: context.w(40),
-                                height: context.w(40),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: provider.isFavorite(song.id)
-                                      ? Colors.red.withOpacity(0.15)
-                                      : theme.colorScheme.surfaceVariant
-                                      .withOpacity(0.5),
-                                ),
-                                child: IconButton(
-                                  icon: Icon(
-                                    provider.isFavorite(song.id)
-                                        ? Icons.favorite_rounded
-                                        : Icons.favorite_border_rounded,
-                                    color: provider.isFavorite(song.id)
-                                        ? Colors.red.shade400
-                                        : theme.colorScheme.onSurface
-                                        .withOpacity(0.6),
-                                    size: context.w(20),
-                                  ),
-                                  onPressed: () =>
-                                      provider.toggleFavorite(song.id),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
       ),
     );
   }
 }
 
-class _SongMetadataRow extends StatelessWidget {
-  const _SongMetadataRow({
-    required this.song,
-    required this.fontSize,
-  });
-
+class _SongTile extends StatelessWidget {
   final Song song;
-  final double fontSize;
+  final int index;
+  final String coverUrl;
+  final String heroTag;
+  final bool isDark;
+
+  const _SongTile({
+    required this.song,
+    required this.index,
+    required this.coverUrl,
+    required this.heroTag,
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final compactFormat = NumberFormat.compact().format(song.viewCount);
+    final songProvider = Provider.of<SongProvider>(context);
+    final isFavorite = songProvider.isFavorite(song.id);
+    final compactViews = NumberFormat.compact().format(song.viewCount);
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          'Track',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: fontSize,
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
-          ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: isDark ? theme.cardColor.withOpacity(0.35) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.onSurface.withOpacity(isDark ? 0.05 : 0.04),
         ),
-        if (song.viewCount > 0) ...[
-          Text(
-            ' • ',
-            style: TextStyle(
-              fontSize: fontSize,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+      ),
+      child: OpenContainer(
+        transitionType: ContainerTransitionType.fadeThrough,
+        transitionDuration: const Duration(milliseconds: 400),
+        closedElevation: 0,
+        openElevation: 0,
+        closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        closedColor: Colors.transparent,
+        openColor: Colors.transparent,
+        openBuilder: (context, _) => SongDetailScreen(
+          song: song,
+          heroTag: heroTag,
+          albumCoverUrl: coverUrl,
+        ),
+        closedBuilder: (context, openContainer) {
+          return InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: openContainer,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                children: [
+                  // Track Index Number
+                  Container(
+                    width: 28,
+                    alignment: Alignment.center,
+                    child: Text(
+                      index.toString().padLeft(2, '0'),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Small Song Avatar
+                  Hero(
+                    tag: heroTag,
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: CachedImage(
+                          imageUrl: coverUrl,
+                          memCacheWidth: 150,
+                          memCacheHeight: 150,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+
+                  // Song Title & Badges
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          song.title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            letterSpacing: -0.2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            if (song.scale != null && song.scale!.isNotEmpty) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  song.scale!,
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                            ],
+                            if (song.rhythm != null && song.rhythm!.isNotEmpty) ...[
+                              Text(
+                                song.rhythm!,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                            ],
+                            if (song.viewCount > 0) ...[
+                              Icon(
+                                IconsaxPlusLinear.eye,
+                                size: 12,
+                                color: theme.colorScheme.onSurface.withOpacity(0.4),
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                compactViews,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Favorite Button
+                  IconButton(
+                    icon: Icon(
+                      isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                      color: isFavorite ? Colors.redAccent : theme.colorScheme.onSurface.withOpacity(0.35),
+                      size: 20,
+                    ),
+                    onPressed: () => songProvider.toggleFavorite(song.id),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Icon(Icons.visibility_outlined,
-              size: fontSize + 1,
-              color: theme.colorScheme.onSurface.withOpacity(0.5)),
-          const SizedBox(width: 3),
-          Text(
-            compactFormat,
-            style: TextStyle(
-              fontSize: fontSize,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-        ]
-      ],
+          );
+        },
+      ),
     );
   }
 }

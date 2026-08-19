@@ -1,4 +1,24 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+extension DateTimeCompatExtension on DateTime {
+  DateTime toDate() => this;
+}
+
+DateTime _parseDateTime(dynamic value) {
+  if (value == null) return DateTime.now();
+  if (value is DateTime) return value;
+  if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+  if (value is String) {
+    try {
+      return DateTime.parse(value);
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
+  try {
+    return (value as dynamic).toDate();
+  } catch (_) {
+    return DateTime.now();
+  }
+}
 
 class ActivityLog {
   final String id;
@@ -6,7 +26,7 @@ class ActivityLog {
   final String moderatorName;
   final String action;
   final String details;
-  final Timestamp timestamp;
+  final DateTime timestamp;
   final bool isSeen;
 
   ActivityLog({
@@ -19,27 +39,52 @@ class ActivityLog {
     this.isSeen = false,
   });
 
-  factory ActivityLog.fromFirestore(DocumentSnapshot doc) {
-    Map data = doc.data() as Map<String, dynamic>;
+  factory ActivityLog.fromMap(Map<String, dynamic> data, [String? id]) {
     return ActivityLog(
-      id: doc.id,
-      moderatorId: data['moderatorId'] ?? '',
-      moderatorName: data['moderatorName'] ?? '',
+      id: (id != null && id.isNotEmpty) ? id : (data['id']?.toString() ?? ''),
+      moderatorId: data['moderatorId'] ?? data['moderator_id'] ?? '',
+      moderatorName: data['moderatorName'] ?? data['moderator_name'] ?? '',
       action: data['action'] ?? '',
       details: data['details'] ?? '',
-      timestamp: data['timestamp'] ?? Timestamp.now(),
-      isSeen: data['isSeen'] ?? false,
+      timestamp: _parseDateTime(data['timestamp'] ?? data['created_at']),
+      isSeen: data['isSeen'] ?? data['is_seen'] ?? false,
     );
+  }
+
+  factory ActivityLog.fromJson(Map<String, dynamic> json) => ActivityLog.fromMap(json);
+
+  factory ActivityLog.fromFirestore(dynamic doc) {
+    if (doc is Map<String, dynamic>) {
+      return ActivityLog.fromMap(doc);
+    }
+    final data = doc.data() as Map<String, dynamic>;
+    return ActivityLog.fromMap(data, doc.id);
   }
 
   Map<String, dynamic> toJson() {
     return {
+      if (id.isNotEmpty) 'id': id,
       'moderatorId': moderatorId,
+      'moderator_id': moderatorId,
       'moderatorName': moderatorName,
+      'moderator_name': moderatorName,
       'action': action,
       'details': details,
-      'timestamp': timestamp,
+      'timestamp': timestamp.toIso8601String(),
       'isSeen': isSeen,
+      'is_seen': isSeen,
+    };
+  }
+
+  Map<String, dynamic> toSupabase() {
+    return {
+      if (id.isNotEmpty) 'id': id,
+      'moderator_id': moderatorId,
+      'moderator_name': moderatorName,
+      'action': action,
+      'details': details,
+      'timestamp': timestamp.toIso8601String(),
+      'is_seen': isSeen,
     };
   }
 }

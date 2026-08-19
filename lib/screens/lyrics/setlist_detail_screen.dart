@@ -9,7 +9,6 @@ import 'package:mahlete_semay_project/providers/setlist_provider.dart';
 import 'package:mahlete_semay_project/providers/song_provider.dart';
 import 'package:mahlete_semay_project/screens/lyrics/song_detail_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SetlistDetailScreen extends StatelessWidget {
   final Setlist setlist;
@@ -140,7 +139,7 @@ class _SetlistSongCard extends StatelessWidget {
 
     final song = songProvider.allSongs.firstWhere(
           (s) => s.id == setlistSong.songId,
-      orElse: () => Song(id: 'deleted', title: 'Song Not Found', artistName: 'Please remove', artistId: '', albumId: '', albumTitle: '', lyrics: '', viewCount: 0, createdAt: Timestamp.fromDate(setlistCreationDate.toUtc())),
+      orElse: () => Song(id: 'deleted', title: 'Song Not Found', artistName: 'Please remove', artistId: '', albumId: '', albumTitle: '', lyrics: '', viewCount: 0, createdAt: setlistCreationDate.toUtc()),
     );
     final bool isDeleted = song.id == 'deleted';
 

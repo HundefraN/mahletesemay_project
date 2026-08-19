@@ -10,13 +10,12 @@ import 'package:provider/provider.dart';
 
 import 'package:mahlete_semay_project/managers/download_manager.dart';
 import 'package:mahlete_semay_project/models/vocal_plan_model.dart';
+import 'package:mahlete_semay_project/providers/notification_settings_provider.dart';
 import 'package:mahlete_semay_project/providers/vocal_progress_provider.dart';
 import 'package:mahlete_semay_project/services/firebase_service.dart';
 import 'package:mahlete_semay_project/services/notification_service.dart';
 import 'package:mahlete_semay_project/utils/responsive_sizer.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
-
-const int continuationReminderId = 200;
 
 class VocalPlanDetailScreen extends StatefulWidget {
   final String planId;
@@ -72,22 +71,28 @@ class _VocalPlanDetailScreenState extends State<VocalPlanDetailScreen>
   }
 
   Future<void> _scheduleContinuationReminder() async {
+    if (!mounted) return;
+    final notificationSettings =
+        Provider.of<NotificationSettingsProvider>(context, listen: false);
+    if (!notificationSettings.practiceFollowUpsEnabled) return;
+
     final progressProvider =
         Provider.of<VocalProgressProvider>(context, listen: false);
     final lastCompleted = progressProvider.getLastCompletedDay(widget.planId);
-    if (_days.isNotEmpty && lastCompleted < _days.length) {
-      await NotificationService.scheduleContinuationReminder(
-        id: continuationReminderId,
-        title: "Keep Up Your Vocal Progress!",
-        body:
-            "Return to complete Day ${lastCompleted + 1} and strengthen your voice today!",
-        delay: const Duration(hours: 1),
-      );
-    }
+    if (_days.isEmpty || lastCompleted >= _days.length) return;
+
+    await NotificationService.schedulePracticeContinuation(
+      delay: const Duration(hours: 1),
+      title: 'Finish ${widget.planTitle}',
+      body:
+          'You stopped just before Day ${lastCompleted + 1}. Pick up where you left off and keep your streak going.',
+    );
   }
 
   Future<void> _cancelContinuationReminder() async {
-    await NotificationService.cancelNotification(continuationReminderId);
+    await NotificationService.cancel(
+      NotificationService.practiceContinuationId,
+    );
   }
 
   void _onDayCompleted() {
