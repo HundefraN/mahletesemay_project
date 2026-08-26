@@ -340,11 +340,17 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            song.title,
-                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, fontSize: 16, letterSpacing: -0.2),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          Hero(
+                            tag: 'song-title-${song.id}',
+                            child: Material(
+                              color: Colors.transparent,
+                              child: Text(
+                                song.title,
+                                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, fontSize: 16, letterSpacing: -0.2),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 4),
                           _SongMetadataRow(song: song, fontSize: 13),

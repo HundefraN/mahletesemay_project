@@ -24,6 +24,7 @@ import '../../services/firebase_service.dart';
 import '../../services/supabase_service.dart';
 import '../home_screen.dart';
 import 'manage_vocal_plans_screen.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class PortalHomeScreen extends StatelessWidget {
   const PortalHomeScreen({super.key});
@@ -463,130 +464,131 @@ class PortalHomeScreen extends StatelessWidget {
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        child: Container(
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF0F1D33) : Colors.white,
-            borderRadius: BorderRadius.circular(32),
-            border: Border.all(
-              color: (isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed).withOpacity(0.3),
-              width: 1.5,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0F1D33) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: (isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed).withOpacity(0.3),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: (isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed).withOpacity(0.15),
+                  blurRadius: 24,
+                  spreadRadius: 4,
+                ),
+              ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: (isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed).withOpacity(0.15),
-                blurRadius: 32,
-                spreadRadius: 8,
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: (isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed).withOpacity(0.1),
-                  shape: BoxShape.circle,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: (isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isRepairMode ? Icons.lock_open_rounded : Icons.build_circle_rounded,
+                    color: isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed,
+                    size: 36,
+                  ),
                 ),
-                child: Icon(
-                  isRepairMode ? Icons.lock_open_rounded : Icons.build_circle_rounded,
-                  color: isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed,
-                  size: 56,
+                const SizedBox(height: 14),
+                Text(
+                  isRepairMode ? 'Deactivate Repair Mode?' : 'Activate Repair Mode?',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : AdminUiKit.primaryNavy,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                isRepairMode ? 'Deactivate Repair Mode?' : 'Activate Repair Mode?',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? Colors.white : AdminUiKit.primaryNavy,
+                const SizedBox(height: 8),
+                Text(
+                  isRepairMode
+                      ? 'This will deactivate repair mode and unlock the app. All users will regain full access to all features immediately.'
+                      : 'This will activate repair mode and lock the app for everyone except Admins. Users will see a maintenance screen. Proceed with caution!',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                isRepairMode
-                    ? 'This will deactivate repair mode and unlock the app. All users will regain full access to all features immediately.'
-                    : 'This will activate repair mode and lock the app for everyone except Admins. Users will see a maintenance screen. Proceed with caution!',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white70 : Colors.black54,
-                  height: 1.6,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 36),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        side: BorderSide(color: isDark ? Colors.white24 : Colors.black12, width: 2),
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        'Cancel',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                          color: isDark ? Colors.white70 : Colors.black54,
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          side: BorderSide(color: isDark ? Colors.white24 : Colors.black12, width: 1.5),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          'Cancel',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13.5,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        elevation: 0,
-                      ),
-                      onPressed: () async {
-                        Navigator.pop(context);
-                        final adminId = moderator?.id ?? authProvider.currentUser?.id ?? 'admin';
-                        final adminName = moderator?.fullName ?? authProvider.currentUser?.email ?? 'Admin';
-                        try {
-                          await SupabaseService().setRepairMode(
-                            !isRepairMode,
-                            adminId,
-                            adminName,
-                          );
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(!isRepairMode ? 'Repair Mode is now Active (App Locked)' : 'Repair Mode is now Inactive (App Unlocked)'),
-                                backgroundColor: !isRepairMode ? AdminUiKit.roseRed : AdminUiKit.emeraldGreen,
-                              ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                        ),
+                        onPressed: () async {
+                          Navigator.pop(context);
+                          final adminId = moderator?.id ?? authProvider.currentUser?.id ?? 'admin';
+                          final adminName = moderator?.fullName ?? authProvider.currentUser?.email ?? 'Admin';
+                          try {
+                            await SupabaseService().setRepairMode(
+                              !isRepairMode,
+                              adminId,
+                              adminName,
                             );
+                            if (context.mounted) {
+                              CustomSnackbar.show(
+                                context,
+                                !isRepairMode ? 'Repair Mode is now Active (App Locked)' : 'Repair Mode is now Inactive (App Unlocked)',
+                                isError: !isRepairMode,
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              CustomSnackbar.show(context, 'Error: $e', isError: true);
+                            }
                           }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-                            );
-                          }
-                        }
-                      },
-                      child: Text(
-                        isRepairMode ? 'Deactivate (Unlock)' : 'Activate (Lock)',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                          color: Colors.white,
+                        },
+                        child: Text(
+                          'Confirm',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13.5,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

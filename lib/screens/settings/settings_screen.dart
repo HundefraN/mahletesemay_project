@@ -199,16 +199,17 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
           physics: const BouncingScrollPhysics(),
           slivers: [
             SliverAppBar(
-              expandedHeight: 120,
+              expandedHeight: 90,
               pinned: true,
               stretch: true,
               backgroundColor: Colors.transparent,
               flexibleSpace: FlexibleSpaceBar(
-                title: Text(l10n.settings, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: theme.appBarTheme.titleTextStyle?.color)),
+                titlePadding: const EdgeInsets.only(left: 16, bottom: 12),
+                title: Text(l10n.settings, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18, color: theme.appBarTheme.titleTextStyle?.color)),
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 80),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 60),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   FadeTransition(
@@ -225,15 +226,15 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                                 ? _buildSimpleProfileCard(moderator, theme)
                                 : const SizedBox.shrink()),
 
-                          const SizedBox(height: 24),
-                          _buildSectionHeader(l10n.preferences, theme),
                           const SizedBox(height: 16),
+                          _buildSectionHeader(l10n.preferences, theme),
+                          const SizedBox(height: 8),
                           _buildSettingsCard(
                             theme: theme,
                             children: [
-                              _buildSettingsTile(icon: Icon(Icons.language_outlined, color: theme.colorScheme.primary), title: l10n.language, subtitle: Provider.of<LanguageProvider>(context).currentLocale.languageCode == 'en' ? 'English' : 'አማርኛ', onTap: _showLanguagePicker, trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16)),
+                              _buildSettingsTile(icon: Icon(Icons.language_outlined, size: 20, color: theme.colorScheme.primary), title: l10n.language, subtitle: Provider.of<LanguageProvider>(context).currentLocale.languageCode == 'en' ? 'English' : 'አማርኛ', onTap: _showLanguagePicker, trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14)),
                               _buildDivider(),
-                              _buildSettingsTile(icon: Icon(isDark ? Icons.dark_mode : Icons.light_mode, color: theme.colorScheme.primary), title: l10n.darkMode, trailing: Transform.scale(scale: 0.8, child: Switch.adaptive(value: isDark, onChanged: (_) => themeProvider.toggleTheme(), activeColor: theme.colorScheme.primary))),
+                              _buildSettingsTile(icon: Icon(isDark ? Icons.dark_mode : Icons.light_mode, size: 20, color: theme.colorScheme.primary), title: l10n.darkMode, trailing: Transform.scale(scale: 0.75, child: Switch.adaptive(value: isDark, onChanged: (_) => themeProvider.toggleTheme(), activeColor: theme.colorScheme.primary))),
                               _buildDivider(),
                               Consumer<NotificationSettingsProvider>(
                                 builder: (context, settings, _) => _buildSettingsTile(
@@ -241,6 +242,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                                     settings.permission.notificationsEnabled
                                         ? Icons.notifications_active_outlined
                                         : Icons.notifications_off_outlined,
+                                    size: 20,
                                     color: settings.isBlockedBySystem
                                         ? theme.colorScheme.error
                                         : theme.colorScheme.primary,
@@ -253,23 +255,23 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                                       builder: (_) => const NotificationSettingsScreen(),
                                     ),
                                   ),
-                                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                                 ),
                               ),
                             ],
                           ),
 
-                          const SizedBox(height: 24),
-                          _buildSectionHeader(l10n.account, theme),
                           const SizedBox(height: 16),
+                          _buildSectionHeader(l10n.account, theme),
+                          const SizedBox(height: 8),
                           _buildSettingsCard(
                             theme: theme,
                             children: [
                               if (authProvider.currentUser == null)
-                                _buildSettingsTile(icon: Icon(Icons.add_comment_outlined, color: theme.colorScheme.primary), title: l10n.suggestASong, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SuggestLyricsScreen())), trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16)),
+                                _buildSettingsTile(icon: Icon(Icons.add_comment_outlined, size: 20, color: theme.colorScheme.primary), title: l10n.suggestASong, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SuggestLyricsScreen())), trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14)),
                               if (authProvider.currentUser == null) _buildDivider(),
                               _buildSettingsTile(
-                                icon: Icon(Icons.shield_outlined, color: theme.colorScheme.secondary),
+                                icon: Icon(Icons.shield_outlined, size: 20, color: theme.colorScheme.secondary),
                                 title: l10n.moderatorPortal,
                                 onTap: () {
                                   if (authProvider.currentUser == null) {
@@ -286,11 +288,11 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                                     Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
                                   }
                                 },
-                                trailing: authProvider.isLoadingUser ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                                trailing: authProvider.isLoadingUser ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                               ),
                               _buildDivider(),
                               _buildSettingsTile(
-                                icon: Icon(Icons.share_rounded, color: theme.colorScheme.primary),
+                                icon: Icon(Icons.share_rounded, size: 20, color: theme.colorScheme.primary),
                                 title: "Share The App",
                                 onTap: _shareApp,
                               ),
@@ -298,43 +300,43 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                           ),
 
                           Padding(
-                            padding: const EdgeInsets.only(top: 40.0),
+                            padding: const EdgeInsets.only(top: 24.0),
                             child: Center(
                               child: authProvider.currentUser != null && !authProvider.isLoadingUser
                                   ? ElevatedButton.icon(
                                 onPressed: () => authProvider.signOut(),
-                                icon: const Icon(Icons.logout_rounded),
-                                label: Text(l10n.signOut),
-                                style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error.withOpacity(0.1), foregroundColor: theme.colorScheme.error, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+                                icon: const Icon(Icons.logout_rounded, size: 18),
+                                label: Text(l10n.signOut, style: const TextStyle(fontSize: 13)),
+                                style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error.withOpacity(0.1), foregroundColor: theme.colorScheme.error, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24))),
                               )
                                   : ElevatedButton.icon(
                                 onPressed: _showExitDialog,
-                                icon: const Icon(Icons.exit_to_app_rounded),
-                                label: const Text('Exit App'),
-                                style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error.withOpacity(0.1), foregroundColor: theme.colorScheme.error, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+                                icon: const Icon(Icons.exit_to_app_rounded, size: 18),
+                                label: const Text('Exit App', style: TextStyle(fontSize: 13)),
+                                style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error.withOpacity(0.1), foregroundColor: theme.colorScheme.error, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24))),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 30),
+                          const SizedBox(height: 20),
                           Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(8),
                                   child: Image.asset(
                                     'assets/logo/logo.png',
-                                    width: 32,
-                                    height: 32,
+                                    width: 28,
+                                    height: 28,
                                     fit: BoxFit.cover,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 6),
                                 Text(
                                   'Mahlete Semay v1.0.0',
                                   style: TextStyle(
                                     color: theme.textTheme.bodySmall?.color?.withOpacity(0.5),
-                                    fontSize: 12,
+                                    fontSize: 11,
                                   ),
                                 ),
                               ],
@@ -355,10 +357,10 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
 
   Widget _buildSimpleProfileCard(dynamic moderator, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: theme.dividerColor.withOpacity(0.5), width: 1),
       ),
       child: Column(
@@ -366,23 +368,23 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         children: [
           Text(
             moderator.fullName,
-            style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold),
+            style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             '@${moderator.username}',
-            style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 14),
+            style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 13),
           ),
-          const Divider(height: 24),
+          const Divider(height: 16),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: theme.colorScheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(30)),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(color: theme.colorScheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(24)),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.shield_outlined, size: 16, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(moderator.role.toUpperCase(), style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+                Icon(Icons.shield_outlined, size: 14, color: theme.colorScheme.primary),
+                const SizedBox(width: 6),
+                Text(moderator.role.toUpperCase(), style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 11)),
               ],
             ),
           ),
@@ -393,10 +395,10 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
 
   Widget _buildProfileCardPlaceholder(ThemeData theme) {
     return Container(
-      height: 150,
+      height: 100,
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: theme.dividerColor.withOpacity(0.5), width: 1),
       ),
       child: const Center(child: CircularProgressIndicator()),
@@ -405,14 +407,14 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
 
   Widget _buildSectionHeader(String title, ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.only(left: 8.0, bottom: 4.0),
-      child: Text(title.toUpperCase(), style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 1.0, color: theme.colorScheme.primary)),
+      padding: const EdgeInsets.only(left: 6.0, bottom: 2.0),
+      child: Text(title.toUpperCase(), style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.8, color: theme.colorScheme.primary)),
     );
   }
 
   Widget _buildSettingsCard({required ThemeData theme, required List<Widget> children}) {
     return Container(
-      decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: theme.dividerColor.withOpacity(0.5), width: 1)),
+      decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(18), border: Border.all(color: theme.dividerColor.withOpacity(0.5), width: 1)),
       child: Column(children: children),
     );
   }
@@ -422,18 +424,18 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           child: Row(
             children: [
-              if (icon != null) ...[icon, const SizedBox(width: 16)],
+              if (icon != null) ...[icon, const SizedBox(width: 12)],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500)),
-                    if (subtitle != null) ...[const SizedBox(height: 4), Text(subtitle, style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6)))],
+                    Text(title, style: GoogleFonts.poppins(fontSize: 14.5, fontWeight: FontWeight.w500)),
+                    if (subtitle != null) ...[const SizedBox(height: 2), Text(subtitle, style: TextStyle(fontSize: 12.5, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6)))],
                   ],
                 ),
               ),
@@ -446,6 +448,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   }
 
   Widget _buildDivider() {
-    return Divider(height: 1, thickness: 1, indent: 56, endIndent: 20, color: Colors.grey.withOpacity(0.1));
+    return Divider(height: 1, thickness: 1, indent: 46, endIndent: 14, color: Colors.grey.withOpacity(0.1));
   }
 }

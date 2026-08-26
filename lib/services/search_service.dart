@@ -352,6 +352,89 @@ class SearchService {
   }
 
   // ---------------------------------------------------------------------------
+  // CONVENIENT MULTI-SCRIPT FILTER HELPERS FOR ALL APP SCREENS
+  // ---------------------------------------------------------------------------
+
+  /// Filters a list of songs using the intelligent multi-script search
+  List<Song> filterSongs({
+    required String query,
+    required List<Song> songs,
+    bool searchLyrics = true,
+  }) {
+    if (query.trim().isEmpty) return songs;
+    final results = searchLocal(
+      query: query,
+      songs: songs,
+      artists: const [],
+      albums: const [],
+      category: searchLyrics ? SearchCategory.songs : SearchCategory.songs,
+    );
+    return results.where((r) => r.item is Song).map((r) => r.item as Song).toList();
+  }
+
+  /// Filters a list of artists using the intelligent multi-script search
+  List<Artist> filterArtists({
+    required String query,
+    required List<Artist> artists,
+  }) {
+    if (query.trim().isEmpty) return artists;
+    final results = searchLocal(
+      query: query,
+      songs: const [],
+      artists: artists,
+      albums: const [],
+      category: SearchCategory.artists,
+    );
+    return results.where((r) => r.item is Artist).map((r) => r.item as Artist).toList();
+  }
+
+  /// Filters a list of albums using the intelligent multi-script search
+  List<Album> filterAlbums({
+    required String query,
+    required List<Album> albums,
+  }) {
+    if (query.trim().isEmpty) return albums;
+    final results = searchLocal(
+      query: query,
+      songs: const [],
+      artists: const [],
+      albums: albums,
+      category: SearchCategory.albums,
+    );
+    return results.where((r) => r.item is Album).map((r) => r.item as Album).toList();
+  }
+
+  /// Checks if a target string or secondary field matches the multi-script query
+  bool matches({
+    required String query,
+    required String text,
+    String? englishText,
+    String? secondaryText,
+    List<String>? keywords,
+  }) {
+    final cleanQuery = query.trim();
+    if (cleanQuery.isEmpty) return true;
+
+    final score1 = AmharicTransliterator.calculateMatchScore(
+      query: cleanQuery,
+      target: text,
+      targetEnglish: englishText,
+      targetKeywords: keywords,
+    );
+    if (score1 > 0) return true;
+
+    if (secondaryText != null && secondaryText.isNotEmpty) {
+      final score2 = AmharicTransliterator.calculateMatchScore(
+        query: cleanQuery,
+        target: secondaryText,
+      );
+      if (score2 > 0) return true;
+    }
+
+    return false;
+  }
+
+  // ---------------------------------------------------------------------------
   // SERVER-SIDE SUPABASE SEARCH (FALLBACK / CROSS-DEVICE)
   // ---------------------------------------------------------------------------
 

@@ -6,6 +6,7 @@ import '../../models/album_model.dart';
 import '../../models/artist_model.dart';
 import '../../providers/auth_proveider.dart';
 import '../../services/firebase_service.dart';
+import '../../services/search_service.dart';
 import '../../widgets/custom_snackbar.dart';
 import 'add_album_screen.dart';
 import 'edit_album_screen.dart';
@@ -233,15 +234,12 @@ class _AlbumListTabState extends State<_AlbumListTab> {
   }
 
   void _filterAlbums() {
-    final query = _searchController.text.toLowerCase().trim();
+    final query = _searchController.text.trim();
     setState(() {
-      if (query.isEmpty) {
-        _filteredAlbums = widget.albums;
-      } else {
-        _filteredAlbums = widget.albums.where((album) =>
-            album.title.toLowerCase().contains(query) ||
-            album.artistName.toLowerCase().contains(query)).toList();
-      }
+      _filteredAlbums = SearchService().filterAlbums(
+        query: query,
+        albums: widget.albums,
+      );
     });
   }
 

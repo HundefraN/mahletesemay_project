@@ -5,16 +5,54 @@ import 'package:mahlete_semay_project/services/notification_service.dart';
 import 'package:mahlete_semay_project/utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Status of a single alert slot in the notification timeline.
+enum AlertSlotStatus {
+  /// The alert time has passed — it already fired.
+  fired,
+
+  /// This is the very next alert that will fire.
+  nextUp,
+
+  /// The alert is scheduled and waiting.
+  scheduled,
+
+  /// The alert was skipped (e.g. service already started).
+  skipped,
+}
+
+/// A single entry in the notification timeline shown to the user.
+@immutable
+class AlertSlotInfo {
+  const AlertSlotInfo({
+    required this.label,
+    required this.dateTime,
+    required this.status,
+    required this.isAlarm,
+  });
+
+  /// Human-readable label like "5 days before", "Morning of", "2 hours before".
+  final String label;
+
+  /// The exact date/time this alert fires (or would have fired).
+  final DateTime dateTime;
+
+  /// Whether this slot has fired, is next, is scheduled, or was skipped.
+  final AlertSlotStatus status;
+
+  /// Whether this alert is an alarm-class notification (full-screen intent).
+  final bool isAlarm;
+}
+
 class ServiceReminderProvider with ChangeNotifier {
   /// Countdown alerts sent before a service, expressed as whole days out.
   /// Index 0 is the morning of the service itself.
-  static const List<int> _countdownDays = <int>[5, 4, 3, 2, 1, 0];
+  static const List<int> countdownDays = <int>[5, 4, 3, 2, 1, 0];
 
   /// Slot used for the final "starting soon" alert. Kept distinct from the
   /// day offsets so notification ids stay unique.
-  static const int _startingSoonSlot = 6;
+  static const int startingSoonSlot = 6;
 
-  static const Duration _startingSoonLeadTime = Duration(hours: 2);
+  static const Duration startingSoonLeadTime = Duration(hours: 2);
 
   List<ServiceReminder> _reminders = [];
   bool _isLoaded = false;
@@ -132,18 +170,82 @@ class ServiceReminderProvider with ChangeNotifier {
   /// user whether a reminder will actually notify them.
   int scheduledAlertCount(ServiceReminder reminder) {
     final now = DateTime.now();
-    var count = _countdownDays
-        .where((day) => _countdownTime(reminder, day).isAfter(now))
+    var count = countdownDays
+        .where((day) => countdownTime(reminder, day).isAfter(now))
         .length;
     if (reminder.serviceDateTime
-        .subtract(_startingSoonLeadTime)
+        .subtract(startingSoonLeadTime)
         .isAfter(now)) {
       count++;
     }
     return count;
   }
 
-  DateTime _countdownTime(ServiceReminder reminder, int daysBefore) {
+  /// Builds the full notification timeline for [reminder] so the UI can
+  /// render each alert slot with its status, label, and time.
+  List<AlertSlotInfo> getNotificationTimeline(ServiceReminder reminder) {
+    final now = DateTime.now();
+    final slots = <AlertSlotInfo>[];
+    bool foundNextUp = false;
+
+    for (final daysBefore in countdownDays) {
+      final when = countdownTime(reminder, daysBefore);
+      final bool isAlarmSlot = daysBefore == 0;
+
+      // The morning-of alert is skipped once the service has begun.
+      final bool skipped = daysBefore == 0 && !when.isBefore(reminder.serviceDateTime);
+
+      AlertSlotStatus status;
+      if (skipped) {
+        status = AlertSlotStatus.skipped;
+      } else if (when.isBefore(now)) {
+        status = AlertSlotStatus.fired;
+      } else if (!foundNextUp) {
+        status = AlertSlotStatus.nextUp;
+        foundNextUp = true;
+      } else {
+        status = AlertSlotStatus.scheduled;
+      }
+
+      final String label;
+      if (daysBefore == 0) {
+        label = 'Morning of service';
+      } else if (daysBefore == 1) {
+        label = '1 day before';
+      } else {
+        label = '$daysBefore days before';
+      }
+
+      slots.add(AlertSlotInfo(
+        label: label,
+        dateTime: when,
+        status: status,
+        isAlarm: isAlarmSlot,
+      ));
+    }
+
+    // "Starting soon" slot
+    final startingSoonWhen = reminder.serviceDateTime.subtract(startingSoonLeadTime);
+    AlertSlotStatus startingSoonStatus;
+    if (startingSoonWhen.isBefore(now)) {
+      startingSoonStatus = AlertSlotStatus.fired;
+    } else if (!foundNextUp) {
+      startingSoonStatus = AlertSlotStatus.nextUp;
+    } else {
+      startingSoonStatus = AlertSlotStatus.scheduled;
+    }
+
+    slots.add(AlertSlotInfo(
+      label: '2 hours before',
+      dateTime: startingSoonWhen,
+      status: startingSoonStatus,
+      isAlarm: true,
+    ));
+
+    return slots;
+  }
+
+  DateTime countdownTime(ServiceReminder reminder, int daysBefore) {
     final date = reminder.serviceDateTime.subtract(Duration(days: daysBefore));
     // Morning-of alerts land earlier so they arrive before the service starts.
     final hour = daysBefore == 0 ? 8 : 10;
@@ -154,20 +256,23 @@ class ServiceReminderProvider with ChangeNotifier {
     final serviceDate = DateFormat.yMMMEd().format(reminder.serviceDateTime);
     final serviceTime = DateFormat.jm().format(reminder.serviceDateTime);
 
-    for (final daysBefore in _countdownDays) {
-      final when = _countdownTime(reminder, daysBefore);
+    for (final daysBefore in countdownDays) {
+      final when = countdownTime(reminder, daysBefore);
 
       // The morning-of alert is pointless once the service has begun.
       if (daysBefore == 0 && !when.isBefore(reminder.serviceDateTime)) continue;
 
+      // Day-of alert is alarm-class (full-screen intent).
+      final bool isAlarmSlot = daysBefore == 0;
+
       final String title;
       final String body;
       if (daysBefore == 0) {
-        title = '${reminder.title} is today';
+        title = '🔔 ${reminder.title} is TODAY!';
         body = 'Your service starts at $serviceTime. '
             '${_notesSuffix(reminder) ?? 'Warm up your voice before you go.'}';
       } else {
-        final dayLabel = daysBefore == 1 ? 'Tomorrow' : '$daysBefore days to go';
+        final dayLabel = daysBefore == 1 ? '⏰ Tomorrow' : '📅 $daysBefore days to go';
         title = '$dayLabel: ${reminder.title}';
         body = '$serviceDate at $serviceTime. '
             '${_notesSuffix(reminder) ?? 'Time to rehearse your set.'}';
@@ -179,19 +284,22 @@ class ServiceReminderProvider with ChangeNotifier {
         title: title,
         body: body,
         when: when,
+        isAlarm: isAlarmSlot,
       );
     }
 
+    // "Starting soon" is also alarm-class (full-screen intent).
     await NotificationService.scheduleServiceReminder(
       id: NotificationService.serviceNotificationId(
         reminder.id,
-        _startingSoonSlot,
+        startingSoonSlot,
       ),
       reminderId: reminder.id,
-      title: '${reminder.title} starts soon',
+      title: '🚨 ${reminder.title} starts in 2 hours!',
       body: 'Starting at $serviceTime. '
           '${_notesSuffix(reminder) ?? 'Run through your warm-ups now.'}',
-      when: reminder.serviceDateTime.subtract(_startingSoonLeadTime),
+      when: reminder.serviceDateTime.subtract(startingSoonLeadTime),
+      isAlarm: true,
     );
   }
 
@@ -201,7 +309,7 @@ class ServiceReminderProvider with ChangeNotifier {
   }
 
   Future<void> _cancelNotifications(ServiceReminder reminder) async {
-    for (final slot in <int>[..._countdownDays, _startingSoonSlot]) {
+    for (final slot in <int>[...countdownDays, startingSoonSlot]) {
       await NotificationService.cancel(
         NotificationService.serviceNotificationId(reminder.id, slot),
       );

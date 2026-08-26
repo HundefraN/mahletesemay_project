@@ -7,6 +7,7 @@ import '../../models/artist_model.dart';
 import '../../models/song_model.dart';
 import '../../providers/auth_proveider.dart';
 import '../../services/firebase_service.dart';
+import '../../services/search_service.dart';
 import '../../widgets/custom_snackbar.dart';
 import 'add_song_screen.dart';
 import 'edit_songs_screen.dart';
@@ -235,16 +236,12 @@ class _SongListTabState extends State<_SongListTab> {
   }
 
   void _filterSongs() {
-    final query = _searchController.text.toLowerCase().trim();
+    final query = _searchController.text.trim();
     setState(() {
-      if (query.isEmpty) {
-        _filteredSongs = widget.songs;
-      } else {
-        _filteredSongs = widget.songs.where((song) =>
-            song.title.toLowerCase().contains(query) ||
-            song.artistName.toLowerCase().contains(query) ||
-            song.lyrics.toLowerCase().contains(query)).toList();
-      }
+      _filteredSongs = SearchService().filterSongs(
+        query: query,
+        songs: widget.songs,
+      );
     });
   }
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -94,7 +95,7 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   // Android resources. These names must match files under android/app/src/main/res.
-  static const String _smallIcon = '@mipmap/ic_launcher';
+  static const String _smallIcon = 'ic_notification';
   static const String _largeIcon = 'notification_large_icon';
 
   /// Channels are versioned because Android freezes a channel's importance and
@@ -112,7 +113,13 @@ class NotificationService {
     enableVibration: true,
   );
 
-  static const AndroidNotificationChannel _serviceChannel =
+  /// Distinctive double-buzz vibration so users recognise service alerts by
+  /// feel alone, even in a noisy environment.
+  static const List<int> _serviceVibrationPattern = <int>[
+    0, 400, 200, 400, 200, 800,
+  ];
+
+  static final AndroidNotificationChannel _serviceChannel =
       AndroidNotificationChannel(
     'service_reminders_$_channelVersion',
     'Service Reminders',
@@ -120,6 +127,7 @@ class NotificationService {
     importance: Importance.max,
     playSound: true,
     enableVibration: true,
+    vibrationPattern: Int64List.fromList(_serviceVibrationPattern),
   );
 
   static const AndroidNotificationChannel _practiceChannel =
@@ -216,17 +224,15 @@ class NotificationService {
     final android = _androidPlugin;
     if (android == null) return;
 
-    for (final id in _retiredChannelIds) {
-      await android.deleteNotificationChannel(id);
-    }
-    for (final channel in <AndroidNotificationChannel>[
-      _dailyChannel,
-      _serviceChannel,
-      _practiceChannel,
-      _contentChannel,
-    ]) {
-      await android.createNotificationChannel(channel);
-    }
+    await Future.wait([
+      ..._retiredChannelIds.map((id) => android.deleteNotificationChannel(id)),
+      ...[
+        _dailyChannel,
+        _serviceChannel,
+        _practiceChannel,
+        _contentChannel,
+      ].map((channel) => android.createNotificationChannel(channel)),
+    ]);
   }
 
   /// Picks up a notification tap that launched the app from a terminated state.
@@ -334,6 +340,7 @@ class NotificationService {
     required AndroidNotificationChannel channel,
     required String title,
     required String body,
+    bool isAlarm = false,
   }) {
     return NotificationDetails(
       android: AndroidNotificationDetails(
@@ -352,19 +359,31 @@ class NotificationService {
           summaryText: channel.name,
         ),
         largeIcon: const DrawableResourceAndroidBitmap(_largeIcon),
-        category: AndroidNotificationCategory.reminder,
+        category: isAlarm
+            ? AndroidNotificationCategory.alarm
+            : AndroidNotificationCategory.reminder,
         visibility: NotificationVisibility.public,
         playSound: channel.playSound,
         enableVibration: channel.enableVibration,
+        vibrationPattern: channel == _serviceChannel
+            ? Int64List.fromList(_serviceVibrationPattern)
+            : null,
         ticker: title,
+        // Full-screen intent wakes the device and shows an alarm-style overlay
+        // on the lock screen for critical alerts (morning-of & starting-soon).
+        fullScreenIntent: isAlarm,
+        ongoing: isAlarm,
+        autoCancel: true,
       ),
       iOS: DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
-        interruptionLevel: channel.importance == Importance.max
-            ? InterruptionLevel.timeSensitive
-            : InterruptionLevel.active,
+        interruptionLevel: isAlarm
+            ? InterruptionLevel.critical
+            : (channel.importance == Importance.max
+                ? InterruptionLevel.timeSensitive
+                : InterruptionLevel.active),
       ),
     );
   }
@@ -400,10 +419,16 @@ class NotificationService {
     required tz.TZDateTime when,
     required NotificationPayload payload,
     DateTimeComponents? repeatOn,
+    bool isAlarm = false,
   }) async {
     if (!await areNotificationsEnabled()) return false;
 
-    final details = _details(channel: channel, title: title, body: body);
+    final details = _details(
+      channel: channel,
+      title: title,
+      body: body,
+      isAlarm: isAlarm,
+    );
     final mode = await canScheduleExactAlarms()
         ? AndroidScheduleMode.exactAllowWhileIdle
         : AndroidScheduleMode.inexactAllowWhileIdle;
@@ -462,6 +487,7 @@ class NotificationService {
     required String title,
     required String body,
     required DateTime when,
+    bool isAlarm = false,
   }) async {
     if (!when.isAfter(DateTime.now())) return false;
     return _schedule(
@@ -474,6 +500,7 @@ class NotificationService {
         NotificationKind.serviceReminder,
         reference: reminderId,
       ),
+      isAlarm: isAlarm,
     );
   }
 

@@ -701,6 +701,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
       child: TextField(
         controller: _searchController,
         autofocus: true,
+        onTapOutside: (_) => FocusScope.of(context).unfocus(),
         style: const TextStyle(fontSize: 13),
         decoration: InputDecoration(
           hintText: 'Search songs, artists, lyrics...',
@@ -719,7 +720,14 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
               Icons.close_rounded,
               color: theme.colorScheme.onSurface.withOpacity(0.6),
             ),
-            onPressed: toggleSearch,
+            onPressed: () {
+              if (_searchController.text.isNotEmpty) {
+                _searchController.clear();
+              } else {
+                toggleSearch();
+              }
+              FocusScope.of(context).unfocus();
+            },
           ),
           border: InputBorder.none,
           contentPadding:

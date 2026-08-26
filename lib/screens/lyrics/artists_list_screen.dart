@@ -570,6 +570,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                   child: TextField(
                                     controller: _searchController,
                                     focusNode: _searchFocusNode,
+                                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
                                     style: TextStyle(fontSize: context.sp(14)),
                                     decoration: InputDecoration(
                                       hintText: l10n.searchHint,
@@ -598,6 +599,20 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                           size: context.w(20),
                                         ),
                                       ),
+                                      suffixIcon: _searchQuery.isNotEmpty
+                                          ? IconButton(
+                                              icon: Icon(
+                                                Icons.close_rounded,
+                                                color: theme.colorScheme.onSurface
+                                                    .withOpacity(0.7),
+                                                size: context.w(20),
+                                              ),
+                                              onPressed: () {
+                                                _searchController.clear();
+                                                FocusScope.of(context).unfocus();
+                                              },
+                                            )
+                                          : null,
                                       filled: true,
                                       fillColor: theme.colorScheme.surface,
                                       border: OutlineInputBorder(
@@ -955,11 +970,17 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                     child: _getCoverForSong(song, songProvider)),
               ),
             ),
-            title: TextHighlighter(
-                text: song.title,
-                query: _searchQuery,
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: context.sp(15))),
+            title: Hero(
+              tag: 'song-title-${song.id}',
+              child: Material(
+                color: Colors.transparent,
+                child: TextHighlighter(
+                    text: song.title,
+                    query: _searchQuery,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: context.sp(15))),
+              ),
+            ),
             subtitle: result.matchType == MatchType.lyric
                 ? TextHighlighter(
                     text: result.matchSnippet!,
@@ -1028,11 +1049,32 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                 child: CachedImage(imageUrl: artist.imageUrl)),
           ),
         ),
-        title: TextHighlighter(
-            text: artist.name,
-            query: _searchQuery,
-            style: TextStyle(
-                fontWeight: FontWeight.bold, fontSize: context.sp(15))),
+        title: Hero(
+          tag: 'artist-name-${artist.id}',
+          flightShuttleBuilder: (flightContext, animation, flightDirection, fromHeroContext, toHeroContext) {
+            return Material(
+              color: Colors.transparent,
+              child: Text(
+                artist.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: context.sp(15),
+                  letterSpacing: -0.3,
+                ),
+              ),
+            );
+          },
+          child: Material(
+            color: Colors.transparent,
+            child: TextHighlighter(
+                text: artist.name,
+                query: _searchQuery,
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: context.sp(15))),
+          ),
+        ),
         subtitle: Row(
           children: [
             Container(
@@ -1160,11 +1202,17 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                 child: CachedImage(imageUrl: album.coverImageUrl)),
           ),
         ),
-        title: TextHighlighter(
-            text: album.title,
-            query: _searchQuery,
-            style: TextStyle(
-                fontWeight: FontWeight.bold, fontSize: context.sp(15))),
+        title: Hero(
+          tag: 'album-title-${album.id}',
+          child: Material(
+            color: Colors.transparent,
+            child: TextHighlighter(
+                text: album.title,
+                query: _searchQuery,
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: context.sp(15))),
+          ),
+        ),
         subtitle: TextHighlighter(
             text: 'Album • $songCountText',
             query: _searchQuery,
@@ -1282,12 +1330,18 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(song.title,
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: context.sp(12)),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
+                        Hero(
+                          tag: 'song-title-${song.id}',
+                          child: Material(
+                            color: Colors.transparent,
+                            child: Text(song.title,
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: context.sp(12)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis),
+                          ),
+                        ),
                         const SizedBox(height: 2),
                         Expanded(
                           child: Align(
@@ -1446,13 +1500,43 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                             ),
                           ),
                           SizedBox(height: context.w(8)),
-                          Text(artist.name,
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: context.sp(12))),
+                          Hero(
+                            tag: 'artist-name-${artist.id}',
+                            flightShuttleBuilder: (flightContext, animation, flightDirection, fromHeroContext, toHeroContext) {
+                              return AnimatedBuilder(
+                                animation: animation,
+                                builder: (context, child) {
+                                  return Material(
+                                    color: Colors.transparent,
+                                    child: Text(
+                                      artist.name,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: context.sp(12) + (animation.value * 14),
+                                        letterSpacing: -0.3,
+                                        color: flightDirection == HeroFlightDirection.push
+                                            ? ColorTween(begin: Theme.of(context).colorScheme.onSurface, end: Colors.white).evaluate(animation)
+                                            : ColorTween(begin: Colors.white, end: Theme.of(context).colorScheme.onSurface).evaluate(animation),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                            child: Material(
+                              color: Colors.transparent,
+                              child: Text(artist.name,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: context.sp(12))),
+                            ),
+                          ),
                           SizedBox(height: context.w(3)),
                           if (!isSinglesCategory)
                             Container(
@@ -1534,12 +1618,18 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                 child: _getCoverForSong(song, songProvider))),
                       ),
                       SizedBox(height: context.w(6)),
-                      Text(song.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: context.sp(11))),
+                      Hero(
+                        tag: 'song-title-${song.id}',
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Text(song.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: context.sp(11))),
+                        ),
+                      ),
                       SizedBox(height: context.w(2)),
                       _SongMetadataColumn(
                           song: song, fontSize: context.sp(9.5)),

@@ -17,6 +17,9 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
   final LocalDbService _localDbService = LocalDbService();
   late final SyncService _syncService;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  StreamSubscription<List<Artist>>? _artistsStreamSubscription;
+  StreamSubscription<List<Album>>? _albumsStreamSubscription;
+  StreamSubscription<List<Song>>? _songsStreamSubscription;
 
   List<Artist> _artists = [];
   List<Album> _albums = [];
@@ -228,6 +231,63 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
       _isLoading = false;
       notifyListeners();
     }
+
+    // Subscribe to real-time streams for live updates
+    _subscribeToRealtimeStreams();
+  }
+
+  void _subscribeToRealtimeStreams() {
+    _artistsStreamSubscription?.cancel();
+    _artistsStreamSubscription = _firebaseService.getArtistsStream().listen(
+      (artists) {
+        if (_hasDataChanged(_artists, artists)) {
+          _artists = artists;
+          _localDbService.syncArtists(artists);
+          notifyListeners();
+        }
+      },
+      onError: (e) => debugPrint('Artists realtime stream error: $e'),
+    );
+
+    _albumsStreamSubscription?.cancel();
+    _albumsStreamSubscription = _firebaseService.getAlbumsStream().listen(
+      (albums) {
+        if (_hasDataChanged(_albums, albums)) {
+          _albums = albums;
+          _localDbService.syncAlbums(albums);
+          notifyListeners();
+        }
+      },
+      onError: (e) => debugPrint('Albums realtime stream error: $e'),
+    );
+
+    _songsStreamSubscription?.cancel();
+    _songsStreamSubscription = _firebaseService.getSongsStream().listen(
+      (songs) {
+        if (_hasDataChanged(_songs, songs)) {
+          _songs = songs;
+          _localDbService.syncSongs(songs);
+          notifyListeners();
+        }
+      },
+      onError: (e) => debugPrint('Songs realtime stream error: $e'),
+    );
+  }
+
+  /// Lightweight diff: checks if two lists differ by length or element IDs.
+  bool _hasDataChanged<T>(List<T> oldList, List<T> newList) {
+    if (oldList.length != newList.length) return true;
+    // Compare by identity of IDs for the known model types
+    final oldIds = oldList.map((e) => _extractId(e)).toSet();
+    final newIds = newList.map((e) => _extractId(e)).toSet();
+    return !oldIds.containsAll(newIds) || !newIds.containsAll(oldIds);
+  }
+
+  String _extractId(dynamic item) {
+    if (item is Artist) return item.id;
+    if (item is Album) return item.id;
+    if (item is Song) return item.id;
+    return item.hashCode.toString();
   }
 
   @override
@@ -310,6 +370,9 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _connectivitySubscription?.cancel();
+    _artistsStreamSubscription?.cancel();
+    _albumsStreamSubscription?.cancel();
+    _songsStreamSubscription?.cancel();
     super.dispose();
   }
 

@@ -28,12 +28,10 @@ class AlbumsListScreen extends StatefulWidget {
 class _AlbumsListScreenState extends State<AlbumsListScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
-  List<Album> _albums = [];
 
   @override
   void initState() {
     super.initState();
-    _loadAlbums();
     _scrollController.addListener(_onScroll);
   }
 
@@ -44,8 +42,14 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
     }
   }
 
-  void _loadAlbums() {
-    final songProvider = Provider.of<SongProvider>(context, listen: false);
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  List<Album> _getAlbums(SongProvider songProvider) {
     final artistAlbums = songProvider.getAlbumsByArtist(widget.artist.id);
     final artistSingles = songProvider.allSongs.where(
       (song) => song.artistId == widget.artist.id && song.albumId == singlesAlbumId,
@@ -62,22 +66,7 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
       );
       list.insert(0, singlesAlbum);
     }
-    _albums = list;
-  }
-
-  @override
-  void didUpdateWidget(covariant AlbumsListScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.artist.id != oldWidget.artist.id) {
-      _loadAlbums();
-    }
-  }
-
-  @override
-  void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    super.dispose();
+    return list;
   }
 
   @override
@@ -87,6 +76,7 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
     final isTablet = MediaQuery.of(context).size.width > 720;
     final isDark = theme.brightness == Brightness.dark;
 
+    final albums = _getAlbums(songProvider);
     final allArtistSongs = songProvider.allSongs.where((s) => s.artistId == widget.artist.id).toList();
     final totalViews = allArtistSongs.fold<int>(0, (sum, s) => sum + s.viewCount);
 
@@ -95,8 +85,8 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         body: Column(
           children: [
-            _buildTabletHeader(theme, totalViews, allArtistSongs.length),
-            Expanded(child: _buildAlbumGrid(songProvider, theme, isDark)),
+            _buildTabletHeader(theme, totalViews, allArtistSongs.length, albums),
+            Expanded(child: _buildAlbumGrid(songProvider, theme, isDark, albums)),
           ],
         ),
       );
@@ -109,14 +99,14 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
         controller: _scrollController,
         physics: const BouncingScrollPhysics(),
         slivers: [
-          _buildSliverAppBar(theme, totalViews, allArtistSongs.length),
-          _buildAlbumGrid(songProvider, theme, isDark),
+          _buildSliverAppBar(theme, totalViews, allArtistSongs.length, albums),
+          _buildAlbumGrid(songProvider, theme, isDark, albums),
         ],
       ),
     );
   }
 
-  Widget _buildTabletHeader(ThemeData theme, int totalViews, int totalSongs) {
+  Widget _buildTabletHeader(ThemeData theme, int totalViews, int totalSongs, List<Album> albums) {
     final compactViews = NumberFormat.compact().format(totalViews);
     return Container(
       height: 160,
@@ -172,14 +162,20 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        widget.artist.name,
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 26),
+                      Hero(
+                        tag: 'artist-name-${widget.artistHeroTag}',
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Text(
+                            widget.artist.name,
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 26),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          _buildBadge(theme, '${_albums.length} Releases'),
+                          _buildBadge(theme, '${albums.length} Releases'),
                           const SizedBox(width: 8),
                           _buildBadge(theme, '$totalSongs Tracks'),
                           if (totalViews > 0) ...[
@@ -199,7 +195,7 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
     );
   }
 
-  SliverAppBar _buildSliverAppBar(ThemeData theme, int totalViews, int totalSongs) {
+  SliverAppBar _buildSliverAppBar(ThemeData theme, int totalViews, int totalSongs, List<Album> albums) {
     final compactViews = NumberFormat.compact().format(totalViews);
 
     return SliverAppBar(
@@ -302,26 +298,32 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    widget.artist.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
-                      shadows: [
-                        Shadow(offset: Offset(0, 2), blurRadius: 6, color: Colors.black54),
-                      ],
+                  Hero(
+                    tag: 'artist-name-${widget.artistHeroTag}',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Text(
+                        widget.artist.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                          shadows: [
+                            Shadow(offset: Offset(0, 2), blurRadius: 6, color: Colors.black54),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildWhiteBadge('${_albums.length} Releases'),
+                      _buildWhiteBadge('${albums.length} Releases'),
                       const SizedBox(width: 8),
                       _buildWhiteBadge('$totalSongs Tracks'),
                       if (totalViews > 0) ...[
@@ -339,7 +341,7 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
     );
   }
 
-  Widget _buildAlbumGrid(SongProvider songProvider, ThemeData theme, bool isDark) {
+  Widget _buildAlbumGrid(SongProvider songProvider, ThemeData theme, bool isDark, List<Album> albums) {
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
       sliver: SliverGrid(
@@ -351,10 +353,10 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
         ),
         delegate: SliverChildBuilderDelegate(
           (context, index) {
-            final album = _albums[index];
+            final album = albums[index];
             return _buildVinylAlbumCard(context, album, songProvider, theme, isDark);
           },
-          childCount: _albums.length,
+          childCount: albums.length,
         ),
       ),
     );
@@ -391,63 +393,30 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 3D Vinyl Stack Effect
+              // Elevated Album Card Artwork
               Expanded(
                 child: Stack(
                   children: [
-                    // Peeking Vinyl Disc Background
-                    Positioned(
-                      top: 4,
-                      bottom: 4,
-                      right: 0,
-                      child: Container(
-                        width: 65,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.black87,
-                          border: Border.all(color: Colors.grey.shade800, width: 1.5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(3, 2),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Container(
-                            width: 22,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: theme.colorScheme.primary,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Front Album Sleeve
-                    Positioned(
-                      top: 0,
-                      bottom: 0,
-                      left: 0,
-                      right: 18,
+                    Positioned.fill(
                       child: Hero(
                         tag: albumHeroTag,
                         child: Container(
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: theme.colorScheme.onSurface.withOpacity(isDark ? 0.1 : 0.06),
+                              width: 1,
+                            ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+                                color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
                                 blurRadius: 12,
-                                offset: const Offset(0, 6),
+                                offset: const Offset(0, 5),
                               ),
                             ],
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                             child: isSinglesAlbum
                                 ? Container(
                                     decoration: BoxDecoration(
@@ -463,7 +432,7 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                                     child: const Center(
                                       child: Icon(
                                         IconsaxPlusBold.music,
-                                        size: 48,
+                                        size: 44,
                                         color: Colors.white,
                                       ),
                                     ),
@@ -499,16 +468,22 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
               ),
               const SizedBox(height: 8),
               // Album Title & Meta
-              Text(
-                album.title,
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                  color: theme.colorScheme.onSurface,
-                  letterSpacing: -0.2,
+              Hero(
+                tag: 'album-title-${album.id}',
+                child: Material(
+                  color: Colors.transparent,
+                  child: Text(
+                    album.title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: theme.colorScheme.onSurface,
+                      letterSpacing: -0.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 3),
               Row(

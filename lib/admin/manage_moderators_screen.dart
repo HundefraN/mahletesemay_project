@@ -7,6 +7,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../../models/moderator_model.dart';
 import '../../providers/auth_proveider.dart';
 import '../../services/firebase_service.dart';
+import '../../services/search_service.dart';
 import '../../widgets/custom_snackbar.dart';
 import 'create_invitation_screen.dart';
 import 'widgets/admin_ui_kit.dart';
@@ -329,9 +330,11 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
     final isDark = theme.brightness == Brightness.dark;
 
     final filteredModerators = _moderators.where((mod) {
-      final queryMatch = _searchQuery.isEmpty ||
-          mod.fullName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          mod.email.toLowerCase().contains(_searchQuery.toLowerCase());
+      final queryMatch = SearchService().matches(
+        query: _searchQuery,
+        text: mod.fullName,
+        secondaryText: mod.email,
+      );
       final roleMatch = _roleFilter == 'All' || mod.role.toLowerCase() == _roleFilter.toLowerCase();
       final statusMatch = _statusFilter == 'All' || mod.status.toLowerCase() == _statusFilter.toLowerCase();
       return queryMatch && roleMatch && statusMatch;

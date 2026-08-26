@@ -5,6 +5,7 @@ import 'package:timeago/timeago.dart' as timeago;
 
 import '../../models/activity_log_model.dart';
 import '../../services/firebase_service.dart';
+import '../../services/search_service.dart';
 import '../../widgets/loading_placeholders.dart';
 import '../../widgets/text_highlighter.dart';
 import 'widgets/admin_ui_kit.dart';
@@ -274,10 +275,11 @@ class _ActivityScreenState extends State<ActivityScreen> {
           final allLogs = snapshot.data!;
 
           final filteredLogs = allLogs.where((log) {
-            final query = _searchQuery.toLowerCase();
-            final searchMatch = query.isEmpty ||
-                log.details.toLowerCase().contains(query) ||
-                log.moderatorName.toLowerCase().contains(query);
+            final searchMatch = SearchService().matches(
+              query: _searchQuery,
+              text: log.details,
+              secondaryText: log.moderatorName,
+            );
             final actionMatch = _filterByAction == 'All' || log.action.startsWith(_filterByAction);
             final moderatorMatch = _filterByModerator == null || log.moderatorName == _filterByModerator;
             return searchMatch && actionMatch && moderatorMatch;

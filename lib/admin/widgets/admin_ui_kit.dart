@@ -276,6 +276,7 @@ class AdminSearchBar extends StatelessWidget {
                 child: TextField(
                   controller: controller,
                   onChanged: onChanged,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w500,
@@ -302,6 +303,7 @@ class AdminSearchBar extends StatelessWidget {
                     controller.clear();
                     onClear?.call();
                     onChanged?.call('');
+                    FocusScope.of(context).unfocus();
                   },
                 ),
               if (trailing != null) ...[

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/artist_model.dart';
 import '../../providers/auth_proveider.dart';
 import '../../services/firebase_service.dart';
+import '../../services/search_service.dart';
 import '../../widgets/custom_snackbar.dart';
 import 'add_artists_screen.dart';
 import 'edit_artists_screen.dart';
@@ -318,8 +319,8 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
   }
 
   Widget _buildArtistList(String category, List<Artist> artists) {
-    final query = _searchController.text.toLowerCase().trim();
-    final displayList = artists.where((artist) => artist.name.toLowerCase().contains(query)).toList();
+    final query = _searchController.text.trim();
+    final displayList = SearchService().filterArtists(query: query, artists: artists);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (displayList.isEmpty) {

@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../../models/invitation_model.dart';
+import '../../services/search_service.dart';
 import '../../services/supabase_service.dart';
 import '../../widgets/custom_snackbar.dart';
 import 'create_invitation_screen.dart';
@@ -125,10 +126,11 @@ This code is single-use and linked to your email.
           final allInvites = snapshot.data ?? [];
 
           final filteredInvites = allInvites.where((invite) {
-            final queryMatch = _searchQuery.isEmpty ||
-                invite.fullName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                invite.email.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                invite.code.toLowerCase().contains(_searchQuery.toLowerCase());
+            final queryMatch = SearchService().matches(
+              query: _searchQuery,
+              text: invite.fullName,
+              secondaryText: '${invite.email} ${invite.code}',
+            );
 
             bool statusMatch = true;
             if (_filterStatus == 'pending') {

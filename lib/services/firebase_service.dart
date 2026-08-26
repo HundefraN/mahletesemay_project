@@ -102,4 +102,12 @@ class FirebaseService {
   Future<List<VocalExerciseDay>> getAllVocalExercises() => _supabase.getAllVocalExercises();
   Future<void> claimInvitation(String invitationId, String moderatorUid) => _supabase.claimInvitation(invitationId, moderatorUid);
   Future<void> confirmUserEmail(String userId) => _supabase.confirmUserEmail(userId);
+
+  // Duplicate detection queries
+  Future<List<Song>> findSongDuplicates({required String title, String? artistId, String? albumId}) =>
+      _supabase.findSongDuplicates(title: title, artistId: artistId, albumId: albumId);
+  Future<List<Album>> findAlbumDuplicates({required String title, String? artistId}) =>
+      _supabase.findAlbumDuplicates(title: title, artistId: artistId);
+  Future<List<Artist>> findArtistDuplicates({required String name, String? region}) =>
+      _supabase.findArtistDuplicates(name: name, region: region);
 }

@@ -59,22 +59,10 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
     final allArtists = songProvider.getRecommendedArtists(region: widget.region);
     
     // Multi-script professional search
-    List<Artist> filteredArtists;
-    if (_searchQuery.isEmpty) {
-      filteredArtists = allArtists;
-    } else {
-      final results = SearchService().searchLocal(
-        query: _searchQuery,
-        songs: const [],
-        artists: allArtists,
-        albums: const [],
-        category: SearchCategory.artists,
-      );
-      filteredArtists = results
-          .where((r) => r.item is Artist)
-          .map((r) => r.item as Artist)
-          .toList();
-    }
+    final filteredArtists = SearchService().filterArtists(
+      query: _searchQuery,
+      artists: allArtists,
+    );
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -168,6 +156,7 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                     ),
                     child: TextField(
                       controller: _searchController,
+                      onTapOutside: (_) => FocusScope.of(context).unfocus(),
                       style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface),
                       decoration: InputDecoration(
                         hintText: 'Search artists in English or Amharic...',
@@ -183,7 +172,10 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(
                                 icon: const Icon(Icons.close_rounded, size: 18),
-                                onPressed: () => _searchController.clear(),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  FocusScope.of(context).unfocus();
+                                },
                               )
                             : null,
                         border: InputBorder.none,
@@ -417,27 +409,39 @@ class _ArtistListTile extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (searchQuery.isNotEmpty)
-                        TextHighlighter(
-                          text: artist.name,
-                          query: searchQuery,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                            letterSpacing: -0.2,
+                        Hero(
+                          tag: 'artist-name-all_${artist.id}',
+                          child: Material(
+                            color: Colors.transparent,
+                            child: TextHighlighter(
+                              text: artist.name,
+                              query: searchQuery,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                                letterSpacing: -0.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         )
                       else
-                        Text(
-                          artist.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                            letterSpacing: -0.2,
+                        Hero(
+                          tag: 'artist-name-all_${artist.id}',
+                          child: Material(
+                            color: Colors.transparent,
+                            child: Text(
+                              artist.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                                letterSpacing: -0.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       const SizedBox(height: 4),
                       Row(
@@ -612,29 +616,41 @@ class _ArtistGridCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 if (searchQuery.isNotEmpty)
-                  TextHighlighter(
-                    text: artist.name,
-                    query: searchQuery,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      letterSpacing: -0.2,
+                  Hero(
+                    tag: 'artist-name-grid_${artist.id}',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: TextHighlighter(
+                        text: artist.name,
+                        query: searchQuery,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          letterSpacing: -0.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
                   )
                 else
-                  Text(
-                    artist.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      letterSpacing: -0.2,
+                  Hero(
+                    tag: 'artist-name-grid_${artist.id}',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Text(
+                        artist.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          letterSpacing: -0.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
                   ),
                 const SizedBox(height: 4),
                 Text(

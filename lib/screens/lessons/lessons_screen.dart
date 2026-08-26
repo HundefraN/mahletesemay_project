@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:mahlete_semay_project/models/lesson_model.dart';
+import 'package:mahlete_semay_project/services/search_service.dart';
 import 'package:mahlete_semay_project/widgets/cached_image.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../widgets/loading_placeholders.dart';
@@ -169,8 +170,11 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
     List<Lesson> lessonsToShow = _lessons.where((lesson) => lesson.category == categoryId).toList();
     if (_searchQuery.isNotEmpty) {
       lessonsToShow = lessonsToShow.where((lesson) =>
-      lesson.title.toLowerCase().contains(_searchQuery) ||
-          lesson.instructor.toLowerCase().contains(_searchQuery)
+        SearchService().matches(
+          query: _searchQuery,
+          text: lesson.title,
+          secondaryText: lesson.instructor,
+        )
       ).toList();
     }
     if (_levelFilter != 'All Levels') {
@@ -268,7 +272,32 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: TextField(controller: _searchFieldController, onChanged: _onSearchChanged, decoration: InputDecoration(hintText: 'Search in lessons...', prefixIcon: const Icon(Icons.search), border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)), contentPadding: EdgeInsets.zero)),
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _searchFieldController,
+              builder: (context, value, _) {
+                return TextField(
+                  controller: _searchFieldController,
+                  onChanged: _onSearchChanged,
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                  decoration: InputDecoration(
+                    hintText: 'Search in lessons...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: value.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 20),
+                            onPressed: () {
+                              _searchFieldController.clear();
+                              _onSearchChanged('');
+                              FocusScope.of(context).unfocus();
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                );
+              },
+            ),
           ),
           _buildCategoryTabs(theme),
           Expanded(

@@ -177,7 +177,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(song.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            Hero(
+                              tag: 'song-title-${song.id}',
+                              child: Material(
+                                color: Colors.transparent,
+                                child: Text(song.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              ),
+                            ),
                             const SizedBox(height: 4),
                             _SongMetadataRow(song: song, fontSize: 13),
                           ],

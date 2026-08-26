@@ -8,6 +8,7 @@ import '../../models/album_model.dart';
 import '../../models/artist_model.dart';
 import '../../models/song_model.dart';
 import '../../providers/song_provider.dart';
+import '../../services/search_service.dart';
 import '../../utils/constants.dart';
 import '../../widgets/cached_image.dart';
 import 'song_detail_screen.dart';
@@ -31,12 +32,10 @@ class _SongsListScreenState extends State<SongsListScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isScrolled = false;
   String _searchQuery = '';
-  List<Song> _allSongs = [];
 
   @override
   void initState() {
     super.initState();
-    _loadSongs();
     _scrollController.addListener(_onScroll);
     _searchController.addListener(() {
       final query = _searchController.text.trim().toLowerCase();
@@ -53,10 +52,9 @@ class _SongsListScreenState extends State<SongsListScreen> {
     }
   }
 
-  void _loadSongs() {
-    final songProvider = Provider.of<SongProvider>(context, listen: false);
+  List<Song> _getSongs(SongProvider songProvider) {
     final isSinglesAlbum = widget.album.id == singlesAlbumId;
-    _allSongs = isSinglesAlbum
+    return isSinglesAlbum
         ? songProvider.allSongs
             .where((s) =>
                 (s.artistId == widget.album.artistId || s.artistId == singlesArtistId) &&
@@ -65,13 +63,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
         : songProvider.getSongsByAlbum(widget.album.id);
   }
 
-  @override
-  void didUpdateWidget(covariant SongsListScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.album.id != oldWidget.album.id) {
-      _loadSongs();
-    }
-  }
+
 
   @override
   void dispose() {
@@ -102,9 +94,11 @@ class _SongsListScreenState extends State<SongsListScreen> {
     final isTablet = MediaQuery.of(context).size.width > 720;
     final isDark = theme.brightness == Brightness.dark;
 
-    final filteredSongs = _searchQuery.isEmpty
-        ? _allSongs
-        : _allSongs.where((s) => s.title.toLowerCase().contains(_searchQuery)).toList();
+    final allSongs = _getSongs(songProvider);
+    final filteredSongs = SearchService().filterSongs(
+      query: _searchQuery,
+      songs: allSongs,
+    );
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -113,7 +107,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
         controller: _scrollController,
         physics: const BouncingScrollPhysics(),
         slivers: [
-          _buildSliverAppBar(theme, isDark),
+          _buildSliverAppBar(theme, isDark, allSongs),
           _buildSearchBar(theme, isDark),
           _buildSongList(filteredSongs, songProvider, theme, isDark, isTablet),
         ],
@@ -121,7 +115,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
     );
   }
 
-  SliverAppBar _buildSliverAppBar(ThemeData theme, bool isDark) {
+  SliverAppBar _buildSliverAppBar(ThemeData theme, bool isDark, List<Song> allSongs) {
     final isSinglesAlbum = widget.album.id == singlesAlbumId;
 
     return SliverAppBar(
@@ -249,19 +243,25 @@ class _SongsListScreenState extends State<SongsListScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          widget.album.title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.3,
-                            shadows: [
-                              Shadow(offset: Offset(0, 2), blurRadius: 6, color: Colors.black54),
-                            ],
+                        Hero(
+                          tag: 'album-title-${widget.album.id}',
+                          child: Material(
+                            color: Colors.transparent,
+                            child: Text(
+                              widget.album.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.3,
+                                shadows: [
+                                  Shadow(offset: Offset(0, 2), blurRadius: 6, color: Colors.black54),
+                                ],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 6),
                         Text(
@@ -283,7 +283,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
                             border: Border.all(color: Colors.white.withOpacity(0.3)),
                           ),
                           child: Text(
-                            '${_allSongs.length} ${_allSongs.length == 1 ? 'Track' : 'Tracks'}',
+                            '${allSongs.length} ${allSongs.length == 1 ? 'Track' : 'Tracks'}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -317,6 +317,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
           ),
           child: TextField(
             controller: _searchController,
+            onTapOutside: (_) => FocusScope.of(context).unfocus(),
             style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
             decoration: InputDecoration(
               hintText: 'Search tracks in this album...',
@@ -332,7 +333,10 @@ class _SongsListScreenState extends State<SongsListScreen> {
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.close_rounded, size: 18),
-                      onPressed: () => _searchController.clear(),
+                      onPressed: () {
+                        _searchController.clear();
+                        FocusScope.of(context).unfocus();
+                      },
                     )
                   : null,
               border: InputBorder.none,
@@ -505,15 +509,21 @@ class _SongTile extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          song.title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                            letterSpacing: -0.2,
+                        Hero(
+                          tag: 'song-title-${song.id}',
+                          child: Material(
+                            color: Colors.transparent,
+                            child: Text(
+                              song.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                                letterSpacing: -0.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 3),
                         Row(

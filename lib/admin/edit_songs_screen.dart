@@ -7,6 +7,7 @@ import '../../models/artist_model.dart';
 import '../../models/song_model.dart';
 import '../../providers/auth_proveider.dart';
 import '../../services/firebase_service.dart';
+import '../../services/search_service.dart';
 import '../../utils/constants.dart';
 import '../../widgets/custom_snackbar.dart';
 import '../../widgets/searchable_dropdown.dart';
@@ -279,7 +280,7 @@ class _EditSongScreenState extends State<EditSongScreen> {
                     itemToString: (artist) => artist.name,
                     onFind: (filter) async {
                       final artists = await _firebaseService.getArtists();
-                      return artists.where((a) => a.name.toLowerCase().contains(filter.toLowerCase())).toList();
+                      return SearchService().filterArtists(query: filter, artists: artists);
                     },
                     dropdownBuilder: (artist) => Row(
                       children: [
@@ -318,7 +319,8 @@ class _EditSongScreenState extends State<EditSongScreen> {
                       onFind: (filter) async {
                         if (_selectedArtist == null) return [];
                         final albums = await _firebaseService.getAlbums();
-                        return albums.where((a) => a.artistId == _selectedArtist!.id && a.title.toLowerCase().contains(filter.toLowerCase())).toList();
+                        final artistAlbums = albums.where((a) => a.artistId == _selectedArtist!.id).toList();
+                        return SearchService().filterAlbums(query: filter, albums: artistAlbums);
                       },
                       dropdownBuilder: (album) => Row(
                         children: [

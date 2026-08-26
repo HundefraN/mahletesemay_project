@@ -7,11 +7,15 @@ import 'package:provider/provider.dart';
 
 import '../../models/artist_model.dart';
 import '../../providers/auth_proveider.dart';
+import '../../services/draft_service.dart';
+import '../../services/duplicate_detection_service.dart';
 import '../../services/firebase_service.dart';
 import '../../services/supabase_storage_service.dart';
 import '../../utils/permission_helper.dart';
 import '../../widgets/custom_snackbar.dart';
 import 'widgets/admin_ui_kit.dart';
+import 'widgets/draft_prompt_dialog.dart';
+import 'widgets/duplicate_warning_dialog.dart';
 
 class AddArtistScreen extends StatefulWidget {
   const AddArtistScreen({super.key});
@@ -25,15 +29,102 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
   final _nameController = TextEditingController();
   String _region = 'Ethiopian';
   final _firebaseService = FirebaseService();
+  final _duplicateService = DuplicateDetectionService();
+
   bool _isSaving = false;
+  bool _isCheckingDuplicates = false;
   double _uploadProgress = 0.0;
   File? _pickedImage;
+  bool _hasUnsavedChanges = false;
+  bool _hasDraftBanner = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(_markDirty);
+    _checkForDraft();
+  }
 
   @override
   void dispose() {
+    _nameController.removeListener(_markDirty);
     _nameController.dispose();
     super.dispose();
   }
+
+  void _markDirty() {
+    if (!_hasUnsavedChanges) {
+      setState(() => _hasUnsavedChanges = true);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // DRAFT MANAGEMENT
+  // ---------------------------------------------------------------------------
+
+  Future<void> _checkForDraft() async {
+    final hasDraft = await DraftService.hasArtistDraft();
+    if (hasDraft && mounted) {
+      setState(() => _hasDraftBanner = true);
+    }
+  }
+
+  Future<void> _restoreDraft() async {
+    final draft = await DraftService.loadArtistDraft();
+    if (draft == null) return;
+
+    setState(() {
+      _nameController.text = draft['name'] ?? '';
+      _region = draft['region'] ?? 'Ethiopian';
+      _hasDraftBanner = false;
+      _hasUnsavedChanges = true;
+    });
+
+    await DraftService.clearArtistDraft();
+    if (mounted) {
+      CustomSnackbar.show(context, 'Draft restored successfully!');
+    }
+  }
+
+  Future<void> _dismissDraft() async {
+    await DraftService.clearArtistDraft();
+    if (mounted) {
+      setState(() => _hasDraftBanner = false);
+    }
+  }
+
+  Future<void> _saveDraft() async {
+    await DraftService.saveArtistDraft(
+      name: _nameController.text,
+      region: _region,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // BACK NAVIGATION HANDLING
+  // ---------------------------------------------------------------------------
+
+  Future<bool> _onWillPop() async {
+    if (!_hasUnsavedChanges) return true;
+
+    final result = await DraftPromptDialog.show(context, 'artist');
+    switch (result) {
+      case DraftPromptResult.saveDraft:
+        await _saveDraft();
+        if (mounted) {
+          CustomSnackbar.show(context, 'Draft saved! You can resume later.');
+        }
+        return true;
+      case DraftPromptResult.discard:
+        return true;
+      case DraftPromptResult.cancel:
+        return false;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // IMAGE PICKER (existing logic preserved)
+  // ---------------------------------------------------------------------------
 
   Future<void> _pickAndCropImage() async {
     final hasPermission = await PermissionHelper.requestPhotoAccess(context);
@@ -70,6 +161,7 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
           setState(() {
             _pickedImage = File(croppedFile?.path ?? pickedFile.path);
             _uploadProgress = 0.0;
+            _hasUnsavedChanges = true;
           });
         }
       }
@@ -80,8 +172,31 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // SUBMIT WITH DUPLICATE CHECK
+  // ---------------------------------------------------------------------------
+
   void _submit() async {
     if (_formKey.currentState!.validate()) {
+      // Run duplicate detection before saving
+      setState(() => _isCheckingDuplicates = true);
+      try {
+        final duplicateResult = await _duplicateService.checkArtistDuplicates(
+          name: _nameController.text.trim(),
+          region: _region,
+        );
+
+        setState(() => _isCheckingDuplicates = false);
+
+        if (duplicateResult != null && duplicateResult.hasDuplicates && mounted) {
+          final proceed = await DuplicateWarningDialog.show(context, duplicateResult);
+          if (!proceed) return;
+        }
+      } catch (e) {
+        setState(() => _isCheckingDuplicates = false);
+        debugPrint('Duplicate check failed: $e');
+      }
+
       setState(() => _isSaving = true);
       try {
         String imageUrl = '';
@@ -110,6 +225,9 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
         );
         await _firebaseService.addArtist(newArtist);
 
+        // Clear any saved draft on successful submission
+        await DraftService.clearArtistDraft();
+
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         if (authProvider.currentModerator != null) {
           _firebaseService.logActivity(
@@ -121,6 +239,7 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
         }
 
         if (mounted) {
+          _hasUnsavedChanges = false;
           setState(() => _isSaving = false);
           Navigator.pop(context, true);
           CustomSnackbar.show(context, 'Artist added successfully!');
@@ -138,81 +257,199 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF070E1B) : const Color(0xFFF5F7FB),
-      appBar: AppBar(
-        title: Text(
-          'Add New Artist',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 17),
+    return PopScope(
+      canPop: !_hasUnsavedChanges,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldPop = await _onWillPop();
+        if (shouldPop && mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: isDark ? const Color(0xFF070E1B) : const Color(0xFFF5F7FB),
+        appBar: AppBar(
+          title: Text(
+            'Add New Artist',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 17),
+          ),
+        ),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            physics: const BouncingScrollPhysics(),
+            children: [
+              // Draft restoration banner
+              if (_hasDraftBanner) _buildDraftBanner(isDark),
+
+              // Section 1: Details
+              const AdminSectionHeader(
+                title: 'Artist Information',
+                icon: Icons.person_rounded,
+                padding: EdgeInsets.only(top: 4, bottom: 6),
+              ),
+              AdminGlassCard(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _nameController,
+                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13.5),
+                      decoration: _inputDecoration('Artist Full Name *', Icons.person_outline_rounded),
+                      validator: (value) => value!.trim().isEmpty ? 'Please enter artist name' : null,
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      value: _region,
+                      decoration: _inputDecoration('Geographical Region', Icons.public_rounded),
+                      items: ['Ethiopian', 'Worldwide']
+                          .map((label) => DropdownMenuItem(
+                                value: label,
+                                child: Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 13)),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _region = value!;
+                          _hasUnsavedChanges = true;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Section 2: Photo
+              const AdminSectionHeader(
+                title: 'Artist Photo (Optional)',
+                icon: Icons.add_a_photo_rounded,
+                padding: EdgeInsets.only(top: 4, bottom: 6),
+              ),
+              AdminGlassCard(
+                padding: const EdgeInsets.all(12),
+                child: _buildAvatarPicker(context),
+              ),
+
+              const SizedBox(height: 16),
+
+              AdminPrimaryButton(
+                label: _isCheckingDuplicates ? 'Checking for duplicates...' : 'Save & Publish Artist',
+                icon: _isCheckingDuplicates ? Icons.search_rounded : Icons.check_circle_rounded,
+                isLoading: _isSaving || _isCheckingDuplicates,
+                onPressed: _submit,
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          physics: const BouncingScrollPhysics(),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // DRAFT BANNER WIDGET
+  // ---------------------------------------------------------------------------
+
+  Widget _buildDraftBanner(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AdminUiKit.royalBlue.withOpacity(0.12),
+            AdminUiKit.royalBlue.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AdminUiKit.royalBlue.withOpacity(0.25),
+          width: 1.2,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
           children: [
-            // Section 1: Details
-            const AdminSectionHeader(
-              title: 'Artist Information',
-              icon: Icons.person_rounded,
-              padding: EdgeInsets.only(top: 4, bottom: 6),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AdminUiKit.royalBlue.withOpacity(0.15),
+              ),
+              child: const Icon(Icons.restore_rounded, color: AdminUiKit.royalBlue, size: 20),
             ),
-            AdminGlassCard(
-              padding: const EdgeInsets.all(12),
+            const SizedBox(width: 12),
+            Expanded(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextFormField(
-                    controller: _nameController,
-                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13.5),
-                    decoration: _inputDecoration('Artist Full Name *', Icons.person_outline_rounded),
-                    validator: (value) => value!.trim().isEmpty ? 'Please enter artist name' : null,
+                  Text(
+                    'Draft Available',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      color: isDark ? Colors.white : AdminUiKit.primaryNavy,
+                    ),
                   ),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    value: _region,
-                    decoration: _inputDecoration('Geographical Region', Icons.public_rounded),
-                    items: ['Ethiopian', 'Worldwide']
-                        .map((label) => DropdownMenuItem(
-                              value: label,
-                              child: Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 13)),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() => _region = value!);
-                    },
+                  const SizedBox(height: 2),
+                  Text(
+                    'You have an unsaved artist draft. Restore it?',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11.5,
+                      color: isDark ? Colors.white60 : Colors.black54,
+                    ),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 12),
-
-            // Section 2: Photo
-            const AdminSectionHeader(
-              title: 'Artist Photo (Optional)',
-              icon: Icons.add_a_photo_rounded,
-              padding: EdgeInsets.only(top: 4, bottom: 6),
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: _dismissDraft,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                'Dismiss',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white54 : Colors.black45,
+                ),
+              ),
             ),
-            AdminGlassCard(
-              padding: const EdgeInsets.all(12),
-              child: _buildAvatarPicker(context),
+            const SizedBox(width: 4),
+            TextButton(
+              onPressed: _restoreDraft,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                backgroundColor: AdminUiKit.royalBlue.withOpacity(0.12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Text(
+                'Restore',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AdminUiKit.royalBlue,
+                ),
+              ),
             ),
-
-            const SizedBox(height: 16),
-
-            AdminPrimaryButton(
-              label: 'Save & Publish Artist',
-              icon: Icons.check_circle_rounded,
-              isLoading: _isSaving,
-              onPressed: _submit,
-            ),
-            const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
+
+  // ---------------------------------------------------------------------------
+  // AVATAR PICKER (existing logic preserved)
+  // ---------------------------------------------------------------------------
 
   Widget _buildAvatarPicker(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -254,7 +491,10 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
               ),
               const SizedBox(width: 8),
               TextButton.icon(
-                onPressed: () => setState(() => _pickedImage = null),
+                onPressed: () => setState(() {
+                  _pickedImage = null;
+                  _hasUnsavedChanges = true;
+                }),
                 icon: const Icon(Icons.delete_outline_rounded, size: 16, color: AdminUiKit.roseRed),
                 label: Text('Remove', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AdminUiKit.roseRed)),
               ),

@@ -1017,6 +1017,94 @@ class SupabaseService {
       rethrow;
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // DUPLICATE DETECTION QUERIES
+  // ---------------------------------------------------------------------------
+
+  /// Find songs matching the given title (case-insensitive).
+  /// Optionally filter by artistId and/or albumId for tighter matches.
+  Future<List<Song>> findSongDuplicates({
+    required String title,
+    String? artistId,
+    String? albumId,
+  }) async {
+    try {
+      final trimmed = title.trim();
+      if (trimmed.isEmpty) return [];
+
+      // Fetch songs with matching title (case-insensitive via ilike)
+      var query = _client.from('songs').select().ilike('title', trimmed);
+
+      // If artistId provided, add that filter for exact-match results
+      if (artistId != null && artistId.isNotEmpty) {
+        query = query.eq('artist_id', artistId);
+      }
+      if (albumId != null && albumId.isNotEmpty) {
+        query = query.eq('album_id', albumId);
+      }
+
+      final response = await query;
+      return (response as List)
+          .map((item) => Song.fromMap(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      debugPrint('Error finding song duplicates: $e');
+      return [];
+    }
+  }
+
+  /// Find albums matching the given title (case-insensitive).
+  /// Optionally filter by artistId for tighter matches.
+  Future<List<Album>> findAlbumDuplicates({
+    required String title,
+    String? artistId,
+  }) async {
+    try {
+      final trimmed = title.trim();
+      if (trimmed.isEmpty) return [];
+
+      var query = _client.from('albums').select().ilike('title', trimmed);
+
+      if (artistId != null && artistId.isNotEmpty) {
+        query = query.eq('artist_id', artistId);
+      }
+
+      final response = await query;
+      return (response as List)
+          .map((item) => Album.fromMap(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      debugPrint('Error finding album duplicates: $e');
+      return [];
+    }
+  }
+
+  /// Find artists matching the given name (case-insensitive).
+  /// Optionally filter by region for tighter matches.
+  Future<List<Artist>> findArtistDuplicates({
+    required String name,
+    String? region,
+  }) async {
+    try {
+      final trimmed = name.trim();
+      if (trimmed.isEmpty) return [];
+
+      var query = _client.from('artists').select().ilike('name', trimmed);
+
+      if (region != null && region.isNotEmpty) {
+        query = query.eq('region', region);
+      }
+
+      final response = await query;
+      return (response as List)
+          .map((item) => Artist.fromMap(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      debugPrint('Error finding artist duplicates: $e');
+      return [];
+    }
+  }
 }
 
 /// Helper snapshot object to mimic Firestore DocumentSnapshot for existing listeners

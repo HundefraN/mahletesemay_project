@@ -30,6 +30,7 @@ import 'package:flutter/foundation.dart';
 import 'utils/constants.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 Future<void> main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -38,20 +39,21 @@ Future<void> main() async {
   try {
     await dotenv.load();
   } catch (_) {
-    // .env file is optional if compile-time or defaults are provided
+    // .env file is optional
   }
 
-  // Initialize Supabase Database & Auth layer
-  await Supabase.initialize(
-    url: SupabaseConfig.url,
-    anonKey: SupabaseConfig.anonKey,
-  );
+  // Initialize Supabase, Firebase, and NotificationService concurrently
+  await Future.wait([
+    Supabase.initialize(
+      url: SupabaseConfig.url,
+      anonKey: SupabaseConfig.anonKey,
+    ),
+    Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
+    NotificationService.initialize(),
+  ]);
 
-  // Initialize Firebase for FCM Push Notifications
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await FcmService.initialize();
-
-  await NotificationService.initialize();
+  // Non-blocking FCM background setup
+  FcmService.initialize();
 
   runApp(const MyApp());
 }
@@ -93,6 +95,7 @@ class MyApp extends StatelessWidget {
             child: MaterialApp(
               title: 'Mahlete Semay',
               navigatorKey: navigatorKey,
+              scaffoldMessengerKey: scaffoldMessengerKey,
               debugShowCheckedModeBanner: false,
               theme: AppThemes.lightTheme,
               darkTheme: AppThemes.darkTheme,
@@ -111,7 +114,11 @@ class MyApp extends StatelessWidget {
               ],
               home: const SplashWrapper(),
               builder: (context, child) {
-                return RepairModeWrapper(child: child!);
+                return GestureDetector(
+                  onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                  behavior: HitTestBehavior.translucent,
+                  child: RepairModeWrapper(child: child!),
+                );
               },
             ),
           );
@@ -176,7 +183,7 @@ class _NotificationCoordinatorState extends State<NotificationCoordinator>
       case NotificationKind.test:
         navigator.pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (_) => const HomeScreen(initialTab: HomePageTab.exercises),
+            builder: (_) => const HomeScreen(initialTab: HomePageTab.lyrics),
           ),
           (route) => false,
         );

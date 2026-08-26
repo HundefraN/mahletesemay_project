@@ -102,7 +102,13 @@ class HistoryScreen extends StatelessWidget {
                                 child: SizedBox(width: 50, height: 50, child: _getCoverForSong(context, song, songProvider)),
                               ),
                             ),
-                            title: Text(song.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            title: Hero(
+                              tag: 'song-title-${song.id}',
+                              child: Material(
+                                color: Colors.transparent,
+                                child: Text(song.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                            ),
                             subtitle: _SongMetadataRow(song: song, fontSize: 13),
                             trailing: Text(
                               timeago.format(historyEntry.viewedAt),

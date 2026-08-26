@@ -18,26 +18,6 @@ class FcmService {
     try {
       FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-      // Request notification permissions for FCM
-      final settings = await _messaging.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
-
-      debugPrint('FCM authorization status: ${settings.authorizationStatus}');
-
-      // Get initial device token
-      final token = await _messaging.getToken();
-      if (token != null) {
-        debugPrint('FCM Device Token: $token');
-        await _saveTokenToSupabase(token);
-      }
-
       // Listen for token refreshments
       _messaging.onTokenRefresh.listen((newToken) {
         debugPrint('FCM Token refreshed: $newToken');
@@ -48,9 +28,37 @@ class FcmService {
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         debugPrint('Received foreground FCM message: ${message.notification?.title}');
       });
+
+      // Request permissions and sync token asynchronously without blocking app startup
+      _syncInitialToken();
     } catch (e) {
       debugPrint('Error initializing FCM service: $e');
     }
+  }
+
+  static void _syncInitialToken() {
+    Future.microtask(() async {
+      try {
+        final settings = await _messaging.requestPermission(
+          alert: true,
+          announcement: false,
+          badge: true,
+          carPlay: false,
+          criticalAlert: false,
+          provisional: false,
+          sound: true,
+        );
+        debugPrint('FCM authorization status: ${settings.authorizationStatus}');
+
+        final token = await _messaging.getToken();
+        if (token != null) {
+          debugPrint('FCM Device Token: $token');
+          await _saveTokenToSupabase(token);
+        }
+      } catch (e) {
+        debugPrint('Error syncing FCM initial token: $e');
+      }
+    });
   }
 
   static Future<void> updateUserToken(String? userId) async {
