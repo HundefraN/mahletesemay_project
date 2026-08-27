@@ -5,7 +5,7 @@ class ThemeProvider with ChangeNotifier {
   bool _isDarkMode = true;
   bool get isDarkMode => _isDarkMode;
 
-  double _lyricsFontSize = 17.0; // Default font size
+  double _lyricsFontSize = 15.0; // Default font size
   double get lyricsFontSize => _lyricsFontSize;
 
   final String _themePreferenceKey = 'isDarkMode';
@@ -18,7 +18,7 @@ class ThemeProvider with ChangeNotifier {
   void _loadPreferences() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     _isDarkMode = prefs.getBool(_themePreferenceKey) ?? true;
-    _lyricsFontSize = prefs.getDouble(_fontSizePreferenceKey) ?? 17.0;
+    _lyricsFontSize = prefs.getDouble(_fontSizePreferenceKey) ?? 15.0;
     notifyListeners();
   }
 

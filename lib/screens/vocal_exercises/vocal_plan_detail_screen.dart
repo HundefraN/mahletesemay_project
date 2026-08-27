@@ -16,6 +16,7 @@ import 'package:mahlete_semay_project/services/firebase_service.dart';
 import 'package:mahlete_semay_project/services/notification_service.dart';
 import 'package:mahlete_semay_project/utils/responsive_sizer.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
+import 'package:mahlete_semay_project/widgets/real_audio_waveform_visualizer.dart';
 
 class VocalPlanDetailScreen extends StatefulWidget {
   final String planId;
@@ -985,28 +986,20 @@ class __ModernAudioPlayerState extends State<_ModernAudioPlayer>
       ),
       child: Column(
         children: [
-          // Audio Dynamic Waveform Equalizer
-          SizedBox(
-            height: context.w(28),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(24, (index) {
-                final height = isPlaying
-                    ? context.w(6 + (16.0 * (1.0 + (index % 5 - 2) * 0.25)))
-                    : context.w(5);
-
-                return AnimatedContainer(
-                  duration: Duration(milliseconds: 180 + (index % 4) * 60),
-                  width: context.w(3.5),
-                  height: height,
-                  decoration: BoxDecoration(
-                    color: isPlaying
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurfaceVariant.withOpacity(0.25),
-                    borderRadius: BorderRadius.circular(context.w(4)),
-                  ),
-                );
-              }),
+          // Real Physical Audio Waveform Visualizer
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: context.w(4)),
+            child: RealAudioWaveformVisualizer(
+              audioUrl: widget.audioUrl,
+              localFilePath: _localPath,
+              currentPosition: _position,
+              totalDuration: _duration,
+              isPlaying: isPlaying,
+              height: context.w(36),
+              barCount: 44,
+              onSeek: (position) async {
+                await _audioPlayer.seek(position);
+              },
             ),
           ),
           SizedBox(height: context.w(8)),

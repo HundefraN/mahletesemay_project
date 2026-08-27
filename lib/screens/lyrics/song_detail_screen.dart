@@ -15,65 +15,18 @@ import '../../widgets/cached_image.dart';
 import '../../widgets/custom_snackbar.dart';
 import 'share_image_preview_screen.dart';
 
-/// Preset color themes inspired by Spotify's vibrant dynamic lyrics backdrops
-class SpotifyLyricsPalette {
-  final String name;
-  final List<Color> gradientColors;
-  final Color activeTextColor;
-  final Color inactiveTextColor;
-  final Color accentColor;
-
-  const SpotifyLyricsPalette({
-    required this.name,
-    required this.gradientColors,
-    this.activeTextColor = Colors.white,
-    this.inactiveTextColor = const Color(0x75FFFFFF),
-    this.accentColor = const Color(0xFF1DB954),
-  });
-}
-
-const List<SpotifyLyricsPalette> kSpotifyPalettes = [
-  SpotifyLyricsPalette(
-    name: 'Spotify Green',
-    gradientColors: [Color(0xFF0F3822), Color(0xFF06180E), Color(0xFF020905)],
-    accentColor: Color(0xFF1DB954),
-  ),
-  SpotifyLyricsPalette(
-    name: 'Deep Amethyst',
-    gradientColors: [Color(0xFF3B1259), Color(0xFF1E0831), Color(0xFF0B0314)],
-    accentColor: Color(0xFFC084FC),
-  ),
-  SpotifyLyricsPalette(
-    name: 'Midnight Navy',
-    gradientColors: [Color(0xFF0F2B48), Color(0xFF081829), Color(0xFF030B14)],
-    accentColor: Color(0xFF38BDF8),
-  ),
-  SpotifyLyricsPalette(
-    name: 'Crimson Ruby',
-    gradientColors: [Color(0xFF540D1D), Color(0xFF2C040D), Color(0xFF120104)],
-    accentColor: Color(0xFFFB7185),
-  ),
-  SpotifyLyricsPalette(
-    name: 'Sunset Amber',
-    gradientColors: [Color(0xFF592D08), Color(0xFF2E1502), Color(0xFF140801)],
-    accentColor: Color(0xFFFBBF24),
-  ),
-  SpotifyLyricsPalette(
-    name: 'Teal Aurora',
-    gradientColors: [Color(0xFF0E3D3A), Color(0xFF061F1E), Color(0xFF020C0C)],
-    accentColor: Color(0xFF2DD4BF),
-  ),
-  SpotifyLyricsPalette(
-    name: 'Charcoal Minimal',
-    gradientColors: [Color(0xFF262626), Color(0xFF141414), Color(0xFF0A0A0A)],
-    accentColor: Color(0xFFFFFFFF),
-  ),
-];
-
 class _LyricsStanza {
   final String? header;
+  final String? cleanHeader;
+  final String? repetition;
   final List<int> lineIndices;
-  const _LyricsStanza({this.header, required this.lineIndices});
+
+  const _LyricsStanza({
+    this.header,
+    this.cleanHeader,
+    this.repetition,
+    required this.lineIndices,
+  });
 }
 
 class SongDetailScreen extends StatefulWidget {
@@ -92,37 +45,51 @@ class SongDetailScreen extends StatefulWidget {
   State<SongDetailScreen> createState() => _SongDetailScreenState();
 }
 
-class _SongDetailScreenState extends State<SongDetailScreen> {
+class _SongDetailScreenState extends State<SongDetailScreen>
+    with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   final Map<int, GlobalKey> _lineKeys = {};
 
   bool _showAppBarTitle = false;
   bool _isFullscreen = false;
 
-  // Active line for Spotify-style karaoke highlight
-  int _activeLineIndex = 0;
+  // Active line for Spotify-style karaoke highlight (-1 means no line currently selected)
+  int _activeLineIndex = -1;
 
   // Auto-scroll sing-along state
   bool _isAutoScrolling = false;
-  double _scrollSpeed = 1.0; // 1x, 1.5x, 2x
+  double _scrollSpeed = 1.0; // 0.75x, 1.0x, 1.25x, 1.5x, 2.0x
   Timer? _autoScrollTimer;
+  bool _isUserDragging = false;
+  bool _isAutoScrollPausedByUser = false;
+  late AnimationController _playPulseController;
+  late Animation<double> _playPulseAnimation;
 
   // Spotify Share Mode (Line selection mode)
   bool _isShareSelectionMode = false;
   final Set<int> _selectedLineIndices = {};
-  static const int _maxSelectableLines = 5;
-
-  // Active Spotify color palette index
-  int _selectedPaletteIndex = 0;
+  int? _lastSelectedLineIndex;
+  static const int _maxSelectableLines = 8;
 
   // Reading & Typography state
   String _selectedFontFamily = 'Outfit';
   TextAlign _textAlign = TextAlign.left;
-  double _lineHeight = 1.85;
+  double _lineHeight = 1.6;
 
   late List<String> _rawLines;
   late List<String> _displayLines;
   List<_LyricsStanza> _stanzas = [];
+
+  // Regex patterns for Ethiopic & International lyric processing
+  static final RegExp _headerRegex = RegExp(
+    r'^\s*(\[|\()?\s*(አዝማች|ተቀባይ|ምልልስ|ዝማሬ|መርጊያ|ክፍል\s*[፩-፲\d]+|መዝሙር|ሃሌ\s*ሉያ|Chorus|Verse\s*\d*|Bridge|Outro|Intro|Pre-Chorus|Hook|Refrain|Interlude)(\s*:\s*|\s*-\s*|\s*|\s*[\]\)])\s*(\(?\s*[\d፪-፱xX]+(?:\s*ጊዜ)?\s*\)?)?\s*$',
+    caseSensitive: false,
+  );
+
+  static final RegExp _repetitionRegex = RegExp(
+    r'[\(\[\{]\s*(\d+|[፩-፲]+)\s*(?:x|X|ጊዜ)\s*[\)\]\}]$',
+    caseSensitive: false,
+  );
 
   @override
   void initState() {
@@ -131,15 +98,51 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
     songProvider.addToHistory(widget.song);
     songProvider.incrementViewCount(widget.song.id);
 
+    _playPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+    _playPulseAnimation = Tween<double>(begin: 1.0, end: 1.28).animate(
+      CurvedAnimation(
+          parent: _playPulseController, curve: Curves.easeInOutSine),
+    );
+
     _parseLyrics();
-    _pickInitialPalette();
     _scrollController.addListener(_onScroll);
   }
 
-  void _pickInitialPalette() {
-    // Generate a stable color palette index based on song id hash
-    final hash = widget.song.id.hashCode.abs();
-    _selectedPaletteIndex = hash % kSpotifyPalettes.length;
+  bool _isHeaderLine(String line) {
+    final trimmed = line.trim();
+    if (trimmed.isEmpty) return false;
+    if ((trimmed.startsWith('[') && trimmed.endsWith(']')) ||
+        (trimmed.startsWith('(') && trimmed.endsWith(')'))) {
+      return true;
+    }
+    return _headerRegex.hasMatch(trimmed) ||
+        trimmed.toLowerCase().startsWith('chorus') ||
+        trimmed.toLowerCase().startsWith('verse') ||
+        trimmed.toLowerCase().startsWith('bridge') ||
+        trimmed.startsWith('አዝማች') ||
+        trimmed.startsWith('ተቀባይ') ||
+        trimmed.startsWith('ምልልስ') ||
+        trimmed.startsWith('ዝማሬ') ||
+        trimmed.startsWith('ክፍል');
+  }
+
+  String _cleanHeaderTitle(String raw) {
+    var clean = raw.trim();
+    clean = clean.replaceAll(RegExp(r'^[\[\(\{\s]+|[\]\)\}\s]+$'), '');
+    clean = clean.replaceAll(RegExp(r'[\:\-]$'), '').trim();
+    return clean;
+  }
+
+  String? _extractRepetition(String text) {
+    final match = _repetitionRegex.firstMatch(text.trim());
+    if (match != null) {
+      final count = match.group(1);
+      return '${count}x';
+    }
+    return null;
   }
 
   void _parseLyrics() {
@@ -157,8 +160,14 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
 
       if (trimmed.isEmpty) {
         if (currentLineIndices.isNotEmpty || currentHeader != null) {
+          final cleanH =
+              currentHeader != null ? _cleanHeaderTitle(currentHeader) : null;
+          final rep =
+              currentHeader != null ? _extractRepetition(currentHeader) : null;
           _stanzas.add(_LyricsStanza(
             header: currentHeader,
+            cleanHeader: cleanH,
+            repetition: rep,
             lineIndices: List.from(currentLineIndices),
           ));
           currentHeader = null;
@@ -167,17 +176,18 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
         continue;
       }
 
-      final isHeader = (trimmed.startsWith('[') && trimmed.endsWith(']')) ||
-          (trimmed.startsWith('(') && trimmed.endsWith(')')) ||
-          trimmed.toLowerCase().startsWith('chorus') ||
-          trimmed.toLowerCase().startsWith('verse') ||
-          trimmed.startsWith('አዝማች') ||
-          trimmed.startsWith('ዝማሬ');
+      final isHeader = _isHeaderLine(trimmed);
 
       if (isHeader) {
         if (currentLineIndices.isNotEmpty || currentHeader != null) {
+          final cleanH =
+              currentHeader != null ? _cleanHeaderTitle(currentHeader) : null;
+          final rep =
+              currentHeader != null ? _extractRepetition(currentHeader) : null;
           _stanzas.add(_LyricsStanza(
             header: currentHeader,
+            cleanHeader: cleanH,
+            repetition: rep,
             lineIndices: List.from(currentLineIndices),
           ));
           currentLineIndices.clear();
@@ -189,20 +199,16 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
     }
 
     if (currentLineIndices.isNotEmpty || currentHeader != null) {
+      final cleanH =
+          currentHeader != null ? _cleanHeaderTitle(currentHeader) : null;
+      final rep =
+          currentHeader != null ? _extractRepetition(currentHeader) : null;
       _stanzas.add(_LyricsStanza(
         header: currentHeader,
+        cleanHeader: cleanH,
+        repetition: rep,
         lineIndices: List.from(currentLineIndices),
       ));
-    }
-
-    // Set first valid lyric line as active
-    for (int i = 0; i < _rawLines.length; i++) {
-      if (_rawLines[i].trim().isNotEmpty &&
-          !_rawLines[i].trim().startsWith('[') &&
-          !_rawLines[i].trim().startsWith('(')) {
-        _activeLineIndex = i;
-        break;
-      }
     }
   }
 
@@ -215,52 +221,93 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
   }
 
   void _scrollToActiveLine(int lineIndex) {
-    final key = _lineKeys[lineIndex];
-    if (key?.currentContext != null) {
-      Scrollable.ensureVisible(
-        key!.currentContext!,
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOutCubic,
-        alignment: 0.35,
-      );
-    }
-  }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final key = _lineKeys[lineIndex];
+      final context = key?.currentContext;
 
-  void _toggleAutoScroll() {
-    setState(() {
-      _isAutoScrolling = !_isAutoScrolling;
+      if (context != null) {
+        Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 650),
+          curve: Curves.fastOutSlowIn,
+          alignment: 0.35,
+        );
+      } else {
+        // Smooth fallback target calculation when context is offscreen
+        final totalLines = _rawLines.length;
+        if (totalLines > 0 && _scrollController.position.maxScrollExtent > 0) {
+          final targetFraction = (lineIndex / totalLines).clamp(0.0, 1.0);
+          final targetOffset =
+              targetFraction * _scrollController.position.maxScrollExtent;
+          _scrollController.animateTo(
+            targetOffset,
+            duration: const Duration(milliseconds: 650),
+            curve: Curves.fastOutSlowIn,
+          );
+        }
+      }
     });
-
-    if (_isAutoScrolling) {
-      _startAutoScrollTimer();
-    } else {
-      _autoScrollTimer?.cancel();
-    }
   }
 
-  void _startAutoScrollTimer() {
-    _autoScrollTimer?.cancel();
-    // Advance active line periodically in Spotify sing-along fashion
-    final interval = (_scrollSpeed == 2.0)
-        ? const Duration(milliseconds: 2200)
-        : (_scrollSpeed == 1.5)
-            ? const Duration(milliseconds: 3000)
-            : const Duration(milliseconds: 4000);
+  // --- Dynamic Adaptive Auto-Scroll Sing-Along Engine ---
 
-    _autoScrollTimer = Timer.periodic(interval, (timer) {
-      if (!_scrollController.hasClients || !_isAutoScrolling) {
-        timer.cancel();
+  Duration _calculateLineDuration(String line, double speedMultiplier) {
+    final trimmed = line.trim();
+    if (trimmed.isEmpty) {
+      return Duration(milliseconds: (850 / speedMultiplier).round());
+    }
+
+    final words =
+        trimmed.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+    final chars = trimmed.length;
+
+    // Smooth natural sing-along reading pace
+    double baseMs = 1500.0 + (words * 240.0) + (chars * 25.0);
+
+    // Ethiopic & Standard punctuation pauses (፣ ። ፤ , . ! ?)
+    final punctuationCount = RegExp(r'[፣።፤,!?\.]').allMatches(trimmed).length;
+    baseMs += punctuationCount * 300.0;
+
+    final clampedMs = baseMs.clamp(1800.0, 5500.0);
+    final scaledMs = clampedMs / speedMultiplier;
+
+    return Duration(milliseconds: scaledMs.round());
+  }
+
+  void _scheduleNextAutoScrollTick() {
+    _autoScrollTimer?.cancel();
+    if (!_isAutoScrolling || _isUserDragging || _isAutoScrollPausedByUser)
+      return;
+
+    final currentLine =
+        (_activeLineIndex >= 0 && _activeLineIndex < _rawLines.length)
+            ? _rawLines[_activeLineIndex]
+            : '';
+    final duration = _calculateLineDuration(currentLine, _scrollSpeed);
+
+    _autoScrollTimer = Timer(duration, () {
+      if (!mounted ||
+          !_scrollController.hasClients ||
+          !_isAutoScrolling ||
+          _isUserDragging ||
+          _isAutoScrollPausedByUser) {
         return;
       }
 
       int nextLine = _activeLineIndex + 1;
-      while (nextLine < _rawLines.length && _rawLines[nextLine].trim().isEmpty) {
+      while (nextLine < _rawLines.length &&
+          (_rawLines[nextLine].trim().isEmpty ||
+              _isHeaderLine(_rawLines[nextLine]))) {
         nextLine++;
       }
 
       if (nextLine >= _rawLines.length) {
-        setState(() => _isAutoScrolling = false);
-        timer.cancel();
+        setState(() {
+          _isAutoScrolling = false;
+          _playPulseController.stop();
+          _playPulseController.reset();
+        });
         return;
       }
 
@@ -268,33 +315,83 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
         _activeLineIndex = nextLine;
       });
       _scrollToActiveLine(nextLine);
+      _scheduleNextAutoScrollTick();
     });
   }
 
+  void _toggleAutoScroll() {
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _isAutoScrolling = !_isAutoScrolling;
+      _isAutoScrollPausedByUser = false;
+      if (_isAutoScrolling && _activeLineIndex == -1) {
+        // Find first valid line if none active
+        for (int i = 0; i < _rawLines.length; i++) {
+          if (_rawLines[i].trim().isNotEmpty && !_isHeaderLine(_rawLines[i])) {
+            _activeLineIndex = i;
+            break;
+          }
+        }
+      }
+    });
+
+    if (_isAutoScrolling) {
+      _playPulseController.repeat(reverse: true);
+      if (_activeLineIndex != -1) {
+        _scrollToActiveLine(_activeLineIndex);
+      }
+      _scheduleNextAutoScrollTick();
+    } else {
+      _playPulseController.stop();
+      _playPulseController.reset();
+      _autoScrollTimer?.cancel();
+    }
+  }
+
+  void _resumeAutoScrollAfterDrag() {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _isAutoScrollPausedByUser = false;
+    });
+    if (_isAutoScrolling) {
+      _playPulseController.repeat(reverse: true);
+      if (_activeLineIndex != -1) {
+        _scrollToActiveLine(_activeLineIndex);
+      }
+      _scheduleNextAutoScrollTick();
+    }
+  }
+
   void _changeScrollSpeed() {
+    HapticFeedback.selectionClick();
     setState(() {
       if (_scrollSpeed == 1.0) {
+        _scrollSpeed = 1.25;
+      } else if (_scrollSpeed == 1.25) {
         _scrollSpeed = 1.5;
       } else if (_scrollSpeed == 1.5) {
         _scrollSpeed = 2.0;
+      } else if (_scrollSpeed == 2.0) {
+        _scrollSpeed = 0.75;
       } else {
         _scrollSpeed = 1.0;
       }
     });
     if (_isAutoScrolling) {
-      _startAutoScrollTimer();
+      _scheduleNextAutoScrollTick();
     }
   }
 
   @override
   void dispose() {
     _autoScrollTimer?.cancel();
+    _playPulseController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
 
-  // --- Spotify Line & Share Selection Helpers ---
+  // --- Spotify Line & Share Selection Helpers & Range Selection ---
 
   void _onLineTapped(int lineIndex) {
     HapticFeedback.selectionClick();
@@ -302,22 +399,57 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
       _toggleLineSelectionForShare(lineIndex);
     } else {
       setState(() {
-        _activeLineIndex = lineIndex;
+        if (_activeLineIndex == lineIndex) {
+          _activeLineIndex = -1; // Deselect if tapped again
+        } else {
+          _activeLineIndex = lineIndex;
+        }
       });
-      _scrollToActiveLine(lineIndex);
+      if (_activeLineIndex != -1) {
+        _scrollToActiveLine(lineIndex);
+      }
     }
   }
 
   void _onLineLongPressed(int lineIndex) {
-    HapticFeedback.mediumImpact();
+    HapticFeedback.heavyImpact();
     if (!_isShareSelectionMode) {
       setState(() {
         _isShareSelectionMode = true;
         _selectedLineIndices.clear();
         _selectedLineIndices.add(lineIndex);
+        _lastSelectedLineIndex = lineIndex;
       });
     } else {
-      _toggleLineSelectionForShare(lineIndex);
+      // Smart Range Selection: Select continuous block between last selected and this line
+      if (_lastSelectedLineIndex != null &&
+          _lastSelectedLineIndex != lineIndex) {
+        final start = _lastSelectedLineIndex! < lineIndex
+            ? _lastSelectedLineIndex!
+            : lineIndex;
+        final end = _lastSelectedLineIndex! < lineIndex
+            ? lineIndex
+            : _lastSelectedLineIndex!;
+
+        setState(() {
+          for (int i = start; i <= end; i++) {
+            if (_rawLines[i].trim().isNotEmpty &&
+                !_isHeaderLine(_rawLines[i])) {
+              if (_selectedLineIndices.length < _maxSelectableLines) {
+                _selectedLineIndices.add(i);
+              }
+            }
+          }
+          _lastSelectedLineIndex = lineIndex;
+        });
+        HapticFeedback.mediumImpact();
+        CustomSnackbar.show(
+          context,
+          'Selected ${_selectedLineIndices.length} lines in range',
+        );
+      } else {
+        _toggleLineSelectionForShare(lineIndex);
+      }
     }
   }
 
@@ -328,14 +460,16 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
         _selectedLineIndices.remove(lineIndex);
         if (_selectedLineIndices.isEmpty) {
           _isShareSelectionMode = false;
+          _lastSelectedLineIndex = null;
         }
       } else {
         if (_selectedLineIndices.length >= _maxSelectableLines) {
-          CustomSnackbar.show(
-              context, 'Maximum $_maxSelectableLines lines can be selected.');
+          CustomSnackbar.show(context,
+              'Maximum $_maxSelectableLines lines can be selected for share card.');
           return;
         }
         _selectedLineIndices.add(lineIndex);
+        _lastSelectedLineIndex = lineIndex;
       }
     });
   }
@@ -345,11 +479,13 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
     setState(() {
       _isShareSelectionMode = true;
       _selectedLineIndices.clear();
-      // Select current active line by default
+      // Select current active line by default if valid
       if (_activeLineIndex >= 0 &&
           _activeLineIndex < _rawLines.length &&
-          _rawLines[_activeLineIndex].trim().isNotEmpty) {
+          _rawLines[_activeLineIndex].trim().isNotEmpty &&
+          !_isHeaderLine(_rawLines[_activeLineIndex])) {
         _selectedLineIndices.add(_activeLineIndex);
+        _lastSelectedLineIndex = _activeLineIndex;
       }
     });
   }
@@ -359,7 +495,38 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
     setState(() {
       _isShareSelectionMode = false;
       _selectedLineIndices.clear();
+      _lastSelectedLineIndex = null;
     });
+  }
+
+  void _selectStanzaLines(_LyricsStanza stanza) {
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _isShareSelectionMode = true;
+      _selectedLineIndices.clear();
+      for (final idx in stanza.lineIndices) {
+        if (_selectedLineIndices.length < _maxSelectableLines) {
+          _selectedLineIndices.add(idx);
+        }
+      }
+      if (stanza.lineIndices.isNotEmpty) {
+        _lastSelectedLineIndex = stanza.lineIndices.last;
+      }
+    });
+    CustomSnackbar.show(
+      context,
+      'Selected ${stanza.cleanHeader ?? "stanza"} (${_selectedLineIndices.length} lines)',
+    );
+  }
+
+  void _copyStanzaDirectly(_LyricsStanza stanza) {
+    HapticFeedback.mediumImpact();
+    final text = stanza.lineIndices.map((i) => _rawLines[i].trim()).join('\n');
+    final stanzaName = stanza.cleanHeader ?? 'Lyrics';
+    final shareContent =
+        '“$text”\n\n— "${widget.song.title}" ($stanzaName) by ${widget.song.artistName}\n#MahleteSemay #Mezmur';
+    Clipboard.setData(ClipboardData(text: shareContent));
+    CustomSnackbar.show(context, 'Copied $stanzaName to clipboard!');
   }
 
   String _getSelectedLinesText() {
@@ -371,7 +538,10 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
     final text = _getSelectedLinesText();
     if (text.isEmpty) return;
 
-    Clipboard.setData(ClipboardData(text: text));
+    HapticFeedback.mediumImpact();
+    final shareContent =
+        '“$text”\n\n— "${widget.song.title}" by ${widget.song.artistName}\nShared via Mahlete Semay';
+    Clipboard.setData(ClipboardData(text: shareContent));
     CustomSnackbar.show(
       context,
       'Copied ${_selectedLineIndices.length} line${_selectedLineIndices.length > 1 ? "s" : ""} to clipboard!',
@@ -382,8 +552,36 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
     final text = _getSelectedLinesText();
     if (text.isEmpty) return;
 
+    HapticFeedback.mediumImpact();
     final shareContent =
-        '$text\n\n— "${widget.song.title}" by ${widget.song.artistName}\nShared via Mahlete Semay';
+        '“$text”\n\n— "${widget.song.title}" by ${widget.song.artistName}\nShared via Mahlete Semay';
+    Share.share(shareContent);
+  }
+
+  void _copyFullSongClean() {
+    HapticFeedback.mediumImpact();
+    final cleanLines = _rawLines
+        .where((l) => !_isHeaderLine(l) && l.trim().isNotEmpty)
+        .map((l) => l.trim())
+        .join('\n');
+    final formatted =
+        '${widget.song.title} — ${widget.song.artistName}\n\n$cleanLines\n\nShared via Mahlete Semay';
+    Clipboard.setData(ClipboardData(text: formatted));
+    CustomSnackbar.show(context, 'Full clean lyrics copied to clipboard!');
+  }
+
+  void _copyFullSongStructured() {
+    HapticFeedback.mediumImpact();
+    final formatted =
+        '${widget.song.title} — ${widget.song.artistName}\n\n${widget.song.lyrics.trim()}\n\nShared via Mahlete Semay';
+    Clipboard.setData(ClipboardData(text: formatted));
+    CustomSnackbar.show(context, 'Full structured lyrics copied to clipboard!');
+  }
+
+  void _shareFullSongText() {
+    HapticFeedback.mediumImpact();
+    final shareContent =
+        '🎵 "${widget.song.title}"\n👤 ${widget.song.artistName}\n\n${widget.song.lyrics.trim()}\n\nShared via Mahlete Semay App';
     Share.share(shareContent);
   }
 
@@ -454,137 +652,417 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
 
   // --- Modals & Sheets ---
 
-  void _showPaletteSelector(BuildContext context) {
+  // 2026 Unified Modern Share & Copy Hub Modal
+  void _showModernShareOptionsModal(BuildContext context) {
+    HapticFeedback.mediumImpact();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
+        final theme = Theme.of(ctx);
+        final isDark = theme.brightness == Brightness.dark;
+        final primaryColor = theme.colorScheme.primary;
+        final onSurface = theme.colorScheme.onSurface;
+
         return BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
             margin: const EdgeInsets.all(12),
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
             decoration: BoxDecoration(
-              color: const Color(0xFF181818).withOpacity(0.96),
-              borderRadius: BorderRadius.circular(26),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              color: isDark
+                  ? const Color(0xFF0F1D33).withOpacity(0.96)
+                  : Colors.white.withOpacity(0.98),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withOpacity(0.12)
+                    : onSurface.withOpacity(0.08),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 24,
+                  offset: const Offset(0, -4),
+                ),
+              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Handle bar
                 Center(
                   child: Container(
-                    width: 36,
+                    width: 38,
                     height: 4,
-                    margin: const EdgeInsets.only(bottom: 14),
+                    margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.25),
+                      color: isDark
+                          ? Colors.white.withOpacity(0.25)
+                          : onSurface.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
+
+                // Header
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Spotify Gradient Theme',
-                      style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                        color: Colors.white,
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(IconsaxPlusBold.export_1,
+                          color: primaryColor, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Share & Copy Hub',
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 17,
+                              color: isDark ? Colors.white : onSurface,
+                            ),
+                          ),
+                          Text(
+                            '${widget.song.title} • ${widget.song.artistName}',
+                            style: GoogleFonts.outfit(
+                              fontSize: 12,
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.65)
+                                  : onSurface.withOpacity(0.6),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
                     ),
                     IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      icon: const Icon(Icons.close_rounded,
-                          size: 18, color: Colors.white70),
+                      icon: Icon(Icons.close_rounded,
+                          size: 20,
+                          color: isDark
+                              ? Colors.white70
+                              : onSurface.withOpacity(0.6)),
                       onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: List.generate(kSpotifyPalettes.length, (index) {
-                    final palette = kSpotifyPalettes[index];
-                    final isSelected = _selectedPaletteIndex == index;
-                    return InkWell(
-                      onTap: () {
-                        setState(() => _selectedPaletteIndex = index);
-                        Navigator.pop(ctx);
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        width: (MediaQuery.of(context).size.width - 76) / 2,
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: palette.gradientColors,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected
-                                ? palette.accentColor
-                                : Colors.white.withOpacity(0.12),
-                            width: isSelected ? 2 : 1,
-                          ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: palette.accentColor.withOpacity(0.35),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 3),
-                                  )
-                                ]
-                              : null,
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 16,
-                              height: 16,
-                              decoration: BoxDecoration(
-                                color: palette.accentColor,
-                                shape: BoxShape.circle,
-                              ),
-                              child: isSelected
-                                  ? const Icon(Icons.check,
-                                      size: 11, color: Colors.black)
-                                  : null,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                palette.name,
-                                style: GoogleFonts.outfit(
-                                  color: Colors.white,
-                                  fontSize: 12.5,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w800
-                                      : FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
+                const SizedBox(height: 18),
+
+                // Hero Action: Share Studio Card
+                InkWell(
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _openStudioWithSelectedLines();
+                  },
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isDark
+                            ? [
+                                primaryColor.withOpacity(0.28),
+                                const Color(0xFF1E1035).withOpacity(0.85),
+                              ]
+                            : [
+                                primaryColor.withOpacity(0.14),
+                                primaryColor.withOpacity(0.06),
+                              ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                    );
-                  }),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: primaryColor.withOpacity(isDark ? 0.5 : 0.3),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [primaryColor, const Color(0xFFE0AAFF)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Center(
+                            child: Icon(IconsaxPlusBold.gallery_export,
+                                color: Colors.black, size: 22),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    'Quote Card Studio',
+                                    style: GoogleFonts.outfit(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 15,
+                                      color: isDark ? Colors.white : onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 7, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: primaryColor,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.auto_awesome,
+                                          size: 9.5,
+                                          color: isDark
+                                              ? Colors.black
+                                              : Colors.white,
+                                        ),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          'STUDIO PRO',
+                                          style: GoogleFonts.outfit(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: 0.4,
+                                            color: isDark
+                                                ? Colors.black
+                                                : Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Design aesthetic cards for Instagram, Stories & Telegram',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 11.5,
+                                  color: isDark
+                                      ? Colors.white.withOpacity(0.7)
+                                      : onSurface.withOpacity(0.65),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios_rounded,
+                            size: 14,
+                            color: isDark
+                                ? Colors.white60
+                                : onSurface.withOpacity(0.5)),
+                      ],
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
+
+                // Grid of Copy & Share Options
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildShareHubOptionTile(
+                        icon: IconsaxPlusBold.tick_circle,
+                        title: 'Select Lines',
+                        subtitle: 'Pick exact verses',
+                        isDark: isDark,
+                        onSurface: onSurface,
+                        primaryColor: primaryColor,
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _enterShareMode();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildShareHubOptionTile(
+                        icon: IconsaxPlusBold.quote_down,
+                        title: 'Copy Quote',
+                        subtitle: 'With artist credit',
+                        isDark: isDark,
+                        onSurface: onSurface,
+                        primaryColor: primaryColor,
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          final sample = _rawLines
+                              .where((l) =>
+                                  !_isHeaderLine(l) && l.trim().isNotEmpty)
+                              .take(4)
+                              .join('\n');
+                          final formatted =
+                              '“$sample”\n\n— "${widget.song.title}" by ${widget.song.artistName}\n#MahleteSemay';
+                          Clipboard.setData(ClipboardData(text: formatted));
+                          CustomSnackbar.show(
+                              context, 'Quote lyrics copied to clipboard!');
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildShareHubOptionTile(
+                        icon: IconsaxPlusBold.document_copy,
+                        title: 'Clean Lyrics',
+                        subtitle: 'Without tags',
+                        isDark: isDark,
+                        onSurface: onSurface,
+                        primaryColor: primaryColor,
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _copyFullSongClean();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildShareHubOptionTile(
+                        icon: IconsaxPlusBold.textalign_left,
+                        title: 'Full Structure',
+                        subtitle: 'Verses & Chorus',
+                        isDark: isDark,
+                        onSurface: onSurface,
+                        primaryColor: primaryColor,
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _copyFullSongStructured();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Direct System Share Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _shareFullSongText();
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      side: BorderSide(
+                        color: isDark
+                            ? Colors.white.withOpacity(0.18)
+                            : onSurface.withOpacity(0.15),
+                      ),
+                    ),
+                    icon: Icon(IconsaxPlusBold.send_2,
+                        size: 16, color: isDark ? Colors.white : onSurface),
+                    label: Text(
+                      'Share Full Text via Apps...',
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: isDark ? Colors.white : onSurface,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildShareHubOptionTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool isDark,
+    required Color onSurface,
+    required Color primaryColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.white.withOpacity(0.06)
+              : onSurface.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.08)
+                : onSurface.withOpacity(0.06),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: primaryColor, size: 17),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12.5,
+                      color: isDark ? Colors.white : onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.outfit(
+                      fontSize: 10.5,
+                      color: isDark
+                          ? Colors.white.withOpacity(0.6)
+                          : onSurface.withOpacity(0.55),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -596,6 +1074,11 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            final theme = Theme.of(context);
+            final isDark = theme.brightness == Brightness.dark;
+            final primaryColor = theme.colorScheme.primary;
+            final onSurface = theme.colorScheme.onSurface;
+
             final themeProvider = Provider.of<ThemeProvider>(context);
             final currentSize = themeProvider.lyricsFontSize;
 
@@ -605,9 +1088,24 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                 margin: const EdgeInsets.all(12),
                 padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF181818).withOpacity(0.96),
+                  color: isDark
+                      ? const Color(0xFF0F1D33).withOpacity(0.96)
+                      : Colors.white.withOpacity(0.98),
                   borderRadius: BorderRadius.circular(26),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withOpacity(0.1)
+                        : onSurface.withOpacity(0.08),
+                  ),
+                  boxShadow: isDark
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 20,
+                            offset: const Offset(0, -4),
+                          ),
+                        ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -619,7 +1117,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                         height: 4,
                         margin: const EdgeInsets.only(bottom: 14),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.25),
+                          color: isDark
+                              ? Colors.white.withOpacity(0.25)
+                              : onSurface.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -632,14 +1132,17 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                           style: GoogleFonts.outfit(
                             fontWeight: FontWeight.w800,
                             fontSize: 16,
-                            color: Colors.white,
+                            color: isDark ? Colors.white : onSurface,
                           ),
                         ),
                         IconButton(
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
-                          icon: const Icon(Icons.close_rounded,
-                              size: 18, color: Colors.white70),
+                          icon: Icon(Icons.close_rounded,
+                              size: 18,
+                              color: isDark
+                                  ? Colors.white70
+                                  : onSurface.withOpacity(0.6)),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
@@ -652,7 +1155,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white70,
+                        color: isDark
+                            ? Colors.white70
+                            : onSurface.withOpacity(0.7),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -677,7 +1182,11 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                                 fontWeight: isSelected
                                     ? FontWeight.w800
                                     : FontWeight.w600,
-                                color: isSelected ? Colors.black : Colors.white,
+                                color: isSelected
+                                    ? (isDark ? Colors.black : Colors.white)
+                                    : (isDark
+                                        ? Colors.white
+                                        : onSurface.withOpacity(0.9)),
                               ),
                               selected: isSelected,
                               visualDensity: VisualDensity.compact,
@@ -685,11 +1194,15 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                                   horizontal: 8, vertical: 4),
                               side: BorderSide(
                                 color: isSelected
-                                    ? const Color(0xFF1DB954)
-                                    : Colors.white.withOpacity(0.15),
+                                    ? primaryColor
+                                    : (isDark
+                                        ? Colors.white.withOpacity(0.15)
+                                        : onSurface.withOpacity(0.12)),
                               ),
-                              backgroundColor: Colors.white.withOpacity(0.06),
-                              selectedColor: const Color(0xFF1DB954),
+                              backgroundColor: isDark
+                                  ? Colors.white.withOpacity(0.06)
+                                  : onSurface.withOpacity(0.05),
+                              selectedColor: primaryColor,
                               onSelected: (val) {
                                 setState(() => _selectedFontFamily = font);
                                 setModalState(() {});
@@ -707,7 +1220,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white70,
+                        color: isDark
+                            ? Colors.white70
+                            : onSurface.withOpacity(0.7),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -716,6 +1231,8 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                         _buildSizeStepButton(
                           icon: Icons.remove_rounded,
                           enabled: currentSize > 14.0,
+                          isDark: isDark,
+                          onSurface: onSurface,
                           onTap: () {
                             final newSize = (currentSize - 2).clamp(14.0, 34.0);
                             themeProvider.setLyricsFontSize(newSize);
@@ -727,17 +1244,18 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1DB954).withOpacity(0.18),
+                            color:
+                                primaryColor.withOpacity(isDark ? 0.18 : 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                                color: const Color(0xFF1DB954).withOpacity(0.4)),
+                                color: primaryColor.withOpacity(0.4)),
                           ),
                           child: Text(
                             '${currentSize.round()} pt',
                             style: GoogleFonts.outfit(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
-                              color: const Color(0xFF1DB954),
+                              color: primaryColor,
                             ),
                           ),
                         ),
@@ -745,6 +1263,8 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                         _buildSizeStepButton(
                           icon: Icons.add_rounded,
                           enabled: currentSize < 34.0,
+                          isDark: isDark,
+                          onSurface: onSurface,
                           onTap: () {
                             final newSize = (currentSize + 2).clamp(14.0, 34.0);
                             themeProvider.setLyricsFontSize(newSize);
@@ -762,6 +1282,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                                   label: 'S',
                                   size: 16.0,
                                   currentSize: currentSize,
+                                  isDark: isDark,
+                                  primaryColor: primaryColor,
+                                  onSurface: onSurface,
                                   onTap: () {
                                     themeProvider.setLyricsFontSize(16.0);
                                     setModalState(() {});
@@ -772,6 +1295,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                                   label: 'M (Spotify)',
                                   size: 21.0,
                                   currentSize: currentSize,
+                                  isDark: isDark,
+                                  primaryColor: primaryColor,
+                                  onSurface: onSurface,
                                   onTap: () {
                                     themeProvider.setLyricsFontSize(21.0);
                                     setModalState(() {});
@@ -782,6 +1308,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                                   label: 'L',
                                   size: 26.0,
                                   currentSize: currentSize,
+                                  isDark: isDark,
+                                  primaryColor: primaryColor,
+                                  onSurface: onSurface,
                                   onTap: () {
                                     themeProvider.setLyricsFontSize(26.0);
                                     setModalState(() {});
@@ -792,6 +1321,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                                   label: 'XL',
                                   size: 30.0,
                                   currentSize: currentSize,
+                                  isDark: isDark,
+                                  primaryColor: primaryColor,
+                                  onSurface: onSurface,
                                   onTap: () {
                                     themeProvider.setLyricsFontSize(30.0);
                                     setModalState(() {});
@@ -818,7 +1350,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                                 style: GoogleFonts.outfit(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white70,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : onSurface.withOpacity(0.7),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -828,6 +1362,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                                     label: 'Left',
                                     icon: Icons.format_align_left_rounded,
                                     isSelected: _textAlign == TextAlign.left,
+                                    isDark: isDark,
+                                    primaryColor: primaryColor,
+                                    onSurface: onSurface,
                                     onTap: () {
                                       setState(
                                           () => _textAlign = TextAlign.left);
@@ -839,6 +1376,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                                     label: 'Center',
                                     icon: Icons.format_align_center_rounded,
                                     isSelected: _textAlign == TextAlign.center,
+                                    isDark: isDark,
+                                    primaryColor: primaryColor,
+                                    onSurface: onSurface,
                                     onTap: () {
                                       setState(
                                           () => _textAlign = TextAlign.center);
@@ -861,7 +1401,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                                 style: GoogleFonts.outfit(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white70,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : onSurface.withOpacity(0.7),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -870,6 +1412,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                                   _buildStyleOptionChip(
                                     label: '1.6x',
                                     isSelected: (_lineHeight - 1.6).abs() < 0.1,
+                                    isDark: isDark,
+                                    primaryColor: primaryColor,
+                                    onSurface: onSurface,
                                     onTap: () {
                                       setState(() => _lineHeight = 1.6);
                                       setModalState(() {});
@@ -880,6 +1425,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                                     label: '1.85x',
                                     isSelected:
                                         (_lineHeight - 1.85).abs() < 0.1,
+                                    isDark: isDark,
+                                    primaryColor: primaryColor,
+                                    onSurface: onSurface,
                                     onTap: () {
                                       setState(() => _lineHeight = 1.85);
                                       setModalState(() {});
@@ -889,6 +1437,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                                   _buildStyleOptionChip(
                                     label: '2.1x',
                                     isSelected: (_lineHeight - 2.1).abs() < 0.1,
+                                    isDark: isDark,
+                                    primaryColor: primaryColor,
+                                    onSurface: onSurface,
                                     onTap: () {
                                       setState(() => _lineHeight = 2.1);
                                       setModalState(() {});
@@ -915,6 +1466,8 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
   Widget _buildSizeStepButton({
     required IconData icon,
     required bool enabled,
+    required bool isDark,
+    required Color onSurface,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -925,15 +1478,25 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
         height: 36,
         decoration: BoxDecoration(
           color: enabled
-              ? Colors.white.withOpacity(0.1)
-              : Colors.white.withOpacity(0.03),
+              ? (isDark
+                  ? Colors.white.withOpacity(0.1)
+                  : onSurface.withOpacity(0.06))
+              : (isDark
+                  ? Colors.white.withOpacity(0.03)
+                  : onSurface.withOpacity(0.02)),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withOpacity(0.12)),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.12)
+                : onSurface.withOpacity(0.1),
+          ),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: enabled ? Colors.white : Colors.white30,
+          color: enabled
+              ? (isDark ? Colors.white : onSurface)
+              : (isDark ? Colors.white30 : onSurface.withOpacity(0.25)),
         ),
       ),
     );
@@ -943,6 +1506,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
     required String label,
     required double size,
     required double currentSize,
+    required bool isDark,
+    required Color primaryColor,
+    required Color onSurface,
     required VoidCallback onTap,
   }) {
     final isSelected = (currentSize - size).abs() < 1.0;
@@ -953,16 +1519,27 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF1DB954)
-              : Colors.white.withOpacity(0.08),
+              ? primaryColor
+              : (isDark
+                  ? Colors.white.withOpacity(0.08)
+                  : onSurface.withOpacity(0.05)),
           borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected
+                ? primaryColor
+                : (isDark
+                    ? Colors.white.withOpacity(0.12)
+                    : onSurface.withOpacity(0.08)),
+          ),
         ),
         child: Text(
           label,
           style: GoogleFonts.outfit(
             fontSize: 11.5,
             fontWeight: FontWeight.w800,
-            color: isSelected ? Colors.black : Colors.white,
+            color: isSelected
+                ? (isDark ? Colors.black : Colors.white)
+                : (isDark ? Colors.white : onSurface),
           ),
         ),
       ),
@@ -973,6 +1550,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
     required String label,
     IconData? icon,
     required bool isSelected,
+    required bool isDark,
+    required Color primaryColor,
+    required Color onSurface,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -982,13 +1562,17 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF1DB954)
-              : Colors.white.withOpacity(0.08),
+              ? primaryColor
+              : (isDark
+                  ? Colors.white.withOpacity(0.08)
+                  : onSurface.withOpacity(0.05)),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF1DB954)
-                : Colors.white.withOpacity(0.12),
+                ? primaryColor
+                : (isDark
+                    ? Colors.white.withOpacity(0.12)
+                    : onSurface.withOpacity(0.1)),
           ),
         ),
         child: Row(
@@ -998,7 +1582,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
               Icon(
                 icon,
                 size: 14,
-                color: isSelected ? Colors.black : Colors.white,
+                color: isSelected
+                    ? (isDark ? Colors.black : Colors.white)
+                    : (isDark ? Colors.white : onSurface),
               ),
               const SizedBox(width: 4),
             ],
@@ -1007,7 +1593,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
               style: GoogleFonts.outfit(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
-                color: isSelected ? Colors.black : Colors.white,
+                color: isSelected
+                    ? (isDark ? Colors.black : Colors.white)
+                    : (isDark ? Colors.white : onSurface),
               ),
             ),
           ],
@@ -1022,6 +1610,11 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (modalCtx) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        final primaryColor = theme.colorScheme.primary;
+        final onSurface = theme.colorScheme.onSurface;
+
         final setlistProvider = Provider.of<SetlistProvider>(context);
 
         return BackdropFilter(
@@ -1030,9 +1623,24 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
             margin: const EdgeInsets.all(12),
             padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
             decoration: BoxDecoration(
-              color: const Color(0xFF181818).withOpacity(0.96),
+              color: isDark
+                  ? const Color(0xFF0F1D33).withOpacity(0.96)
+                  : Colors.white.withOpacity(0.98),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : onSurface.withOpacity(0.08),
+              ),
+              boxShadow: isDark
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 20,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
             ),
             child: ConstrainedBox(
               constraints: BoxConstraints(
@@ -1045,7 +1653,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 14),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.25),
+                      color: isDark
+                          ? Colors.white.withOpacity(0.25)
+                          : onSurface.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -1054,7 +1664,7 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                     style: GoogleFonts.outfit(
                       fontWeight: FontWeight.w800,
                       fontSize: 16,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : onSurface,
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -1064,7 +1674,11 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                       child: Text(
                         "No setlists created yet.",
                         style: GoogleFonts.outfit(
-                            fontSize: 13, color: Colors.white60),
+                          fontSize: 13,
+                          color: isDark
+                              ? Colors.white60
+                              : onSurface.withOpacity(0.6),
+                        ),
                       ),
                     )
                   else
@@ -1078,14 +1692,15 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                             dense: true,
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
-                            leading: const Icon(IconsaxPlusBold.music_playlist,
-                                size: 20, color: Color(0xFF1DB954)),
+                            leading: Icon(IconsaxPlusBold.music_playlist,
+                                size: 20, color: primaryColor),
                             title: Text(
                               setlist.name,
                               style: GoogleFonts.outfit(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                  color: Colors.white),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                                color: isDark ? Colors.white : onSurface,
+                              ),
                             ),
                             onTap: () {
                               setlistProvider.addSongToSetlist(
@@ -1098,19 +1713,23 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                         },
                       ),
                     ),
-                  const Divider(height: 18, color: Colors.white12),
+                  Divider(
+                    height: 18,
+                    color:
+                        isDark ? Colors.white12 : onSurface.withOpacity(0.08),
+                  ),
                   ListTile(
                     dense: true,
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    leading: const Icon(IconsaxPlusBold.add_circle,
-                        color: Color(0xFF1DB954), size: 20),
+                    leading: Icon(IconsaxPlusBold.add_circle,
+                        color: primaryColor, size: 20),
                     title: Text(
                       'Create New Setlist',
                       style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
-                        color: const Color(0xFF1DB954),
+                        color: primaryColor,
                       ),
                     ),
                     onTap: () {
@@ -1128,6 +1747,11 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
   }
 
   void _showCreateSetlistDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = theme.colorScheme.primary;
+    final onSurface = theme.colorScheme.onSurface;
+
     final controller = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
@@ -1135,38 +1759,54 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
       context: context,
       builder: (dialogCtx) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF222222),
+          backgroundColor: isDark ? const Color(0xFF13233D) : Colors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           contentPadding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
           actionsPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          title: Text('New Setlist',
-              style: GoogleFonts.outfit(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 17,
-                  color: Colors.white)),
+          title: Text(
+            'New Setlist',
+            style: GoogleFonts.outfit(
+              fontWeight: FontWeight.bold,
+              fontSize: 17,
+              color: isDark ? Colors.white : onSurface,
+            ),
+          ),
           content: Form(
             key: formKey,
             child: TextFormField(
               controller: controller,
               autofocus: true,
-              style: GoogleFonts.outfit(fontSize: 14, color: Colors.white),
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                color: isDark ? Colors.white : onSurface,
+              ),
               decoration: InputDecoration(
                 hintText: 'Setlist Name',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                hintStyle: TextStyle(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.4)
+                      : onSurface.withOpacity(0.4),
+                ),
                 isDense: true,
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.08),
+                fillColor: isDark
+                    ? Colors.white.withOpacity(0.08)
+                    : onSurface.withOpacity(0.04),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                  borderSide: BorderSide(
+                    color: isDark
+                        ? Colors.white.withOpacity(0.1)
+                        : onSurface.withOpacity(0.12),
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF1DB954)),
+                  borderSide: BorderSide(color: primaryColor),
                 ),
               ),
               validator: (v) => (v == null || v.trim().isEmpty)
@@ -1177,14 +1817,18 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
-              child: Text('Cancel',
-                  style: GoogleFonts.outfit(
-                      fontSize: 13, color: Colors.white70)),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  color: isDark ? Colors.white70 : onSurface.withOpacity(0.7),
+                ),
+              ),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF1DB954),
-                foregroundColor: Colors.black,
+                backgroundColor: primaryColor,
+                foregroundColor: isDark ? Colors.black : Colors.white,
               ),
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
@@ -1201,9 +1845,11 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                   }
                 }
               },
-              child: Text('Create',
-                  style: GoogleFonts.outfit(
-                      fontSize: 13, fontWeight: FontWeight.w800)),
+              child: Text(
+                'Create',
+                style: GoogleFonts.outfit(
+                    fontSize: 13, fontWeight: FontWeight.w800),
+              ),
             ),
           ],
         );
@@ -1215,210 +1861,355 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = theme.colorScheme.primary;
+    final onSurface = theme.colorScheme.onSurface;
+
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final currentPalette = kSpotifyPalettes[_selectedPaletteIndex];
     final fontSize = themeProvider.lyricsFontSize;
 
     return Scaffold(
-      backgroundColor: currentPalette.gradientColors.last,
+      backgroundColor: theme.scaffoldBackgroundColor,
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          // 1. Spotify Dynamic Fluid Gradient Mesh Background
-          Positioned.fill(
-            child: _buildSpotifyGradientBackground(currentPalette),
+          // 1. Ambient atmospheric glow
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 350,
+            child: IgnorePointer(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      primaryColor.withOpacity(isDark ? 0.16 : 0.08),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
 
-          // 2. Main Scrollable Lyrics Body
+          // 2. Main Scrollable Lyrics Body with Drag/Gesture Notification
           Positioned.fill(
-            child: GestureDetector(
-              onTap: () {
-                if (_isShareSelectionMode) {
-                  // Keep share mode active for line picking
-                } else {
-                  setState(() => _isFullscreen = !_isFullscreen);
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification is ScrollStartNotification) {
+                  if (notification.dragDetails != null && _isAutoScrolling) {
+                    _isUserDragging = true;
+                    _autoScrollTimer?.cancel();
+                  }
+                } else if (notification is ScrollEndNotification) {
+                  if (_isUserDragging && _isAutoScrolling) {
+                    _isUserDragging = false;
+                    _isAutoScrollPausedByUser = true;
+                    setState(() {});
+                  }
                 }
+                return false;
               },
-              child: CustomScrollView(
-                controller: _scrollController,
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  // Spotify Top Header Bar (collapsible)
-                  SliverAppBar(
-                    expandedHeight: _isFullscreen ? 0 : 200,
-                    pinned: true,
-                    stretch: true,
-                    backgroundColor: _showAppBarTitle
-                        ? currentPalette.gradientColors.first.withOpacity(0.95)
-                        : Colors.transparent,
-                    elevation: 0,
-                    leading: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: ClipOval(
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.35),
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                                  color: Colors.white, size: 17),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    actions: [
-                      // Share mode trigger / Fullscreen toggle
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: GestureDetector(
+                onTap: () {
+                  if (!_isShareSelectionMode) {
+                    setState(() => _isFullscreen = !_isFullscreen);
+                  }
+                },
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    // Spotify Top Header Bar (collapsible)
+                    SliverAppBar(
+                      expandedHeight: _isFullscreen ? 0 : 200,
+                      pinned: true,
+                      stretch: true,
+                      backgroundColor: _showAppBarTitle
+                          ? (isDark
+                              ? theme.colorScheme.surface.withOpacity(0.92)
+                              : theme.scaffoldBackgroundColor.withOpacity(0.95))
+                          : Colors.transparent,
+                      elevation: 0,
+                      leading: Padding(
+                        padding: const EdgeInsets.all(8),
                         child: ClipOval(
                           child: BackdropFilter(
                             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.35),
+                                color: isDark
+                                    ? Colors.white.withOpacity(0.12)
+                                    : Colors.white.withOpacity(0.85),
                                 shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isDark
+                                      ? Colors.white.withOpacity(0.15)
+                                      : onSurface.withOpacity(0.08),
+                                ),
+                                boxShadow: isDark
+                                    ? null
+                                    : [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.06),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
                               ),
                               child: IconButton(
                                 icon: Icon(
-                                  _isShareSelectionMode
-                                      ? Icons.close_rounded
-                                      : IconsaxPlusLinear.export_1,
-                                  color: Colors.white,
-                                  size: 19,
+                                  Icons.arrow_back_ios_new_rounded,
+                                  color: isDark ? Colors.white : onSurface,
+                                  size: 17,
                                 ),
-                                tooltip: _isShareSelectionMode
-                                    ? 'Exit selection'
-                                    : 'Share lyrics',
-                                onPressed: () {
-                                  if (_isShareSelectionMode) {
-                                    _exitShareMode();
-                                  } else {
-                                    _enterShareMode();
-                                  }
-                                },
+                                onPressed: () => Navigator.pop(context),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ],
-                    title: AnimatedOpacity(
-                      opacity: _showAppBarTitle ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            widget.song.title,
-                            style: GoogleFonts.outfit(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 15,
-                              color: Colors.white,
+                      actions: [
+                        // Animated Favorite Button (pinned) / Exit selection
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: ClipOval(
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? Colors.white.withOpacity(0.12)
+                                      : Colors.white.withOpacity(0.85),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isDark
+                                        ? Colors.white.withOpacity(0.15)
+                                        : onSurface.withOpacity(0.08),
+                                  ),
+                                  boxShadow: isDark
+                                      ? null
+                                      : [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.06),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                ),
+                                child: _isShareSelectionMode
+                                    ? IconButton(
+                                        icon: Icon(
+                                          Icons.close_rounded,
+                                          color:
+                                              isDark ? Colors.white : onSurface,
+                                          size: 18,
+                                        ),
+                                        tooltip: 'Exit selection',
+                                        onPressed: _exitShareMode,
+                                      )
+                                    : Center(
+                                        child: _AnimatedFavoriteButton(
+                                          songId: widget.song.id,
+                                          size: 19,
+                                          isDark: isDark,
+                                          primaryColor: primaryColor,
+                                          onSurface: onSurface,
+                                        ),
+                                      ),
+                              ),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                          Text(
-                            widget.song.artistName,
-                            style: GoogleFonts.outfit(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12,
-                              color: Colors.white.withOpacity(0.7),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    flexibleSpace: _isFullscreen
-                        ? null
-                        : FlexibleSpaceBar(
-                            background: _buildSpotifyParallaxHeader(currentPalette),
-                          ),
-                  ),
-
-                  // Spotify Share Mode Guidance Banner (when active)
-                  if (_isShareSelectionMode)
-                    SliverToBoxAdapter(
-                      child: Container(
-                        margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1DB954).withOpacity(0.18),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                              color: const Color(0xFF1DB954).withOpacity(0.4)),
                         ),
-                        child: Row(
-                          children: [
-                            const Icon(IconsaxPlusBold.info_circle,
-                                color: Color(0xFF1DB954), size: 18),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Tap lines to select (up to $_maxSelectableLines) to share',
+                      ],
+                      title: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: _showAppBarTitle
+                            ? Column(
+                                key: const ValueKey('appbar-title-visible'),
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    widget.song.title,
+                                    style: GoogleFonts.outfit(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 15,
+                                      color: isDark ? Colors.white : onSurface,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    widget.song.artistName,
+                                    style: GoogleFonts.outfit(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 12,
+                                      color: isDark
+                                          ? Colors.white.withOpacity(0.7)
+                                          : onSurface.withOpacity(0.65),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              )
+                            : const SizedBox.shrink(
+                                key: ValueKey('appbar-title-hidden'),
+                              ),
+                      ),
+                      flexibleSpace: _isFullscreen
+                          ? null
+                          : FlexibleSpaceBar(
+                              background: _buildSpotifyParallaxHeader(
+                                primaryColor: primaryColor,
+                                isDark: isDark,
+                                onSurface: onSurface,
+                              ),
+                            ),
+                    ),
+
+                    // Spotify Share Mode Guidance Banner (when active)
+                    if (_isShareSelectionMode)
+                      SliverToBoxAdapter(
+                        child: Container(
+                          margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color:
+                                primaryColor.withOpacity(isDark ? 0.18 : 0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color:
+                                  primaryColor.withOpacity(isDark ? 0.4 : 0.25),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(IconsaxPlusBold.info_circle,
+                                  color: primaryColor, size: 18),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Tap lines to select (up to $_maxSelectableLines) or long-press for range',
+                                  style: GoogleFonts.outfit(
+                                    color: isDark ? Colors.white : onSurface,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${_selectedLineIndices.length}/$_maxSelectableLines',
                                 style: GoogleFonts.outfit(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 12.5,
+                                  color: primaryColor,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 13,
                                 ),
                               ),
-                            ),
-                            Text(
-                              '${_selectedLineIndices.length}/$_maxSelectableLines',
-                              style: GoogleFonts.outfit(
-                                color: const Color(0xFF1DB954),
-                                fontWeight: FontWeight.w900,
-                                fontSize: 13,
+                            ],
+                          ),
+                        ),
+                      ),
+
+                    // Lyrics Stream Body
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          20,
+                          _isShareSelectionMode ? 10 : 24,
+                          20,
+                          160,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: _textAlign == TextAlign.center
+                              ? CrossAxisAlignment.center
+                              : CrossAxisAlignment.start,
+                          children: [
+                            for (int sIdx = 0;
+                                sIdx < _stanzas.length;
+                                sIdx++) ...[
+                              _buildSpotifyStanza(
+                                _stanzas[sIdx],
+                                sIdx,
+                                fontSize,
+                                primaryColor: primaryColor,
+                                isDark: isDark,
+                                onSurface: onSurface,
                               ),
-                            ),
+                              if (sIdx < _stanzas.length - 1)
+                                const SizedBox(height: 16),
+                            ],
                           ],
                         ),
                       ),
                     ),
-
-                  // Lyrics Stream Body
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        20,
-                        _isShareSelectionMode ? 10 : 24,
-                        20,
-                        160,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: _textAlign == TextAlign.center
-                            ? CrossAxisAlignment.center
-                            : CrossAxisAlignment.start,
-                        children: [
-                          for (int sIdx = 0; sIdx < _stanzas.length; sIdx++) ...[
-                            _buildSpotifyStanza(
-                              _stanzas[sIdx],
-                              sIdx,
-                              fontSize,
-                              currentPalette,
-                            ),
-                            if (sIdx < _stanzas.length - 1)
-                              const SizedBox(height: 28),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
 
-          // 3. Floating Bottom Controls (Spotify Player Bar or Share Banner)
+          // 3. Floating User Auto-Scroll Resume Chip (if paused during scroll)
+          if (_isAutoScrolling && _isAutoScrollPausedByUser)
+            Positioned(
+              bottom: 84,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: GestureDetector(
+                  onTap: _resumeAutoScrollAfterDrag,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.92),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withOpacity(0.4),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.play_arrow_rounded,
+                                color: Colors.black, size: 18),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Auto-scroll paused • Tap to resume',
+                              style: GoogleFonts.outfit(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // 4. Floating Bottom Controls (Spotify Player Bar or Share Banner)
           AnimatedPositioned(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeOutCubic,
@@ -1438,8 +2229,18 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                 );
               },
               child: _isShareSelectionMode
-                  ? _buildSpotifyShareBottomBar(context, currentPalette)
-                  : _buildSpotifyFloatingPill(context, currentPalette),
+                  ? _buildSpotifyShareBottomBar(
+                      context,
+                      primaryColor: primaryColor,
+                      isDark: isDark,
+                      onSurface: onSurface,
+                    )
+                  : _buildSpotifyFloatingPill(
+                      context,
+                      primaryColor: primaryColor,
+                      isDark: isDark,
+                      onSurface: onSurface,
+                    ),
             ),
           ),
         ],
@@ -1449,58 +2250,11 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
 
   // --- Background & Visual Layer ---
 
-  Widget _buildSpotifyGradientBackground(SpotifyLyricsPalette palette) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Base dark backdrop
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: palette.gradientColors,
-              stops: const [0.0, 0.45, 1.0],
-            ),
-          ),
-        ),
-
-        // Glowing radial ambient top light
-        Positioned(
-          top: -120,
-          left: -60,
-          right: -60,
-          height: 380,
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  palette.accentColor.withOpacity(0.22),
-                  palette.accentColor.withOpacity(0.05),
-                  Colors.transparent,
-                ],
-                stops: const [0.0, 0.55, 1.0],
-              ),
-            ),
-          ),
-        ),
-
-        // Blurred noise/ambient texture overlay
-        BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            color: Colors.black.withOpacity(0.12),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSpotifyParallaxHeader(SpotifyLyricsPalette palette) {
-    final songProvider = Provider.of<SongProvider>(context);
-    final isFav = songProvider.isFavorite(widget.song.id);
-
+  Widget _buildSpotifyParallaxHeader({
+    required Color primaryColor,
+    required bool isDark,
+    required Color onSurface,
+  }) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 60, 20, 16),
       alignment: Alignment.bottomLeft,
@@ -1515,7 +2269,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.5),
+                  color: isDark
+                      ? Colors.black.withOpacity(0.4)
+                      : primaryColor.withOpacity(0.15),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
@@ -1531,13 +2287,14 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                     )
                   : Container(
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: palette.gradientColors,
-                        ),
+                        color: primaryColor.withOpacity(isDark ? 0.2 : 0.12),
                       ),
-                      child: const Center(
-                        child: Icon(IconsaxPlusBold.music,
-                            color: Colors.white, size: 28),
+                      child: Center(
+                        child: Icon(
+                          IconsaxPlusBold.music,
+                          color: isDark ? Colors.white : primaryColor,
+                          size: 28,
+                        ),
                       ),
                     ),
             ),
@@ -1557,16 +2314,19 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                     child: Text(
                       widget.song.title,
                       style: GoogleFonts.outfit(
-                        color: Colors.white,
+                        color: isDark ? Colors.white : onSurface,
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
                         letterSpacing: -0.5,
-                        shadows: const [
-                          Shadow(
-                              offset: Offset(0, 2),
-                              blurRadius: 6,
-                              color: Colors.black54),
-                        ],
+                        shadows: isDark
+                            ? const [
+                                Shadow(
+                                  offset: Offset(0, 2),
+                                  blurRadius: 6,
+                                  color: Colors.black54,
+                                ),
+                              ]
+                            : null,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1577,7 +2337,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                 Text(
                   widget.song.artistName,
                   style: GoogleFonts.outfit(
-                    color: Colors.white.withOpacity(0.85),
+                    color: isDark
+                        ? Colors.white.withOpacity(0.85)
+                        : onSurface.withOpacity(0.75),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1589,52 +2351,66 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                   children: [
                     if (widget.song.scale != null &&
                         widget.song.scale!.isNotEmpty) ...[
-                      _buildMiniBadge('Scale: ${widget.song.scale!}'),
+                      _buildMiniBadge(
+                        'Scale: ${widget.song.scale!}',
+                        isDark: isDark,
+                        primaryColor: primaryColor,
+                        onSurface: onSurface,
+                      ),
                       const SizedBox(width: 6),
                     ],
                     _buildMiniBadge(
                       '${NumberFormat.compact().format(widget.song.viewCount)} plays',
                       icon: IconsaxPlusLinear.eye,
+                      isDark: isDark,
+                      primaryColor: primaryColor,
+                      onSurface: onSurface,
                     ),
                   ],
                 ),
               ],
             ),
           ),
-
-          // Favorite Heart Button on Header
-          IconButton(
-            icon: Icon(
-              isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-              color: isFav ? const Color(0xFF1DB954) : Colors.white70,
-              size: 22,
-            ),
-            tooltip: 'Favorite',
-            onPressed: () => songProvider.toggleFavorite(widget.song.id),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildMiniBadge(String label, {IconData? icon}) {
+  Widget _buildMiniBadge(
+    String label, {
+    IconData? icon,
+    required bool isDark,
+    required Color primaryColor,
+    required Color onSurface,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
+        color: isDark
+            ? Colors.white.withOpacity(0.12)
+            : onSurface.withOpacity(0.06),
         borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withOpacity(0.08)
+              : onSurface.withOpacity(0.08),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 10.5, color: Colors.white70),
+            Icon(
+              icon,
+              size: 10.5,
+              color: isDark ? Colors.white70 : onSurface.withOpacity(0.7),
+            ),
             const SizedBox(width: 3),
           ],
           Text(
             label,
             style: GoogleFonts.outfit(
-              color: Colors.white.withOpacity(0.9),
+              color: isDark ? Colors.white.withOpacity(0.9) : onSurface,
               fontSize: 10,
               fontWeight: FontWeight.w600,
             ),
@@ -1649,34 +2425,69 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
   Widget _buildSpotifyStanza(
     _LyricsStanza stanza,
     int stanzaIndex,
-    double fontSize,
-    SpotifyLyricsPalette palette,
-  ) {
+    double fontSize, {
+    required Color primaryColor,
+    required bool isDark,
+    required Color onSurface,
+  }) {
+    final title = (stanza.cleanHeader ?? stanza.header)?.toUpperCase();
+
     return Column(
       crossAxisAlignment: _textAlign == TextAlign.center
           ? CrossAxisAlignment.center
           : CrossAxisAlignment.start,
       children: [
-        // Section Header (e.g. [Chorus], [Verse 1], [አዝማች])
-        if (stanza.header != null && stanza.header!.isNotEmpty)
+        // Section Header Bar
+        if (title != null && title.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(bottom: 12, top: 4),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.white.withOpacity(0.12)),
-              ),
-              child: Text(
-                stanza.header!.replaceAll('[', '').replaceAll(']', '').toUpperCase(),
-                style: GoogleFonts.outfit(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: palette.accentColor,
-                  letterSpacing: 1.1,
+            padding: const EdgeInsets.only(bottom: 8, top: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withOpacity(0.08)
+                        : primaryColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withOpacity(0.12)
+                          : primaryColor.withOpacity(0.16),
+                    ),
+                  ),
+                  child: Text(
+                    title,
+                    style: GoogleFonts.outfit(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: primaryColor,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
                 ),
-              ),
+                if (stanza.repetition != null) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      stanza.repetition!,
+                      style: GoogleFonts.outfit(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                        color: primaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
 
@@ -1685,7 +2496,9 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
           _buildSpotifyLine(
             lineIndex,
             fontSize,
-            palette,
+            primaryColor: primaryColor,
+            isDark: isDark,
+            onSurface: onSurface,
           ),
       ],
     );
@@ -1693,61 +2506,79 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
 
   Widget _buildSpotifyLine(
     int lineIndex,
-    double fontSize,
-    SpotifyLyricsPalette palette,
-  ) {
+    double fontSize, {
+    required Color primaryColor,
+    required bool isDark,
+    required Color onSurface,
+  }) {
     final line = _rawLines[lineIndex].trim();
     if (line.isEmpty) return const SizedBox.shrink();
 
     final isActive = _activeLineIndex == lineIndex;
     final isSelectedForShare = _selectedLineIndices.contains(lineIndex);
 
-    // Dynamic Spotify styling:
-    // In share mode: Selected lines are bright with Spotify green badge/border.
-    // In normal mode: Active line is 100% white bold; inactive lines are dimmed translucent (~0.45).
+    // Dynamic Spotify styling
     final Color textColor = _isShareSelectionMode
-        ? (isSelectedForShare ? Colors.white : Colors.white.withOpacity(0.35))
-        : (isActive ? Colors.white : palette.inactiveTextColor);
+        ? (isSelectedForShare
+            ? (isDark ? Colors.white : onSurface)
+            : (isDark
+                ? Colors.white.withOpacity(0.32)
+                : onSurface.withOpacity(0.32)))
+        : (_activeLineIndex == -1
+            ? (isDark ? Colors.white.withOpacity(0.92) : onSurface)
+            : (isActive
+                ? (isDark ? Colors.white : onSurface)
+                : (isDark
+                    ? Colors.white.withOpacity(0.42)
+                    : onSurface.withOpacity(0.40))));
 
     final FontWeight fontWeight = (isActive || isSelectedForShare)
         ? FontWeight.w900
-        : FontWeight.w700;
+        : (_activeLineIndex == -1 ? FontWeight.w700 : FontWeight.w600);
 
     final double effectiveSize = isActive ? (fontSize + 1.0) : fontSize;
 
     return Padding(
       key: _lineKeys[lineIndex],
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 2.5),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _onLineTapped(lineIndex),
           onLongPress: () => _onLineLongPressed(lineIndex),
-          borderRadius: BorderRadius.circular(12),
-          splashColor: palette.accentColor.withOpacity(0.15),
-          highlightColor: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(14),
+          splashColor: primaryColor.withOpacity(0.15),
+          highlightColor: isDark
+              ? Colors.white.withOpacity(0.05)
+              : onSurface.withOpacity(0.04),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
+            duration: const Duration(milliseconds: 280),
             curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: isSelectedForShare
-                  ? palette.accentColor.withOpacity(0.2)
+                  ? primaryColor.withOpacity(isDark ? 0.22 : 0.12)
                   : (isActive && !_isShareSelectionMode
-                      ? Colors.white.withOpacity(0.06)
+                      ? (isDark
+                          ? primaryColor.withOpacity(0.16)
+                          : primaryColor.withOpacity(0.09))
                       : Colors.transparent),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               border: isSelectedForShare
-                  ? Border.all(color: palette.accentColor, width: 1.5)
+                  ? Border.all(color: primaryColor, width: 1.5)
                   : (isActive && !_isShareSelectionMode
-                      ? Border.all(color: Colors.white.withOpacity(0.12), width: 1)
-                      : Border.all(color: Colors.transparent, width: 1)),
-              boxShadow: isSelectedForShare
+                      ? Border.all(
+                          color: primaryColor.withOpacity(isDark ? 0.35 : 0.22),
+                          width: 1.2,
+                        )
+                      : Border.all(color: Colors.transparent, width: 1.2)),
+              boxShadow: isSelectedForShare ||
+                      (isActive && !_isShareSelectionMode)
                   ? [
                       BoxShadow(
-                        color: palette.accentColor.withOpacity(0.25),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
+                        color: primaryColor.withOpacity(isDark ? 0.2 : 0.12),
+                        blurRadius: 12,
+                        offset: const Offset(0, 3),
                       )
                     ]
                   : null,
@@ -1755,6 +2586,24 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // Karaoke active line indicator bar
+                if (isActive && !_isShareSelectionMode)
+                  Container(
+                    width: 3.5,
+                    height: effectiveSize * 1.3,
+                    margin: const EdgeInsets.only(right: 10),
+                    decoration: BoxDecoration(
+                      color: primaryColor,
+                      borderRadius: BorderRadius.circular(2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: primaryColor.withOpacity(0.6),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
                 if (_isShareSelectionMode)
                   Padding(
                     padding: const EdgeInsets.only(right: 10),
@@ -1764,19 +2613,26 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                       height: 20,
                       decoration: BoxDecoration(
                         color: isSelectedForShare
-                            ? palette.accentColor
-                            : Colors.white.withOpacity(0.1),
+                            ? primaryColor
+                            : (isDark
+                                ? Colors.white.withOpacity(0.1)
+                                : onSurface.withOpacity(0.05)),
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: isSelectedForShare
-                              ? palette.accentColor
-                              : Colors.white38,
+                              ? primaryColor
+                              : (isDark
+                                  ? Colors.white38
+                                  : onSurface.withOpacity(0.25)),
                           width: 1.5,
                         ),
                       ),
                       child: isSelectedForShare
-                          ? const Icon(Icons.check,
-                              size: 13, color: Colors.black)
+                          ? Icon(
+                              Icons.check,
+                              size: 13,
+                              color: isDark ? Colors.black : Colors.white,
+                            )
                           : null,
                     ),
                   ),
@@ -1790,13 +2646,20 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                       fontWeight: fontWeight,
                     ).copyWith(
                       shadows: isActive && !_isShareSelectionMode
-                          ? [
-                              Shadow(
-                                color: Colors.black.withOpacity(0.6),
-                                blurRadius: 8,
-                                offset: const Offset(0, 1),
-                              ),
-                            ]
+                          ? (isDark
+                              ? [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.7),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ]
+                              : [
+                                  Shadow(
+                                    color: primaryColor.withOpacity(0.12),
+                                    blurRadius: 6,
+                                  ),
+                                ])
                           : null,
                     ),
                   ),
@@ -1812,83 +2675,170 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
   // --- Bottom Control Bars ---
 
   Widget _buildSpotifyFloatingPill(
-      BuildContext context, SpotifyLyricsPalette palette) {
+    BuildContext context, {
+    required Color primaryColor,
+    required bool isDark,
+    required Color onSurface,
+  }) {
     return ClipRRect(
       key: const ValueKey('spotify-controls-pill'),
       borderRadius: BorderRadius.circular(28),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          height: 60,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
-            color: const Color(0xFF121212).withOpacity(0.85),
+            color: isDark
+                ? const Color(0xFF0F1D33).withOpacity(0.92)
+                : Colors.white.withOpacity(0.94),
             borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: Colors.white.withOpacity(0.12)),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withOpacity(0.12)
+                  : onSurface.withOpacity(0.08),
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.4),
+                color: isDark
+                    ? Colors.black.withOpacity(0.45)
+                    : onSurface.withOpacity(0.12),
                 blurRadius: 20,
                 offset: const Offset(0, 6),
               ),
             ],
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Palette / Gradient Theme Switcher
-              IconButton(
-                icon: const Icon(IconsaxPlusBold.colorfilter, size: 20),
-                color: palette.accentColor,
-                tooltip: 'Theme & Colors',
-                onPressed: () => _showPaletteSelector(context),
-              ),
-
-              // Auto-Scroll Sing-Along Play/Pause
-              IconButton(
-                icon: Icon(
-                  _isAutoScrolling
-                      ? Icons.pause_circle_filled_rounded
-                      : Icons.play_circle_filled_rounded,
-                  color: _isAutoScrolling
-                      ? palette.accentColor
-                      : Colors.white,
-                  size: 24,
-                ),
-                tooltip: _isAutoScrolling
-                    ? 'Pause sing-along'
-                    : 'Auto sing-along karaoke',
-                onPressed: _toggleAutoScroll,
-              ),
-
-              // Speed Badge (when auto-scrolling)
-              if (_isAutoScrolling)
-                GestureDetector(
-                  onTap: _changeScrollSpeed,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: palette.accentColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: palette.accentColor.withOpacity(0.4)),
-                    ),
-                    child: Text(
-                      '${_scrollSpeed}x',
-                      style: GoogleFonts.outfit(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                        color: palette.accentColor,
-                      ),
-                    ),
+              // Animated Play/Pause Auto-Scroll Group
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedBuilder(
+                    animation: _playPulseController,
+                    builder: (context, child) {
+                      return Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          if (_isAutoScrolling)
+                            Container(
+                              width: 44 * _playPulseAnimation.value,
+                              height: 44 * _playPulseAnimation.value,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: primaryColor.withOpacity(
+                                  (0.35 * (1.3 - _playPulseAnimation.value))
+                                      .clamp(0.0, 0.35),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: primaryColor.withOpacity(0.3),
+                                    blurRadius: 10,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: _toggleAutoScroll,
+                              borderRadius: BorderRadius.circular(22),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 260),
+                                curve: Curves.easeOutCubic,
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _isAutoScrolling
+                                      ? primaryColor
+                                      : (isDark
+                                          ? Colors.white.withOpacity(0.1)
+                                          : onSurface.withOpacity(0.06)),
+                                  border: Border.all(
+                                    color: _isAutoScrolling
+                                        ? primaryColor
+                                        : (isDark
+                                            ? Colors.white.withOpacity(0.12)
+                                            : onSurface.withOpacity(0.08)),
+                                  ),
+                                ),
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 220),
+                                  transitionBuilder: (child, anim) =>
+                                      ScaleTransition(
+                                          scale: anim, child: child),
+                                  child: Icon(
+                                    _isAutoScrolling
+                                        ? Icons.pause_rounded
+                                        : Icons.play_arrow_rounded,
+                                    key: ValueKey<bool>(_isAutoScrolling),
+                                    color: _isAutoScrolling
+                                        ? (isDark ? Colors.black : Colors.white)
+                                        : (isDark ? Colors.white : onSurface),
+                                    size: 22,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
-                ),
+                  // Animated Speed Multiplier Chip
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOutCubic,
+                    child: _isAutoScrolling
+                        ? Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: GestureDetector(
+                              onTap: _changeScrollSpeed,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: primaryColor
+                                      .withOpacity(isDark ? 0.22 : 0.14),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: primaryColor
+                                        .withOpacity(isDark ? 0.5 : 0.35),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.speed_rounded,
+                                      size: 11,
+                                      color: primaryColor,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      '${_scrollSpeed}x',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w900,
+                                        color: primaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ),
 
               // Add to Setlist
               IconButton(
                 icon: const Icon(IconsaxPlusBold.music_playlist, size: 20),
-                color: Colors.white70,
+                color: isDark ? Colors.white70 : onSurface.withOpacity(0.7),
                 tooltip: 'Add to Setlist',
                 onPressed: () => _showAddToSetlistDialog(context),
               ),
@@ -1896,17 +2846,17 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
               // Typography & Lyrics Size
               IconButton(
                 icon: const Icon(IconsaxPlusBold.text, size: 20),
-                color: Colors.white70,
+                color: isDark ? Colors.white70 : onSurface.withOpacity(0.7),
                 tooltip: 'Typography & Size',
                 onPressed: () => _showLyricsAppearanceModal(context),
               ),
 
-              // Spotify Share Lyrics Button
+              // Unified Share & Copy Hub Trigger
               IconButton(
                 icon: const Icon(IconsaxPlusBold.export_1, size: 20),
-                color: Colors.white,
-                tooltip: 'Share Lyrics',
-                onPressed: _enterShareMode,
+                color: isDark ? Colors.white : onSurface,
+                tooltip: 'Share & Copy Hub',
+                onPressed: () => _showModernShareOptionsModal(context),
               ),
             ],
           ),
@@ -1916,7 +2866,11 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
   }
 
   Widget _buildSpotifyShareBottomBar(
-      BuildContext context, SpotifyLyricsPalette palette) {
+    BuildContext context, {
+    required Color primaryColor,
+    required bool isDark,
+    required Color onSurface,
+  }) {
     final count = _selectedLineIndices.length;
 
     return ClipRRect(
@@ -1927,13 +2881,19 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: const Color(0xFF181818).withOpacity(0.95),
+            color: isDark
+                ? const Color(0xFF0F1D33).withOpacity(0.96)
+                : Colors.white.withOpacity(0.96),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-                color: palette.accentColor.withOpacity(0.4), width: 1.5),
+              color: primaryColor.withOpacity(isDark ? 0.4 : 0.3),
+              width: 1.5,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.5),
+                color: isDark
+                    ? Colors.black.withOpacity(0.5)
+                    : onSurface.withOpacity(0.14),
                 blurRadius: 20,
                 offset: const Offset(0, 6),
               ),
@@ -1946,15 +2906,15 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: palette.accentColor.withOpacity(0.18),
+                  color: primaryColor.withOpacity(isDark ? 0.18 : 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  '$count / $_maxSelectableLines lines',
+                  '$count / $_maxSelectableLines',
                   style: GoogleFonts.outfit(
                     fontWeight: FontWeight.w800,
                     fontSize: 12,
-                    color: palette.accentColor,
+                    color: primaryColor,
                   ),
                 ),
               ),
@@ -1964,8 +2924,8 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
               FilledButton.icon(
                 onPressed: count > 0 ? _openStudioWithSelectedLines : null,
                 style: FilledButton.styleFrom(
-                  backgroundColor: palette.accentColor,
-                  foregroundColor: Colors.black,
+                  backgroundColor: primaryColor,
+                  foregroundColor: isDark ? Colors.black : Colors.white,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   shape: RoundedRectangleBorder(
@@ -1986,7 +2946,7 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
               // Copy selected
               IconButton(
                 icon: const Icon(IconsaxPlusBold.copy, size: 18),
-                color: Colors.white,
+                color: isDark ? Colors.white : onSurface,
                 tooltip: 'Copy',
                 visualDensity: VisualDensity.compact,
                 onPressed: count > 0 ? _copySelectedLines : null,
@@ -1995,7 +2955,7 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
               // Share text directly
               IconButton(
                 icon: const Icon(IconsaxPlusBold.send_2, size: 18),
-                color: Colors.white,
+                color: isDark ? Colors.white : onSurface,
                 tooltip: 'Share Text',
                 visualDensity: VisualDensity.compact,
                 onPressed: count > 0 ? _shareSelectedLinesDirectly : null,
@@ -2004,10 +2964,162 @@ class _SongDetailScreenState extends State<SongDetailScreen> {
               // Close selection mode
               IconButton(
                 icon: const Icon(Icons.close_rounded, size: 20),
-                color: Colors.white70,
+                color: isDark ? Colors.white70 : onSurface.withOpacity(0.6),
                 tooltip: 'Cancel',
                 visualDensity: VisualDensity.compact,
                 onPressed: _exitShareMode,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AnimatedFavoriteButton extends StatefulWidget {
+  final String songId;
+  final double size;
+  final bool isDark;
+  final Color primaryColor;
+  final Color onSurface;
+
+  const _AnimatedFavoriteButton({
+    required this.songId,
+    this.size = 22,
+    required this.isDark,
+    required this.primaryColor,
+    required this.onSurface,
+  });
+
+  @override
+  State<_AnimatedFavoriteButton> createState() =>
+      _AnimatedFavoriteButtonState();
+}
+
+class _AnimatedFavoriteButtonState extends State<_AnimatedFavoriteButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _rippleAnimation;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 480),
+    );
+
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 0.72)
+            .chain(CurveTween(curve: Curves.easeInQuad)),
+        weight: 22,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.72, end: 1.38)
+            .chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 48,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.38, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeInOutQuad)),
+        weight: 30,
+      ),
+    ]).animate(_controller);
+
+    _rippleAnimation = Tween<double>(begin: 0.0, end: 1.9).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+
+    _opacityAnimation = Tween<double>(begin: 0.75, end: 0.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTap() {
+    HapticFeedback.mediumImpact();
+    _controller.forward(from: 0.0);
+    final songProvider = Provider.of<SongProvider>(context, listen: false);
+    songProvider.toggleFavorite(widget.songId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final songProvider = Provider.of<SongProvider>(context);
+    final isFav = songProvider.isFavorite(widget.songId);
+    final favColor =
+        widget.isDark ? const Color(0xFFFF4D6D) : const Color(0xFFE63946);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _onTap,
+        borderRadius: BorderRadius.circular(widget.size + 12),
+        splashColor: favColor.withOpacity(0.2),
+        highlightColor: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              // Expanding Halo Ripple on Favorite
+              AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  if (_controller.value == 0 || _controller.value == 1) {
+                    return const SizedBox.shrink();
+                  }
+                  return Container(
+                    width: widget.size * (1 + _rippleAnimation.value),
+                    height: widget.size * (1 + _rippleAnimation.value),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: favColor.withOpacity(
+                        _opacityAnimation.value.clamp(0.0, 1.0),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: favColor.withOpacity(
+                            (_opacityAnimation.value * 0.5).clamp(0.0, 1.0),
+                          ),
+                          blurRadius: 10,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+
+              // Animated Scaled Heart Icon
+              ScaleTransition(
+                scale: _scaleAnimation,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  transitionBuilder: (child, anim) =>
+                      ScaleTransition(scale: anim, child: child),
+                  child: Icon(
+                    isFav
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    key: ValueKey<bool>(isFav),
+                    color: isFav
+                        ? favColor
+                        : (widget.isDark
+                            ? Colors.white70
+                            : widget.onSurface.withOpacity(0.65)),
+                    size: widget.size,
+                  ),
+                ),
               ),
             ],
           ),

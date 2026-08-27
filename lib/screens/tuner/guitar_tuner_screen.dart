@@ -381,6 +381,190 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
             gauge: 0.9),
       ],
     ),
+    TuningPreset(
+      name: 'Full-Step Down (D G C F A D)',
+      description: 'D Standard heavy downtuning',
+      strings: const [
+        GuitarString(
+            index: 0,
+            noteName: 'D',
+            octave: 2,
+            frequency: 73.42,
+            label: '6th (Low D)',
+            isWound: true,
+            gauge: 3.4),
+        GuitarString(
+            index: 1,
+            noteName: 'G',
+            octave: 2,
+            frequency: 98.00,
+            label: '5th (G)',
+            isWound: true,
+            gauge: 2.8),
+        GuitarString(
+            index: 2,
+            noteName: 'C',
+            octave: 3,
+            frequency: 130.81,
+            label: '4th (C)',
+            isWound: true,
+            gauge: 2.2),
+        GuitarString(
+            index: 3,
+            noteName: 'F',
+            octave: 3,
+            frequency: 174.61,
+            label: '3rd (F)',
+            isWound: false,
+            gauge: 1.6),
+        GuitarString(
+            index: 4,
+            noteName: 'A',
+            octave: 3,
+            frequency: 220.00,
+            label: '2nd (A)',
+            isWound: false,
+            gauge: 1.2),
+        GuitarString(
+            index: 5,
+            noteName: 'D',
+            octave: 4,
+            frequency: 293.66,
+            label: '1st (High D)',
+            isWound: false,
+            gauge: 0.9),
+      ],
+    ),
+    TuningPreset(
+      name: 'Drop C (C G C F A D)',
+      description: 'Ultra-heavy metal tuning with low C string',
+      strings: const [
+        GuitarString(
+            index: 0,
+            noteName: 'C',
+            octave: 2,
+            frequency: 65.41,
+            label: '6th (Low C)',
+            isWound: true,
+            gauge: 3.6),
+        GuitarString(
+            index: 1,
+            noteName: 'G',
+            octave: 2,
+            frequency: 98.00,
+            label: '5th (G)',
+            isWound: true,
+            gauge: 2.8),
+        GuitarString(
+            index: 2,
+            noteName: 'C',
+            octave: 3,
+            frequency: 130.81,
+            label: '4th (C)',
+            isWound: true,
+            gauge: 2.2),
+        GuitarString(
+            index: 3,
+            noteName: 'F',
+            octave: 3,
+            frequency: 174.61,
+            label: '3rd (F)',
+            isWound: false,
+            gauge: 1.6),
+        GuitarString(
+            index: 4,
+            noteName: 'A',
+            octave: 3,
+            frequency: 220.00,
+            label: '2nd (A)',
+            isWound: false,
+            gauge: 1.2),
+        GuitarString(
+            index: 5,
+            noteName: 'D',
+            octave: 4,
+            frequency: 293.66,
+            label: '1st (High D)',
+            isWound: false,
+            gauge: 0.9),
+      ],
+    ),
+    TuningPreset(
+      name: 'Bass 4-String (E A D G)',
+      description: 'Standard 4-string electric & acoustic bass tuning',
+      strings: const [
+        GuitarString(
+            index: 0,
+            noteName: 'E',
+            octave: 1,
+            frequency: 41.20,
+            label: '4th (Low E)',
+            isWound: true,
+            gauge: 4.2),
+        GuitarString(
+            index: 1,
+            noteName: 'A',
+            octave: 1,
+            frequency: 55.00,
+            label: '3rd (A)',
+            isWound: true,
+            gauge: 3.4),
+        GuitarString(
+            index: 2,
+            noteName: 'D',
+            octave: 2,
+            frequency: 73.42,
+            label: '2nd (D)',
+            isWound: true,
+            gauge: 2.6),
+        GuitarString(
+            index: 3,
+            noteName: 'G',
+            octave: 2,
+            frequency: 98.00,
+            label: '1st (G)',
+            isWound: true,
+            gauge: 1.9),
+      ],
+    ),
+    TuningPreset(
+      name: 'Ukulele Standard (G C E A)',
+      description: 'Standard soprano, concert, and tenor ukulele tuning',
+      strings: const [
+        GuitarString(
+            index: 0,
+            noteName: 'G',
+            octave: 4,
+            frequency: 392.00,
+            label: '4th (High G)',
+            isWound: false,
+            gauge: 1.4),
+        GuitarString(
+            index: 1,
+            noteName: 'C',
+            octave: 4,
+            frequency: 261.63,
+            label: '3rd (C)',
+            isWound: false,
+            gauge: 1.8),
+        GuitarString(
+            index: 2,
+            noteName: 'E',
+            octave: 4,
+            frequency: 329.63,
+            label: '2nd (E)',
+            isWound: false,
+            gauge: 1.3),
+        GuitarString(
+            index: 3,
+            noteName: 'A',
+            octave: 4,
+            frequency: 440.00,
+            label: '1st (A)',
+            isWound: false,
+            gauge: 1.0),
+      ],
+    ),
   ];
 
   late TuningPreset _currentPreset;
@@ -490,10 +674,16 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
       _streamSub = stream.listen((data) {
         _audioBuffer.addAll(data);
 
+        // Anti-lag circular buffer protection: drop stale accumulation if UI frame dips
+        if (_audioBuffer.length > _targetBufferBytes * 2) {
+          final excess = _audioBuffer.length - _targetBufferBytes;
+          _audioBuffer.removeRange(0, excess);
+        }
+
         while (_audioBuffer.length >= _targetBufferBytes) {
           final chunk =
               Uint8List.fromList(_audioBuffer.sublist(0, _targetBufferBytes));
-          // Hop forward with 75% overlap for ultra-responsive ~23ms updates
+          // Hop forward with 75% overlap for ultra-responsive ~11.6ms updates
           _audioBuffer.removeRange(0, _hopBufferBytes);
 
           // Fast RMS signal energy calculation
@@ -506,7 +696,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
           }
           final rms = math.sqrt(sumSquares / samples);
 
-          if (rms < 25.0) {
+          if (rms < 20.0) {
             _pitchHistory.clear();
             _filteredPitch = 0.0;
             _inTuneHoldCount = 0;
@@ -526,9 +716,9 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
           }
 
           try {
-            // High-precision YIN+ pitch detection with subharmonic check
+            // Ultra-precise McLeod Pitch Method (MPM) pitch detection with subharmonic check
             final result = PitchService.detectPitchFromPcm16(chunk, sampleRate: 44100);
-            if (result.pitch >= 40.0 && result.pitch <= 1200.0 && result.clarity >= 0.40) {
+            if (result.pitch >= 35.0 && result.pitch <= 1400.0 && result.clarity >= 0.42) {
               _processPitch(result.pitch);
             }
           } catch (e) {
@@ -1098,6 +1288,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
 
   Widget _buildInteractivePegKey(
       int index, double left, double top, BuildContext context) {
+    if (index >= _currentPreset.strings.length) return const SizedBox.shrink();
     final string = _currentPreset.strings[index];
     final isSelected = index == _selectedStringIndex;
 

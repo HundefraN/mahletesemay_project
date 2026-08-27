@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
+import 'package:mahlete_semay_project/screens/pitch_trainer/pitch_trainer_screen.dart';
 import 'package:mahlete_semay_project/services/pitch_service.dart';
 import 'package:mahlete_semay_project/utils/constants.dart';
+import 'package:mahlete_semay_project/widgets/audio_waveform_visualizer.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
 import 'package:mahlete_semay_project/widgets/vocal_piano_roll.dart';
 import 'package:mahlete_semay_project/utils/permission_helper.dart';
@@ -38,8 +41,8 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
   String _candidateNote = '';
   double _candidatePitch = 0.0;
   int _stableFrames = 0;
-  // ~1.2 seconds of stable sustain (at ~23ms frames = ~12 frames)
-  static const int _requiredStableFrames = 12;
+  // ~350ms of steady vocal sustain
+  static const int _requiredStableFrames = 7;
   double _stabilityProgress = 0.0;
 
   @override
@@ -300,12 +303,10 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
           currentHighest: _highestNoteFound,
           onLockManual: () {
             final pitchData = _pitchService.pitchData;
-            final noteToLock = _candidateNote.isNotEmpty
-                ? _candidateNote
-                : pitchData.note;
-            final pitchToLock = _candidatePitch > 0
-                ? _candidatePitch
-                : pitchData.pitch;
+            final noteToLock =
+                _candidateNote.isNotEmpty ? _candidateNote : pitchData.note;
+            final pitchToLock =
+                _candidatePitch > 0 ? _candidatePitch : pitchData.pitch;
 
             if (noteToLock.isNotEmpty && pitchToLock > 0) {
               _lockNote(noteToLock, pitchToLock);
@@ -328,12 +329,10 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
           currentHighest: _highestNoteFound,
           onLockManual: () {
             final pitchData = _pitchService.pitchData;
-            final noteToLock = _candidateNote.isNotEmpty
-                ? _candidateNote
-                : pitchData.note;
-            final pitchToLock = _candidatePitch > 0
-                ? _candidatePitch
-                : pitchData.pitch;
+            final noteToLock =
+                _candidateNote.isNotEmpty ? _candidateNote : pitchData.note;
+            final pitchToLock =
+                _candidatePitch > 0 ? _candidatePitch : pitchData.pitch;
 
             if (noteToLock.isNotEmpty && pitchToLock > 0) {
               _lockNote(noteToLock, pitchToLock);
@@ -477,8 +476,10 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
         final currentPitch = pitchData.pitch;
         final currentNote = pitchData.note;
 
-        final displayNote = _candidateNote.isNotEmpty ? _candidateNote : currentNote;
-        final displayPitch = _candidatePitch > 0 ? _candidatePitch : currentPitch;
+        final displayNote =
+            _candidateNote.isNotEmpty ? _candidateNote : currentNote;
+        final displayPitch =
+            _candidatePitch > 0 ? _candidatePitch : currentPitch;
 
         return SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -511,14 +512,26 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Modern Equalizer Visualizer Visual Card
+              // Modern Equalizer Visualizer & Real-Time Audio Waveform Card
               _ModernEqualizerCard(
                 pitch: displayPitch,
                 note: displayNote,
                 stabilityProgress: _stabilityProgress,
+                waveform: pitchData.waveform,
+                rms: pitchData.rms,
+                isListening: _pitchService.isListening,
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+
+              // Live Piano Roll Feedback
+              VocalPianoRoll(
+                lowestNote: currentLowest.isNotEmpty ? currentLowest : null,
+                highestNote: currentHighest.isNotEmpty ? currentHighest : null,
+                currentNote: displayNote.isNotEmpty ? displayNote : null,
+              ),
+
+              const SizedBox(height: 16),
 
               // Stability Progress Meter
               Column(
@@ -566,8 +579,9 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                         return LinearProgressIndicator(
                           value: value,
                           minHeight: 10,
-                          backgroundColor:
-                              theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                          backgroundColor: theme
+                              .colorScheme.surfaceContainerHighest
+                              .withOpacity(0.5),
                           valueColor: AlwaysStoppedAnimation<Color>(
                             value >= 1.0
                                 ? Colors.greenAccent.shade700
@@ -580,7 +594,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                 ],
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Captured Notes Badges
               Row(
@@ -588,7 +602,12 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                   Expanded(
                     child: _CapturedNoteCard(
                       label: "Lowest Note",
-                      note: currentLowest.isNotEmpty ? currentLowest : (_currentStep == GuidedStep.lowNote && displayNote.isNotEmpty ? displayNote : '--'),
+                      note: currentLowest.isNotEmpty
+                          ? currentLowest
+                          : (_currentStep == GuidedStep.lowNote &&
+                                  displayNote.isNotEmpty
+                              ? displayNote
+                              : '--'),
                       color: Colors.blueAccent,
                     ),
                   ),
@@ -596,14 +615,19 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                   Expanded(
                     child: _CapturedNoteCard(
                       label: "Highest Note",
-                      note: currentHighest.isNotEmpty ? currentHighest : (_currentStep == GuidedStep.highNote && displayNote.isNotEmpty ? displayNote : '--'),
+                      note: currentHighest.isNotEmpty
+                          ? currentHighest
+                          : (_currentStep == GuidedStep.highNote &&
+                                  displayNote.isNotEmpty
+                              ? displayNote
+                              : '--'),
                       color: Colors.purpleAccent,
                     ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Manual Lock Button
               SizedBox(
@@ -759,7 +783,45 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
             highestNote: _highestNoteFound,
             voiceTypeRange: voiceRangeInfo,
           ).animate().fadeIn(delay: 200.ms),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
+
+          // Training Recommendation Card
+          Card(
+            elevation: 1,
+            color: theme.colorScheme.primaryContainer.withOpacity(0.4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(
+                color: theme.colorScheme.primary.withOpacity(0.2),
+              ),
+            ),
+            child: ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              leading: CircleAvatar(
+                backgroundColor: theme.colorScheme.primary,
+                child:
+                    const Icon(Icons.music_note_rounded, color: Colors.white),
+              ),
+              title: const Text(
+                'Train Your Voice Pitch',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: const Text(
+                  'Practice hitting notes accurately with the Pitch Trainer'),
+              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PitchTrainerScreen(),
+                  ),
+                );
+              },
+            ),
+          ).animate().fadeIn(delay: 250.ms),
+          const SizedBox(height: 20),
+
           Row(
             children: [
               Expanded(
@@ -800,16 +862,22 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
   }
 }
 
-// Modern Equalizer Display Component
+// Modern Equalizer & Audio Waveform Display Component
 class _ModernEqualizerCard extends StatelessWidget {
   final double pitch;
   final String note;
   final double stabilityProgress;
+  final Float64List? waveform;
+  final double rms;
+  final bool isListening;
 
   const _ModernEqualizerCard({
     required this.pitch,
     required this.note,
     required this.stabilityProgress,
+    this.waveform,
+    this.rms = 0.0,
+    this.isListening = true,
   });
 
   @override
@@ -819,7 +887,7 @@ class _ModernEqualizerCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
         borderRadius: BorderRadius.circular(24),
@@ -851,14 +919,16 @@ class _ModernEqualizerCard extends StatelessWidget {
               isActive ? note : '--',
               key: ValueKey(note.isEmpty ? '--' : note),
               style: GoogleFonts.poppins(
-                fontSize: 60,
+                fontSize: 56,
                 fontWeight: FontWeight.bold,
+                height: 1.0,
                 color: isActive
                     ? theme.colorScheme.primary
                     : theme.colorScheme.onSurface.withOpacity(0.3),
               ),
             ),
           ),
+          const SizedBox(height: 4),
           TweenAnimationBuilder<double>(
             duration: const Duration(milliseconds: 150),
             tween: Tween<double>(begin: 0, end: pitch),
@@ -867,39 +937,23 @@ class _ModernEqualizerCard extends StatelessWidget {
                 value > 0 ? '${value.toStringAsFixed(1)} Hz' : '0.0 Hz',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  color: theme.colorScheme.onSurface.withOpacity(0.55),
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               );
             },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
 
-          // Animated Bar Equalizer
-          SizedBox(
-            height: 48,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: List.generate(12, (index) {
-                final barHeight = isActive
-                    ? (sin(index + pitch) * 18 + 26).clamp(8.0, 48.0)
-                    : 6.0;
-
-                return AnimatedContainer(
-                  duration: Duration(milliseconds: 100 + (index * 20)),
-                  width: 8,
-                  height: barHeight,
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? theme.colorScheme.primary
-                            .withOpacity(0.4 + (index % 3 == 0 ? 0.6 : 0.2))
-                        : theme.colorScheme.onSurface.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                );
-              }),
-            ),
+          // Real Live Audio PCM Waveform Visualizer
+          AudioWaveformVisualizer(
+            waveform: waveform,
+            rms: rms,
+            pitch: pitch,
+            isListening: isListening,
+            height: 52.0,
+            primaryColor: theme.colorScheme.primary,
+            secondaryColor: theme.colorScheme.secondary,
           ),
         ],
       ),

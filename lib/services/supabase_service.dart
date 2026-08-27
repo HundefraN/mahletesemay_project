@@ -1019,6 +1019,31 @@ class SupabaseService {
   }
 
   // ---------------------------------------------------------------------------
+  // FORCE UPDATE — minimum app version
+  // ---------------------------------------------------------------------------
+
+  /// Fetches the `min_required_version` value from the `app_settings` table.
+  ///
+  /// This column stores a semver string (e.g. "1.2.0") representing the lowest
+  /// app version that is still allowed to run. Returns `null` when the column
+  /// doesn't exist yet or when the query fails, so that the app degrades
+  /// gracefully (no force-update dialog is shown).
+  Future<String?> getMinRequiredVersion() async {
+    try {
+      final res = await _client
+          .from('app_settings')
+          .select('min_required_version');
+      if (res.isNotEmpty && res.first['min_required_version'] != null) {
+        return res.first['min_required_version'] as String;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching min_required_version: $e');
+      return null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // DUPLICATE DETECTION QUERIES
   // ---------------------------------------------------------------------------
 

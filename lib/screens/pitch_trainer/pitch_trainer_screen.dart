@@ -11,6 +11,7 @@ import 'package:mahlete_semay_project/services/pitch_service.dart';
 import 'package:mahlete_semay_project/utils/generated_tones.dart';
 import 'package:mahlete_semay_project/utils/permission_helper.dart';
 import 'package:mahlete_semay_project/utils/responsive_sizer.dart';
+import 'package:mahlete_semay_project/widgets/audio_waveform_visualizer.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
 import 'package:mahlete_semay_project/widgets/vocal_piano_roll.dart';
 
@@ -672,8 +673,10 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
     );
   }
 
-  /// Live Scrolling Vocal Pitch Flow Visualizer (Yousician Style)
+  /// Live Scrolling Vocal Pitch Flow & Real-Time Audio Frequency Waveform Visualizer
   Widget _buildLivePitchFlowCard(ThemeData theme, bool isDark) {
+    final pitchData = _pitchService.pitchData;
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -688,30 +691,80 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'REAL-TIME PITCH FLOW',
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                  ),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.graphic_eq_rounded,
+                      size: 16,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'REAL-TIME PITCH & AUDIO WAVE',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  _state == TrainerState.listening ? 'LIVE MIC' : 'STANDBY',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: _state == TrainerState.listening
-                        ? Colors.green
-                        : Colors.grey,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: (_state == TrainerState.listening
+                            ? Colors.green
+                            : Colors.grey)
+                        .withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _state == TrainerState.listening
+                              ? Colors.green
+                              : Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        _state == TrainerState.listening ? 'LIVE MIC' : 'STANDBY',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                          color: _state == TrainerState.listening
+                              ? Colors.green
+                              : Colors.grey,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
+
+            // Real Live Audio PCM Waveform Visualizer
+            AudioWaveformVisualizer(
+              waveform: pitchData.waveform,
+              rms: pitchData.rms,
+              pitch: pitchData.pitch,
+              isListening: _state == TrainerState.listening,
+              height: 48.0,
+              primaryColor: theme.colorScheme.primary,
+              secondaryColor: const Color(0xFF00E676),
+            ),
+            const SizedBox(height: 8),
+
+            // Continuous Scrolling Vocal Pitch Corridor
             SizedBox(
-              height: 110,
+              height: 105,
               width: double.infinity,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),

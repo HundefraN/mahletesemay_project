@@ -265,8 +265,11 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
   }
 
   void _copyQuoteText() {
-    Clipboard.setData(ClipboardData(text: _currentQuoteText));
-    CustomSnackbar.show(context, 'Quote lyrics copied to clipboard!');
+    HapticFeedback.mediumImpact();
+    final formatted =
+        '“$_currentQuoteText”\n\n— "${widget.song.title}" by ${widget.song.artistName}\n#MahleteSemay #Mezmur';
+    Clipboard.setData(ClipboardData(text: formatted));
+    CustomSnackbar.show(context, 'Quote lyrics & attribution copied to clipboard!');
   }
 
   void _openTextAndWordEditor() {
