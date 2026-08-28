@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -348,15 +349,15 @@ class _AddAlbumScreenState extends State<AddAlbumScreen> {
               if (_hasDraftBanner) _buildDraftBanner(isDark),
 
               // Section 1: Artist
-              const AdminSectionHeader(
-                title: 'Album Artist',
+              AdminSectionHeader(
+                title: AppLocalizations.of(context)?.albumArtistSection ?? 'Album Artist',
                 icon: Icons.person_rounded,
                 padding: EdgeInsets.only(top: 4, bottom: 6),
               ),
               AdminGlassCard(
                 padding: const EdgeInsets.all(12),
                 child: SearchableDropdown<Artist>(
-                  label: 'Select Artist *',
+                  label: AppLocalizations.of(context)?.selectArtistPrompt ?? 'Select Artist *',
                   icon: Icons.person_search_rounded,
                   selectedItem: _selectedArtist,
                   onChanged: (artist) {
@@ -407,8 +408,8 @@ class _AddAlbumScreenState extends State<AddAlbumScreen> {
               const SizedBox(height: 12),
 
               // Section 2: Details
-              const AdminSectionHeader(
-                title: 'Album Details',
+              AdminSectionHeader(
+                title: AppLocalizations.of(context)?.albumDetailsSection ?? 'Album Details',
                 icon: Icons.album_rounded,
                 padding: EdgeInsets.only(top: 4, bottom: 6),
               ),
@@ -453,8 +454,8 @@ class _AddAlbumScreenState extends State<AddAlbumScreen> {
               const SizedBox(height: 12),
 
               // Section 3: Cover Art
-              const AdminSectionHeader(
-                title: 'Album Cover Art (Optional)',
+              AdminSectionHeader(
+                title: AppLocalizations.of(context)?.albumCoverOptional ?? 'Album Cover Art (Optional)',
                 icon: Icons.image_rounded,
                 padding: EdgeInsets.only(top: 4, bottom: 6),
               ),
@@ -466,7 +467,7 @@ class _AddAlbumScreenState extends State<AddAlbumScreen> {
               const SizedBox(height: 16),
 
               AdminPrimaryButton(
-                label: _isCheckingDuplicates ? 'Checking for duplicates...' : 'Save & Publish Album',
+                label: _isCheckingDuplicates ? (AppLocalizations.of(context)?.checkingForDuplicates ?? 'Checking for duplicates...') : (AppLocalizations.of(context)?.saveAndPublishAlbum ?? 'Save & Publish Album'),
                 icon: _isCheckingDuplicates ? Icons.search_rounded : Icons.check_circle_rounded,
                 isLoading: _isSaving || _isCheckingDuplicates,
                 onPressed: _submit,
@@ -624,7 +625,7 @@ class _AddAlbumScreenState extends State<AddAlbumScreen> {
               TextButton.icon(
                 onPressed: _pickAndCropImage,
                 icon: const Icon(Icons.change_circle_rounded, size: 16),
-                label: Text('Change Cover', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
+                label: Text(AppLocalizations.of(context)?.changeCover ?? 'Change Cover', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
               ),
               const SizedBox(width: 8),
               TextButton.icon(
@@ -633,7 +634,7 @@ class _AddAlbumScreenState extends State<AddAlbumScreen> {
                   _hasUnsavedChanges = true;
                 }),
                 icon: const Icon(Icons.delete_outline_rounded, size: 16, color: AdminUiKit.roseRed),
-                label: Text('Remove', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AdminUiKit.roseRed)),
+                label: Text(AppLocalizations.of(context)?.remove ?? 'Remove', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AdminUiKit.roseRed)),
               ),
             ],
           ),

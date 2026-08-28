@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:mahlete_semay_project/screens/lyrics/suggest_lyrics_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -62,9 +63,10 @@ class _MySubmissionsScreenState extends State<MySubmissionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Submission History'),
+        title: Text(l10n.mySubmissions),
       ),
       body: FutureBuilder<List<SubmissionHistoryEntry>>(
         future: _historyFuture,
@@ -73,7 +75,7 @@ class _MySubmissionsScreenState extends State<MySubmissionsScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('You have not submitted any songs yet.'));
+            return Center(child: Text(l10n.noSubmissionsYet));
           }
 
           final history = snapshot.data!;
@@ -89,10 +91,10 @@ class _MySubmissionsScreenState extends State<MySubmissionsScreen> {
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(timeago.format(entry.submittedAt), style: Theme.of(context).textTheme.bodySmall),
+                    Text(timeago.format(entry.submittedAt, locale: Localizations.localeOf(context).languageCode), style: Theme.of(context).textTheme.bodySmall),
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, size: 20),
-                      tooltip: 'Recall & Edit',
+                      tooltip: l10n.recallAndEdit,
                       onPressed: () => _editSubmission(entry),
                     ),
                   ],

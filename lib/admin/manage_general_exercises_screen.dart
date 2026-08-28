@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -18,17 +19,17 @@ class ManageGeneralExercisesScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete Exercise?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
-        content: Text('Are you sure you want to delete "${exercise.title}"?'),
+        title: Text(AppLocalizations.of(context)?.deleteExercisePrompt ?? 'Delete Exercise?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        content: Text(AppLocalizations.of(context)?.deleteExerciseConfirm(exercise.title) ?? 'Are you sure you want to delete "${exercise.title}"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel')),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: AdminUiKit.roseRed,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
           ),
         ],
       ),
@@ -82,14 +83,14 @@ class ManageGeneralExercisesScreen extends StatelessWidget {
           if (snapshot.hasError) {
             return AdminEmptyState(
               icon: Icons.error_outline_rounded,
-              title: 'Failed to load exercises',
+              title: AppLocalizations.of(context)?.failedToLoadExercises ?? 'Failed to load exercises',
               description: snapshot.error.toString(),
             );
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return AdminEmptyState(
               icon: Icons.graphic_eq_rounded,
-              title: 'No General Exercises',
+              title: AppLocalizations.of(context)?.noExercisesFound ?? 'No General Exercises',
               description: 'Create standalone vocal workout drills for users to practice anytime.',
               actionLabel: 'Add General Drill',
               onAction: () => Navigator.push(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/duplicate_detection_service.dart';
+import '../../l10n/app_localizations.dart';
 import 'admin_ui_kit.dart';
 
 /// A premium-styled dialog that warns the admin about potential duplicate entries.
@@ -176,7 +177,7 @@ class DuplicateWarningDialog extends StatelessWidget {
                 children: [
                   Expanded(
                     child: AdminPrimaryButton(
-                      label: 'Cancel',
+                      label: AppLocalizations.of(context)?.cancel ?? 'Cancel',
                       icon: Icons.close_rounded,
                       isSecondary: true,
                       height: 42,
@@ -186,7 +187,7 @@ class DuplicateWarningDialog extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: AdminPrimaryButton(
-                      label: 'Save Anyway',
+                      label: AppLocalizations.of(context)?.publishAnyway ?? 'Save Anyway',
                       icon: Icons.check_rounded,
                       height: 42,
                       color: color,

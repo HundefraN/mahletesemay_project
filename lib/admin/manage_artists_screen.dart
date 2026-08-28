@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -100,14 +101,14 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete $count Artist(s)?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        title: Text(AppLocalizations.of(context)?.deleteSelectedArtistsTitle(count) ?? 'Delete $count Artist(s)?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
         content: Text(
           'Are you sure you want to permanently delete $count artist(s)? This will affect associated albums and songs.',
           style: GoogleFonts.plusJakartaSans(fontSize: 14),
         ),
         actions: [
           TextButton(
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
             onPressed: () => Navigator.of(context).pop(false),
           ),
           FilledButton(
@@ -115,7 +116,7 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
               backgroundColor: AdminUiKit.roseRed,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
             onPressed: () => Navigator.of(context).pop(true),
           ),
         ],
@@ -232,7 +233,7 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
           if (snapshot.hasError) {
             return AdminEmptyState(
               icon: Icons.error_outline_rounded,
-              title: 'Failed to load artists',
+              title: AppLocalizations.of(context)?.failedToLoadArtists ?? 'Failed to load artists',
               description: snapshot.error.toString(),
               actionLabel: 'Retry',
               onAction: _refreshData,
@@ -279,14 +280,14 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               icon: const Icon(Icons.delete_sweep_rounded, size: 18),
-                              label: const Text('Delete'),
+                              label: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
                             ),
                           ],
                         ),
                       )
                     : AdminSearchBar(
                         controller: _searchController,
-                        hintText: 'Search artists by name...',
+                        hintText: AppLocalizations.of(context)?.searchArtistsHint ?? 'Search artists by name...',
                       ),
               ),
               Expanded(
@@ -326,7 +327,7 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
     if (displayList.isEmpty) {
       return AdminEmptyState(
         icon: Icons.person_off_rounded,
-        title: 'No Artists Found',
+        title: AppLocalizations.of(context)?.noArtistsFound ?? 'No Artists Found',
         description: query.isNotEmpty
             ? 'No artist matching "$query".'
             : 'There are no $category artists added yet.',

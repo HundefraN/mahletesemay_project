@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class PermissionHelper {
@@ -13,10 +14,11 @@ class PermissionHelper {
     if (result.isGranted) return true;
 
     if (result.isPermanentlyDenied && context.mounted) {
+      final l10n = AppLocalizations.of(context);
       await _showPermissionSettingsDialog(
         context: context,
-        title: 'Microphone Permission Required',
-        description:
+        title: l10n?.micPermissionTitle ?? 'Microphone Permission Required',
+        description: l10n?.micPermissionDesc ??
             'Mahlete Semay requires microphone access for the Vocal Range Finder and Pitch Trainer to detect and analyze your pitch.',
       );
     }
@@ -46,10 +48,11 @@ class PermissionHelper {
     if (result.isGranted) return true;
 
     if (result.isPermanentlyDenied && context.mounted) {
+      final l10n = AppLocalizations.of(context);
       await _showPermissionSettingsDialog(
         context: context,
-        title: 'Notification Permission Required',
-        description:
+        title: l10n?.notifPermissionTitle ?? 'Notification Permission Required',
+        description: l10n?.notifPermissionDesc ??
             'Enable notifications to receive daily vocal workout reminders and service alerts on schedule.',
       );
     }
@@ -76,7 +79,7 @@ class PermissionHelper {
     if (result.isPermanentlyDenied && context.mounted) {
       await _showPermissionSettingsDialog(
         context: context,
-        title: 'Photo Library Permission Required',
+        title: AppLocalizations.of(context)?.photosPermissionTitle ?? 'Photo Library Permission Required',
         description:
             'Photo library access is needed to choose and customize artist and album cover images.',
       );
@@ -95,7 +98,7 @@ class PermissionHelper {
     if (result.isPermanentlyDenied && context.mounted) {
       await _showPermissionSettingsDialog(
         context: context,
-        title: 'Camera Permission Required',
+        title: AppLocalizations.of(context)?.cameraPermissionTitle ?? 'Camera Permission Required',
         description:
             'Camera access is required to take photo covers for artists and albums.',
       );
@@ -122,7 +125,7 @@ class PermissionHelper {
     if (result.isPermanentlyDenied && context.mounted) {
       await _showPermissionSettingsDialog(
         context: context,
-        title: 'Audio Access Required',
+        title: AppLocalizations.of(context)?.audioAccessTitle ?? 'Audio Access Required',
         description:
             'Audio access permission is required to import custom backing tracks for vocal practice.',
       );
@@ -145,14 +148,14 @@ class PermissionHelper {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(context);
               openAppSettings();
             },
-            child: const Text('Open Settings'),
+            child: Text(AppLocalizations.of(context)?.openSettings ?? 'Open Settings'),
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
+import '../../l10n/app_localizations.dart';
 import '../../models/activity_log_model.dart';
 import '../../services/firebase_service.dart';
 import '../../services/search_service.dart';
@@ -38,27 +39,48 @@ class _ActivityScreenState extends State<ActivityScreen> {
   }
 
   IconData _getIconForAction(String action) {
-    if (action.startsWith('CREATE')) return Icons.add_circle_outline_rounded;
-    if (action.startsWith('UPDATE')) return Icons.edit_note_rounded;
-    if (action.startsWith('DELETE')) return Icons.delete_outline_rounded;
-    if (action.startsWith('APPROVE')) return Icons.check_circle_outline_rounded;
-    if (action.startsWith('REJECT')) return Icons.cancel_outlined;
-    return Icons.history_rounded;
+    switch (action.toLowerCase()) {
+      case 'add_song':
+      case 'edit_song':
+      case 'delete_song':
+        return Icons.music_note_rounded;
+      case 'add_artist':
+      case 'edit_artist':
+      case 'delete_artist':
+        return Icons.person_rounded;
+      case 'add_album':
+      case 'edit_album':
+      case 'delete_album':
+        return Icons.album_rounded;
+      case 'add_vocal_plan':
+      case 'edit_vocal_plan':
+      case 'delete_vocal_plan':
+        return Icons.fitness_center_rounded;
+      case 'approve_suggestion':
+      case 'reject_suggestion':
+        return Icons.rate_review_rounded;
+      case 'create_invitation':
+      case 'delete_invitation':
+        return Icons.vpn_key_rounded;
+      default:
+        return Icons.admin_panel_settings_rounded;
+    }
   }
 
   Color _getColorForAction(String action) {
-    if (action.startsWith('CREATE')) return AdminUiKit.emeraldGreen;
-    if (action.startsWith('UPDATE')) return AdminUiKit.royalBlue;
-    if (action.startsWith('DELETE')) return AdminUiKit.roseRed;
-    if (action.startsWith('APPROVE')) return AdminUiKit.emeraldGreen;
-    if (action.startsWith('REJECT')) return AdminUiKit.amberOrange;
-    return AdminUiKit.goldAccent;
+    if (action.contains('delete') || action.contains('reject')) return AdminUiKit.roseRed;
+    if (action.contains('edit') || action.contains('update')) return AdminUiKit.amberOrange;
+    if (action.contains('add') || action.contains('approve') || action.contains('create')) {
+      return AdminUiKit.emeraldGreen;
+    }
+    return AdminUiKit.royalBlue;
   }
 
   void _showFilterSheet(List<ActivityLog> allLogs) {
-    final uniqueActions = allLogs.map((log) => log.action.split('_').first).toSet().toList();
-    final uniqueModerators = allLogs.map((log) => log.moderatorName).toSet().toList();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
+    final actions = ['All', 'add', 'edit', 'delete', 'approve', 'reject', 'create'];
+    final uniqueModerators = allLogs.map((l) => l.moderatorName).toSet().toList();
 
     showModalBottomSheet(
       context: context,
@@ -66,7 +88,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
       builder: (context) {
         return StatefulBuilder(builder: (context, setModalState) {
           return Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24.0),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF13233D) : Colors.white,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -87,48 +109,41 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 ),
                 const SizedBox(height: 18),
                 Text(
-                  'Filter Activities',
+                  l10n?.filterAndSort ?? 'Filter Logs',
                   style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 Text(
-                  'Action Type',
+                  l10n?.filterByAction ?? 'Action Type',
                   style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.grey),
                 ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: ['All', ...uniqueActions].map((action) {
-                    final isSelected = _filterByAction == action;
-                    return InkWell(
-                      onTap: () => setModalState(() => _filterByAction = action),
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? (isDark ? AdminUiKit.goldAccent : AdminUiKit.primaryNavy)
-                              : (isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04)),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          action,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: isSelected
-                                ? (isDark ? AdminUiKit.primaryNavy : Colors.white)
-                                : (isDark ? Colors.white70 : Colors.black87),
-                          ),
+                  children: actions.map((act) {
+                    final selected = _filterByAction == act;
+                    return ChoiceChip(
+                      label: Text(
+                        act.toUpperCase(),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11.5,
+                          color: selected ? AdminUiKit.primaryNavy : (isDark ? Colors.white70 : Colors.black87),
                         ),
                       ),
+                      selected: selected,
+                      selectedColor: AdminUiKit.goldAccent,
+                      backgroundColor: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+                      onSelected: (val) {
+                        if (val) setModalState(() => _filterByAction = act);
+                      },
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 Text(
-                  'Moderator',
+                  l10n?.moderatorRole ?? 'Moderator',
                   style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.grey),
                 ),
                 const SizedBox(height: 8),
@@ -140,14 +155,14 @@ class _ActivityScreenState extends State<ActivityScreen> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   ),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('All Moderators')),
+                    DropdownMenuItem(value: null, child: Text(l10n?.allModeratorsDropdown ?? 'All Moderators')),
                     ...uniqueModerators.map((name) => DropdownMenuItem(value: name, child: Text(name))),
                   ],
                   onChanged: (value) => setModalState(() => _filterByModerator = value),
                 ),
                 const SizedBox(height: 24),
                 AdminPrimaryButton(
-                  label: 'Apply Filters',
+                  label: l10n?.applyFilters ?? 'Apply Filters',
                   onPressed: () {
                     setState(() {});
                     Navigator.pop(context);
@@ -164,6 +179,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   void _showLogDetails(ActivityLog log) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
 
     showModalBottomSheet(
       context: context,
@@ -191,21 +207,21 @@ class _ActivityScreenState extends State<ActivityScreen> {
               ),
               const SizedBox(height: 18),
               Text(
-                'Activity Event Details',
+                l10n?.activityEventDetails ?? 'Activity Event Details',
                 style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800),
               ),
               const Divider(height: 24),
-              _buildDetailRow(Icons.person_rounded, 'Moderator', log.moderatorName),
-              _buildDetailRow(_getIconForAction(log.action), 'Action', log.action.replaceAll('_', ' ')),
-              _buildDetailRow(Icons.description_rounded, 'Details', log.details),
+              _buildDetailRow(Icons.person_rounded, l10n?.moderatorRole ?? 'Moderator', log.moderatorName),
+              _buildDetailRow(_getIconForAction(log.action), l10n?.filterByAction ?? 'Action', log.action.replaceAll('_', ' ')),
+              _buildDetailRow(Icons.description_rounded, l10n?.details ?? 'Details', log.details),
               _buildDetailRow(
                 Icons.schedule_rounded,
-                'Timestamp',
+                l10n?.timestamp ?? 'Timestamp',
                 DateFormat('MMM d, yyyy • hh:mm a').format(log.timestamp.toDate()),
               ),
               const SizedBox(height: 24),
               AdminPrimaryButton(
-                label: 'Close',
+                label: l10n?.close ?? 'Close',
                 isSecondary: true,
                 onPressed: () => Navigator.pop(context),
               ),
@@ -250,12 +266,13 @@ class _ActivityScreenState extends State<ActivityScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF070E1B) : const Color(0xFFF5F7FB),
       appBar: AppBar(
         title: Text(
-          'Moderator Activity Log',
+          l10n?.auditActivityLogs ?? 'Moderator Activity Log',
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 19),
         ),
       ),
@@ -266,10 +283,10 @@ class _ActivityScreenState extends State<ActivityScreen> {
             return ListView.builder(itemCount: 8, itemBuilder: (_, __) => const ListTileShimmer());
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const AdminEmptyState(
+            return AdminEmptyState(
               icon: Icons.history_toggle_off_rounded,
-              title: 'No Activity Logged',
-              description: 'No admin or moderator activities have been recorded yet.',
+              title: l10n?.noActivityLogged ?? 'No Activity Logged',
+              description: l10n?.noActivityLoggedDesc ?? 'No admin or moderator activities have been recorded yet.',
             );
           }
           final allLogs = snapshot.data!;
@@ -280,7 +297,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
               text: log.details,
               secondaryText: log.moderatorName,
             );
-            final actionMatch = _filterByAction == 'All' || log.action.startsWith(_filterByAction);
+            final actionMatch = _filterByAction == 'All' || log.action.toLowerCase().contains(_filterByAction.toLowerCase());
             final moderatorMatch = _filterByModerator == null || log.moderatorName == _filterByModerator;
             return searchMatch && actionMatch && moderatorMatch;
           }).toList();
@@ -291,20 +308,20 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: AdminSearchBar(
                   controller: _searchController,
-                  hintText: 'Search actions or names...',
+                  hintText: l10n?.searchActionsOrNames ?? 'Search actions or names...',
                   trailing: IconButton(
                     icon: const Icon(Icons.filter_list_rounded, size: 20),
-                    tooltip: 'Filter Logs',
+                    tooltip: l10n?.filterAndSort ?? 'Filter Logs',
                     onPressed: () => _showFilterSheet(allLogs),
                   ),
                 ),
               ),
               Expanded(
                 child: filteredLogs.isEmpty
-                    ? const AdminEmptyState(
+                    ? AdminEmptyState(
                         icon: Icons.search_off_rounded,
-                        title: 'No Matching Logs',
-                        description: 'No activity matches your active search and filter filters.',
+                        title: l10n?.noMatchingLogs ?? 'No Matching Logs',
+                        description: l10n?.noMatchingLogsDesc ?? 'No activity matches your active search and filter filters.',
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 6, 16, 80),
@@ -351,7 +368,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          '${log.moderatorName} • ${timeago.format(log.timestamp.toDate())}',
+                                          '${log.moderatorName} • ${timeago.format(log.timestamp.toDate(), locale: Localizations.localeOf(context).languageCode)}',
                                           style: GoogleFonts.plusJakartaSans(
                                             fontSize: 12,
                                             color: isDark ? Colors.white60 : Colors.black54,

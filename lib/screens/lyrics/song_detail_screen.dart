@@ -7,6 +7,7 @@ import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import '../../models/song_model.dart';
 import '../../providers/setlist_provider.dart';
 import '../../providers/song_provider.dart';
@@ -567,7 +568,11 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     final formatted =
         '${widget.song.title} — ${widget.song.artistName}\n\n$cleanLines\n\nShared via Mahlete Semay';
     Clipboard.setData(ClipboardData(text: formatted));
-    CustomSnackbar.show(context, 'Full clean lyrics copied to clipboard!');
+    CustomSnackbar.show(
+      context,
+      AppLocalizations.of(context)?.fullLyricsCopied ??
+          'Full clean lyrics copied to clipboard!',
+    );
   }
 
   void _copyFullSongStructured() {
@@ -575,7 +580,11 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     final formatted =
         '${widget.song.title} — ${widget.song.artistName}\n\n${widget.song.lyrics.trim()}\n\nShared via Mahlete Semay';
     Clipboard.setData(ClipboardData(text: formatted));
-    CustomSnackbar.show(context, 'Full structured lyrics copied to clipboard!');
+    CustomSnackbar.show(
+      context,
+      AppLocalizations.of(context)?.structuredLyricsCopied ??
+          'Full structured lyrics copied to clipboard!',
+    );
   }
 
   void _shareFullSongText() {
@@ -725,7 +734,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Share & Copy Hub',
+                            AppLocalizations.of(context)?.shareAndCopyHub ?? 'Share & Copy Hub',
                             style: GoogleFonts.outfit(
                               fontWeight: FontWeight.w900,
                               fontSize: 17,
@@ -811,7 +820,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                               Row(
                                 children: [
                                   Text(
-                                    'Quote Card Studio',
+                                    AppLocalizations.of(context)?.quoteCardStudio ?? 'Quote Card Studio',
                                     style: GoogleFonts.outfit(
                                       fontWeight: FontWeight.w900,
                                       fontSize: 15,
@@ -883,8 +892,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                     Expanded(
                       child: _buildShareHubOptionTile(
                         icon: IconsaxPlusBold.tick_circle,
-                        title: 'Select Lines',
-                        subtitle: 'Pick exact verses',
+                        title: AppLocalizations.of(context)?.selectLinesTitle ?? AppLocalizations.of(context)?.selectLines ?? 'Select Lines',
+                        subtitle: AppLocalizations.of(context)?.selectLinesSubtitle ?? 'Pick exact verses',
                         isDark: isDark,
                         onSurface: onSurface,
                         primaryColor: primaryColor,
@@ -898,8 +907,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                     Expanded(
                       child: _buildShareHubOptionTile(
                         icon: IconsaxPlusBold.quote_down,
-                        title: 'Copy Quote',
-                        subtitle: 'With artist credit',
+                        title: AppLocalizations.of(context)?.copyQuoteTitle ?? AppLocalizations.of(context)?.copyQuote ?? 'Copy Quote',
+                        subtitle: AppLocalizations.of(context)?.copyQuoteSubtitle ?? 'With artist credit',
                         isDark: isDark,
                         onSurface: onSurface,
                         primaryColor: primaryColor,
@@ -926,8 +935,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                     Expanded(
                       child: _buildShareHubOptionTile(
                         icon: IconsaxPlusBold.document_copy,
-                        title: 'Clean Lyrics',
-                        subtitle: 'Without tags',
+                        title: AppLocalizations.of(context)?.cleanLyricsTitle ?? AppLocalizations.of(context)?.cleanLyrics ?? 'Clean Lyrics',
+                        subtitle: AppLocalizations.of(context)?.cleanLyricsSubtitle ?? 'Without tags',
                         isDark: isDark,
                         onSurface: onSurface,
                         primaryColor: primaryColor,
@@ -941,8 +950,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                     Expanded(
                       child: _buildShareHubOptionTile(
                         icon: IconsaxPlusBold.textalign_left,
-                        title: 'Full Structure',
-                        subtitle: 'Verses & Chorus',
+                        title: AppLocalizations.of(context)?.fullStructureTitle ?? AppLocalizations.of(context)?.fullStructure ?? 'Full Structure',
+                        subtitle: AppLocalizations.of(context)?.fullStructureSubtitle ?? 'Verses & Chorus',
                         isDark: isDark,
                         onSurface: onSurface,
                         primaryColor: primaryColor,
@@ -978,7 +987,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                     icon: Icon(IconsaxPlusBold.send_2,
                         size: 16, color: isDark ? Colors.white : onSurface),
                     label: Text(
-                      'Share Full Text via Apps...',
+                      AppLocalizations.of(context)?.shareFullText ?? 'Share Full Text via Apps...',
                       style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
@@ -1128,7 +1137,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Lyrics Typography & Style',
+                          AppLocalizations.of(context)?.lyricsTypographyStyle ?? 'Lyrics Typography & Style',
                           style: GoogleFonts.outfit(
                             fontWeight: FontWeight.w800,
                             fontSize: 16,
@@ -1151,7 +1160,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
 
                     // Font Family Selector
                     Text(
-                      'Font Family',
+                      AppLocalizations.of(context)?.fontFamily ?? 'Font Family',
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -1216,7 +1225,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
 
                     // Font Size Edit
                     Text(
-                      'Lyrics Size',
+                      AppLocalizations.of(context)?.lyricsSize ?? 'Lyrics Size',
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -1346,7 +1355,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Alignment',
+                                AppLocalizations.of(context)?.alignment ?? 'Alignment',
                                 style: GoogleFonts.outfit(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -1359,7 +1368,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                               Row(
                                 children: [
                                   _buildStyleOptionChip(
-                                    label: 'Left',
+                                    label: AppLocalizations.of(context)?.alignLeft ?? 'Left',
                                     icon: Icons.format_align_left_rounded,
                                     isSelected: _textAlign == TextAlign.left,
                                     isDark: isDark,
@@ -1373,7 +1382,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                                   ),
                                   const SizedBox(width: 6),
                                   _buildStyleOptionChip(
-                                    label: 'Center',
+                                    label: AppLocalizations.of(context)?.alignCenter ?? 'Center',
                                     icon: Icons.format_align_center_rounded,
                                     isSelected: _textAlign == TextAlign.center,
                                     isDark: isDark,
@@ -1397,7 +1406,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Spacing',
+                                AppLocalizations.of(context)?.spacing ?? 'Spacing',
                                 style: GoogleFonts.outfit(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -1660,7 +1669,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                     ),
                   ),
                   Text(
-                    'Add to Setlist',
+                    AppLocalizations.of(context)?.addToSetlist ?? 'Add to Setlist',
                     style: GoogleFonts.outfit(
                       fontWeight: FontWeight.w800,
                       fontSize: 16,
@@ -1672,7 +1681,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                     Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Text(
-                        "No setlists created yet.",
+                        AppLocalizations.of(context)?.noSetlistsCreatedYet ?? "No setlists created yet.",
                         style: GoogleFonts.outfit(
                           fontSize: 13,
                           color: isDark
@@ -1707,7 +1716,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                                   setlist.id!, widget.song.id);
                               Navigator.pop(modalCtx);
                               CustomSnackbar.show(context,
-                                  'Added "${widget.song.title}" to "${setlist.name}"');
+                                  AppLocalizations.of(context)?.addedSongToSetlist(widget.song.title, setlist.name) ?? 'Added "${widget.song.title}" to "${setlist.name}"');
                             },
                           );
                         },
@@ -1725,7 +1734,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                     leading: Icon(IconsaxPlusBold.add_circle,
                         color: primaryColor, size: 20),
                     title: Text(
-                      'Create New Setlist',
+                      AppLocalizations.of(context)?.createNewSetlist ?? 'Create New Setlist',
                       style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
@@ -1766,7 +1775,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
           actionsPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           title: Text(
-            'New Setlist',
+            AppLocalizations.of(context)?.newSetlist ?? 'New Setlist',
             style: GoogleFonts.outfit(
               fontWeight: FontWeight.bold,
               fontSize: 17,
@@ -1783,7 +1792,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                 color: isDark ? Colors.white : onSurface,
               ),
               decoration: InputDecoration(
-                hintText: 'Setlist Name',
+                hintText: AppLocalizations.of(context)?.setlistNameHint ?? 'Setlist Name',
                 hintStyle: TextStyle(
                   color: isDark
                       ? Colors.white.withOpacity(0.4)
@@ -1810,7 +1819,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                 ),
               ),
               validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'Please enter a name'
+                  ? (AppLocalizations.of(context)?.pleaseEnterName ?? 'Please enter a name')
                   : null,
             ),
           ),
@@ -1818,7 +1827,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
               child: Text(
-                'Cancel',
+                AppLocalizations.of(context)?.cancel ?? 'Cancel',
                 style: GoogleFonts.outfit(
                   fontSize: 13,
                   color: isDark ? Colors.white70 : onSurface.withOpacity(0.7),
@@ -1841,12 +1850,12 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                   nav.pop();
                   if (context.mounted) {
                     CustomSnackbar.show(
-                        context, 'Setlist created and song added!');
+                        context, AppLocalizations.of(context)?.setlistCreatedAndSongAdded ?? 'Setlist created and song added!');
                   }
                 }
               },
               child: Text(
-                'Create',
+                AppLocalizations.of(context)?.create ?? 'Create',
                 style: GoogleFonts.outfit(
                     fontSize: 13, fontWeight: FontWeight.w800),
               ),
@@ -2360,7 +2369,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                       const SizedBox(width: 6),
                     ],
                     _buildMiniBadge(
-                      '${NumberFormat.compact().format(widget.song.viewCount)} plays',
+                      '${NumberFormat.compact().format(widget.song.viewCount)} ${AppLocalizations.of(context)?.plays ?? "plays"}',
                       icon: IconsaxPlusLinear.eye,
                       isDark: isDark,
                       primaryColor: primaryColor,
@@ -2839,7 +2848,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
               IconButton(
                 icon: const Icon(IconsaxPlusBold.music_playlist, size: 20),
                 color: isDark ? Colors.white70 : onSurface.withOpacity(0.7),
-                tooltip: 'Add to Setlist',
+                tooltip: AppLocalizations.of(context)?.addToSetlist ?? 'Add to Setlist',
                 onPressed: () => _showAddToSetlistDialog(context),
               ),
 
@@ -2847,7 +2856,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
               IconButton(
                 icon: const Icon(IconsaxPlusBold.text, size: 20),
                 color: isDark ? Colors.white70 : onSurface.withOpacity(0.7),
-                tooltip: 'Typography & Size',
+                tooltip: AppLocalizations.of(context)?.typographyAndSize ?? 'Typography & Size',
                 onPressed: () => _showLyricsAppearanceModal(context),
               ),
 
@@ -2855,7 +2864,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
               IconButton(
                 icon: const Icon(IconsaxPlusBold.export_1, size: 20),
                 color: isDark ? Colors.white : onSurface,
-                tooltip: 'Share & Copy Hub',
+                tooltip: AppLocalizations.of(context)?.shareAndCopyHub ?? 'Share & Copy Hub',
                 onPressed: () => _showModernShareOptionsModal(context),
               ),
             ],
@@ -2934,7 +2943,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                 ),
                 icon: const Icon(IconsaxPlusBold.gallery_export, size: 15),
                 label: Text(
-                  'Share Card',
+                  AppLocalizations.of(context)?.shareCardButton ?? 'Share Card',
                   style: GoogleFonts.outfit(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w900,
@@ -2947,7 +2956,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
               IconButton(
                 icon: const Icon(IconsaxPlusBold.copy, size: 18),
                 color: isDark ? Colors.white : onSurface,
-                tooltip: 'Copy',
+                tooltip: AppLocalizations.of(context)?.copyButton ?? 'Copy',
                 visualDensity: VisualDensity.compact,
                 onPressed: count > 0 ? _copySelectedLines : null,
               ),
@@ -2956,7 +2965,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
               IconButton(
                 icon: const Icon(IconsaxPlusBold.send_2, size: 18),
                 color: isDark ? Colors.white : onSurface,
-                tooltip: 'Share Text',
+                tooltip: AppLocalizations.of(context)?.shareTextButton ?? 'Share Text',
                 visualDensity: VisualDensity.compact,
                 onPressed: count > 0 ? _shareSelectedLinesDirectly : null,
               ),

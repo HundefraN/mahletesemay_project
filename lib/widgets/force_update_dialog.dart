@@ -1,6 +1,8 @@
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Un-dismissible, full-coverage dialog shown when the installed app version
@@ -52,6 +54,7 @@ class ForceUpdateDialog {
   static Future<void> show(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     return showDialog<void>(
       context: context,
@@ -86,7 +89,7 @@ class ForceUpdateDialog {
 
                 // ---- Title ----
                 Text(
-                  'Update Required',
+                  l10n?.updateRequired ?? 'Update Required',
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.onSurface,
@@ -97,8 +100,8 @@ class ForceUpdateDialog {
 
                 // ---- Description ----
                 Text(
-                  'A newer version of Mahlete Semay is available. '
-                  'Please update to continue using the app.',
+                  l10n?.updateRequiredDesc ??
+                      'A newer version of Mahlete Semay is available. Please update to continue using the app.',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurface.withValues(alpha: 0.7),
                     height: 1.5,
@@ -114,9 +117,9 @@ class ForceUpdateDialog {
                   child: FilledButton.icon(
                     onPressed: () => _openStore(),
                     icon: const Icon(Icons.open_in_new_rounded, size: 20),
-                    label: const Text(
-                      'Update Now',
-                      style: TextStyle(
+                    label: Text(
+                      l10n?.updateNow ?? 'Update Now',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -128,6 +131,16 @@ class ForceUpdateDialog {
                     ),
                   ),
                 ),
+                if (kDebugMode) ...[
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+                    child: const Text(
+                      'Bypass Update (Debug Mode)',
+                      style: TextStyle(fontSize: 13, color: Colors.orange),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

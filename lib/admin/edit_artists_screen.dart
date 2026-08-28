@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -151,16 +152,16 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete Artist?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
-        content: Text('Are you sure you want to delete "${widget.artist.name}"? This will impact attached albums and songs.'),
+        title: Text(AppLocalizations.of(context)?.deleteArtistPrompt ?? 'Delete Artist?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        content: Text(AppLocalizations.of(context)?.deleteArtistConfirm(widget.artist.name) ?? 'Are you sure you want to delete "${widget.artist.name}"? This will impact attached albums and songs.'),
         actions: [
-          TextButton(child: const Text('Cancel'), onPressed: () => Navigator.of(context).pop(false)),
+          TextButton(child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'), onPressed: () => Navigator.of(context).pop(false)),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: AdminUiKit.roseRed,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
             onPressed: () => Navigator.of(context).pop(true),
           ),
         ],
@@ -221,8 +222,8 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
           physics: const BouncingScrollPhysics(),
           children: [
             // Section 1: Info
-            const AdminSectionHeader(
-              title: 'Artist Information',
+            AdminSectionHeader(
+              title: AppLocalizations.of(context)?.artistInfoSection ?? 'Artist Information',
               icon: Icons.person_rounded,
               padding: EdgeInsets.only(top: 4, bottom: 6),
             ),
@@ -257,8 +258,8 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
             const SizedBox(height: 12),
 
             // Section 2: Photo
-            const AdminSectionHeader(
-              title: 'Artist Photo',
+            AdminSectionHeader(
+              title: AppLocalizations.of(context)?.artistPhoto ?? 'Artist Photo',
               icon: Icons.add_a_photo_rounded,
               padding: EdgeInsets.only(top: 4, bottom: 6),
             ),
@@ -270,7 +271,7 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
             const SizedBox(height: 16),
 
             AdminPrimaryButton(
-              label: 'Save Artist Changes',
+              label: AppLocalizations.of(context)?.saveArtistChanges ?? 'Save Artist Changes',
               icon: Icons.save_rounded,
               isLoading: _isSaving,
               onPressed: _submit,
@@ -317,14 +318,14 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
               TextButton.icon(
                 onPressed: _pickAndCropImage,
                 icon: const Icon(Icons.change_circle_rounded, size: 16),
-                label: Text('Change', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
+                label: Text(AppLocalizations.of(context)?.change ?? 'Change', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
               ),
               if (_pickedImage != null) ...[
                 const SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: () => setState(() => _pickedImage = null),
                   icon: const Icon(Icons.undo_rounded, size: 16),
-                  label: Text('Revert', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
+                  label: Text(AppLocalizations.of(context)?.revert ?? 'Revert', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
                 ),
               ],
             ],

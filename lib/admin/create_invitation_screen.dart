@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -115,7 +116,7 @@ This code is single-use and linked to your email. Welcome to the team!
         actions: [
           TextButton.icon(
             icon: const Icon(Icons.history_rounded, size: 18),
-            label: const Text('History'),
+            label: Text(AppLocalizations.of(context)?.historyButton ?? 'History'),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ManageInviteCodesScreen()),
@@ -130,8 +131,8 @@ This code is single-use and linked to your email. Welcome to the team!
         children: [
           // If code was generated, show success card
           if (_generatedCode != null) ...[
-            const AdminSectionHeader(
-              title: 'Invitation Code Ready!',
+            AdminSectionHeader(
+              title: AppLocalizations.of(context)?.invitationCodeReady ?? 'Invitation Code Ready!',
               icon: Icons.vpn_key_rounded,
               padding: EdgeInsets.only(top: 8, bottom: 10),
             ),
@@ -187,7 +188,7 @@ This code is single-use and linked to your email. Welcome to the team!
                   ),
                   const SizedBox(height: 4),
                   AdminStatusBadge(
-                    label: 'ROLE: ${_selectedRole.toUpperCase()}',
+                    label: AppLocalizations.of(context)?.roleBadgePrefix(_selectedRole.toUpperCase()) ?? 'ROLE: ${_selectedRole.toUpperCase()}',
                     color: _selectedRole == 'admin' ? AdminUiKit.goldAccent : AdminUiKit.royalBlue,
                   ),
                   const SizedBox(height: 18),
@@ -195,7 +196,7 @@ This code is single-use and linked to your email. Welcome to the team!
                     children: [
                       Expanded(
                         child: AdminPrimaryButton(
-                          label: 'Share Invitation',
+                          label: AppLocalizations.of(context)?.shareInvitation ?? 'Share Invitation',
                           icon: Icons.share_rounded,
                           height: 46,
                           onPressed: () => _shareInvitation(_generatedCode!),
@@ -210,10 +211,10 @@ This code is single-use and linked to your email. Welcome to the team!
           ],
 
           // Form
-          const AdminSectionHeader(
-            title: 'Invitee Details',
+          AdminSectionHeader(
+            title: AppLocalizations.of(context)?.inviteeDetails ?? 'Invitee Details',
             icon: Icons.person_add_rounded,
-            padding: EdgeInsets.only(top: 8, bottom: 10),
+            padding: const EdgeInsets.only(top: 8, bottom: 10),
           ),
           AdminGlassCard(
             padding: const EdgeInsets.all(16),
@@ -258,9 +259,9 @@ This code is single-use and linked to your email. Welcome to the team!
                   DropdownButtonFormField<String>(
                     value: _selectedRole,
                     decoration: _inputDecoration('Assigned Role', Icons.shield_outlined),
-                    items: const [
-                      DropdownMenuItem(value: 'moderator', child: Text('Moderator (Content Editor)')),
-                      DropdownMenuItem(value: 'admin', child: Text('Administrator (Full Control)')),
+                    items: [
+                      DropdownMenuItem(value: 'moderator', child: Text(AppLocalizations.of(context)?.moderatorRoleDesc ?? 'Moderator (Content Editor)')),
+                      DropdownMenuItem(value: 'admin', child: Text(AppLocalizations.of(context)?.adminRoleDesc ?? 'Administrator (Full Control)')),
                     ],
                     onChanged: (val) {
                       if (val != null) setState(() => _selectedRole = val);
@@ -274,7 +275,7 @@ This code is single-use and linked to your email. Welcome to the team!
           const SizedBox(height: 24),
 
           AdminPrimaryButton(
-            label: 'Generate Invitation Code',
+            label: AppLocalizations.of(context)?.generateInviteCode ?? 'Generate Invitation Code',
             icon: Icons.vpn_key_rounded,
             isLoading: _isLoading,
             onPressed: _createInvitation,

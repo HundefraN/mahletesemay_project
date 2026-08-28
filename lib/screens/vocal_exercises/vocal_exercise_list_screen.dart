@@ -148,7 +148,7 @@ class VocalExerciseListScreen extends StatelessWidget {
                                   ),
                                 ),
                                 child: Text(
-                                  "VOCAL COACHING",
+                                  l10n.vocalCoaching,
                                   style: GoogleFonts.poppins(
                                     fontSize: context.sp(10),
                                     fontWeight: FontWeight.w800,
@@ -159,7 +159,7 @@ class VocalExerciseListScreen extends StatelessWidget {
                               ),
                               SizedBox(height: context.w(8)),
                               Text(
-                                "Shape Your Voice,",
+                                l10n.shapeYourVoice,
                                 style: GoogleFonts.poppins(
                                   fontWeight: FontWeight.w400,
                                   fontSize: context.sp(20),
@@ -168,7 +168,7 @@ class VocalExerciseListScreen extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                "Master Your Craft.",
+                                l10n.masterYourCraft,
                                 style: GoogleFonts.poppins(
                                   fontWeight: FontWeight.w900,
                                   fontSize: context.sp(26),
@@ -191,7 +191,7 @@ class VocalExerciseListScreen extends StatelessWidget {
                 padding: EdgeInsets.only(right: context.w(16)),
                 child: IconButton.filledTonal(
                   icon: Icon(Icons.tune_rounded, size: context.w(20)),
-                  tooltip: 'Pitch Trainer',
+                  tooltip: l10n.pitchTrainer,
                   style: IconButton.styleFrom(
                     backgroundColor:
                         theme.colorScheme.surfaceContainerHigh.withOpacity(0.8),
@@ -293,7 +293,7 @@ class VocalExerciseListScreen extends StatelessWidget {
       padding: EdgeInsets.only(right: context.w(8)),
       child: IconButton.filledTonal(
         icon: Icon(Icons.school_outlined, size: context.w(20)),
-        tooltip: 'Lessons & Tutorials',
+        tooltip: AppLocalizations.of(context)?.lessonsAndTutorials ?? 'Lessons & Tutorials',
         style: IconButton.styleFrom(
           backgroundColor:
               theme.colorScheme.surfaceContainerHigh.withOpacity(0.8),
@@ -316,6 +316,7 @@ class VocalExerciseListScreen extends StatelessWidget {
   Widget _buildGeneralExercisesList(
       BuildContext context, FirebaseService firebaseService) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return StreamBuilder<List<VocalExerciseDay>>(
       stream: firebaseService.getGeneralExercisesStream(),
@@ -329,7 +330,7 @@ class VocalExerciseListScreen extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.all(context.w(24)),
                 child: Text(
-                  'No general exercises available yet.',
+                  l10n.noGeneralExercises,
                   style: GoogleFonts.poppins(
                       color: theme.colorScheme.onSurfaceVariant),
                 ),
@@ -728,7 +729,7 @@ class _ExerciseDetailSheet extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "About Exercise",
+                    AppLocalizations.of(context)?.aboutExercise ?? "About Exercise",
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w800,
                       fontSize: context.sp(15),

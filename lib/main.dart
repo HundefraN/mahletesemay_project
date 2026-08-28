@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
+import 'l10n/fallback_localizations_delegate.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'config/supabase_config.dart';
@@ -25,9 +26,10 @@ import 'services/notification_service.dart';
 import 'services/pitch_service.dart';
 import 'services/supabase_service.dart';
 import 'utils/app_themes.dart';
+import 'utils/constants.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter/foundation.dart';
-import 'utils/constants.dart';
+import 'utils/timeago_utils.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
@@ -35,6 +37,8 @@ final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<Scaffol
 Future<void> main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  setupTimeAgoLocales();
 
   try {
     await dotenv.load();
@@ -102,15 +106,14 @@ class MyApp extends StatelessWidget {
               themeMode:
                   themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
               locale: languageProvider.currentLocale,
-              supportedLocales: const [
-                Locale('en', ''),
-                Locale('am', ''),
-              ],
+              supportedLocales: AppLocalizations.supportedLocales,
               localizationsDelegates: const [
                 AppLocalizations.delegate,
                 GlobalMaterialLocalizations.delegate,
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
+                FallbackMaterialLocalizationsDelegate(),
+                FallbackCupertinoLocalizationsDelegate(),
               ],
               home: const SplashWrapper(),
               builder: (context, child) {
@@ -183,14 +186,14 @@ class _NotificationCoordinatorState extends State<NotificationCoordinator>
       case NotificationKind.test:
         navigator.pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (_) => const HomeScreen(initialTab: HomePageTab.lyrics),
+            builder: (_) => HomeScreen(initialTab: HomePageTab.lyrics),
           ),
           (route) => false,
         );
       case NotificationKind.newContent:
         navigator.pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (_) => const HomeScreen(initialTab: HomePageTab.lyrics),
+            builder: (_) => HomeScreen(initialTab: HomePageTab.lyrics),
           ),
           (route) => false,
         );
@@ -219,6 +222,8 @@ class RepairModeWrapper extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context);
     final theme = Theme.of(context);
     
+    final l10n = AppLocalizations.of(context);
+    
     return StreamBuilder<bool>(
       stream: SupabaseService().getRepairModeStream(),
       initialData: SupabaseService().lastKnownRepairMode,
@@ -242,7 +247,7 @@ class RepairModeWrapper extends StatelessWidget {
                   Icon(Icons.build_circle_rounded, size: 80, color: theme.colorScheme.primary),
                   const SizedBox(height: 24),
                   Text(
-                    'We are under maintenance',
+                    l10n?.underMaintenance ?? 'We are under maintenance',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -252,7 +257,8 @@ class RepairModeWrapper extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'The Mahlete Semay app is currently in repair mode. We are working hard to bring it back online shortly. Thank you for your patience!',
+                    l10n?.maintenanceDesc ??
+                        'The Mahlete Semay app is currently in repair mode. We are working hard to bring it back online shortly. Thank you for your patience!',
                     style: TextStyle(
                       fontSize: 16,
                       color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),

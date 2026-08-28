@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -40,8 +41,8 @@ class AnalyticsScreen extends StatelessWidget {
         physics: const BouncingScrollPhysics(),
         children: [
           // Key Metrics Header
-          const AdminSectionHeader(
-            title: 'Key Platform Metrics',
+          AdminSectionHeader(
+            title: AppLocalizations.of(context)?.keyPlatformMetrics ?? 'Key Platform Metrics',
             icon: Icons.dashboard_customize_rounded,
             padding: EdgeInsets.only(top: 8, bottom: 12),
           ),
@@ -57,28 +58,28 @@ class AnalyticsScreen extends StatelessWidget {
             children: [
               _buildStatCard(
                 context,
-                title: 'Total Songs',
+                title: AppLocalizations.of(context)?.totalSongs ?? 'Total Songs',
                 value: stats.totalSongs.toString(),
                 icon: Icons.music_note_rounded,
                 accentColor: AdminUiKit.royalBlue,
               ),
               _buildStatCard(
                 context,
-                title: 'Total Artists',
+                title: AppLocalizations.of(context)?.totalArtists ?? 'Total Artists',
                 value: stats.totalArtists.toString(),
                 icon: Icons.person_rounded,
                 accentColor: AdminUiKit.goldAccent,
               ),
               _buildStatCard(
                 context,
-                title: 'Total Albums',
+                title: AppLocalizations.of(context)?.totalAlbums ?? 'Total Albums',
                 value: stats.totalAlbums.toString(),
                 icon: Icons.album_rounded,
                 accentColor: AdminUiKit.emeraldGreen,
               ),
               _buildStatCard(
                 context,
-                title: 'Total Song Views',
+                title: AppLocalizations.of(context)?.totalSongViews ?? 'Total Song Views',
                 value: NumberFormat.compact().format(stats.totalSongViews),
                 icon: Icons.play_circle_fill_rounded,
                 accentColor: AdminUiKit.amberOrange,
@@ -89,8 +90,8 @@ class AnalyticsScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // 7-day trend chart
-          const AdminSectionHeader(
-            title: 'Songs Added (Last 7 Days)',
+          AdminSectionHeader(
+            title: AppLocalizations.of(context)?.songsAdded7Days ?? 'Songs Added (Last 7 Days)',
             icon: Icons.bar_chart_rounded,
             padding: EdgeInsets.only(top: 8, bottom: 12),
           ),
@@ -107,8 +108,8 @@ class AnalyticsScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Artist Distribution Pie Chart
-          const AdminSectionHeader(
-            title: 'Artist Distribution Breakdown',
+          AdminSectionHeader(
+            title: AppLocalizations.of(context)?.artistDistributionBreakdown ?? 'Artist Distribution Breakdown',
             icon: Icons.pie_chart_outline_rounded,
             padding: EdgeInsets.only(top: 8, bottom: 12),
           ),
@@ -171,8 +172,8 @@ class AnalyticsScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Top Viewed Songs
-          const AdminSectionHeader(
-            title: 'Top 5 Most Viewed Songs',
+          AdminSectionHeader(
+            title: AppLocalizations.of(context)?.top5ViewedSongs ?? 'Top 5 Most Viewed Songs',
             icon: Icons.trending_up_rounded,
             padding: EdgeInsets.only(top: 8, bottom: 12),
           ),
@@ -217,7 +218,7 @@ class AnalyticsScreen extends StatelessWidget {
                           ),
                         ),
                         AdminStatusBadge(
-                          label: '${NumberFormat.compact().format(song.viewCount)} views',
+                          label: '${NumberFormat.compact().format(song.viewCount)} ${AppLocalizations.of(context)?.views?.toLowerCase() ?? "views"}',
                           color: AdminUiKit.emeraldGreen,
                           icon: Icons.visibility_rounded,
                         ),
@@ -226,17 +227,17 @@ class AnalyticsScreen extends StatelessWidget {
                   ),
                 ))
           else
-            const AdminEmptyState(
+            AdminEmptyState(
               icon: Icons.music_off_rounded,
-              title: 'No Song Views Yet',
+              title: AppLocalizations.of(context)?.noSongViewsYet ?? 'No Song Views Yet',
               description: 'Song view statistics will appear once listeners start playing songs.',
             ),
 
           const SizedBox(height: 24),
 
           // Top Artists
-          const AdminSectionHeader(
-            title: 'Top Recommended Artists',
+          AdminSectionHeader(
+            title: AppLocalizations.of(context)?.topRecommendedArtists ?? 'Top Recommended Artists',
             icon: Icons.star_rounded,
             padding: EdgeInsets.only(top: 8, bottom: 12),
           ),

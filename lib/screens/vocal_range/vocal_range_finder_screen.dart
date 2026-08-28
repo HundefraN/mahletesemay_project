@@ -242,7 +242,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
             IconButton(
               onPressed: () => _resetState(keepIntro: true),
               icon: const Icon(Icons.restart_alt_rounded),
-              tooltip: 'Start Over',
+              tooltip: AppLocalizations.of(context)?.startOver ?? 'Start Over',
             ),
         ],
       ),
@@ -296,9 +296,10 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
       case GuidedStep.lowNote:
         return _buildStepCaptureView(
           theme: theme,
-          stepTitle: "Step 1: Find Your Lowest Note",
+          stepTitle: AppLocalizations.of(context)?.step1FindLowest ?? "Step 1: Find Your Lowest Note",
           stepInstruction:
-              "Hum or sing downwards to your lowest comfortable pitch and hold it steady.",
+              AppLocalizations.of(context)?.step1FindLowestDesc ??
+                  "Hum or sing downwards to your lowest comfortable pitch and hold it steady.",
           currentLowest: _lowestNoteFound,
           currentHighest: _highestNoteFound,
           onLockManual: () {
@@ -313,7 +314,8 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
             } else {
               CustomSnackbar.show(
                 context,
-                'Sing a note into the microphone first!',
+                AppLocalizations.of(context)?.singNotePrompt ??
+                    'Sing a note into the microphone first!',
                 isError: true,
               );
             }
@@ -322,9 +324,10 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
       case GuidedStep.highNote:
         return _buildStepCaptureView(
           theme: theme,
-          stepTitle: "Step 2: Find Your Highest Note",
+          stepTitle: AppLocalizations.of(context)?.step2FindHighest ?? "Step 2: Find Your Highest Note",
           stepInstruction:
-              "Glide upwards to your highest comfortable note (chest or head voice) and hold it steady.",
+              AppLocalizations.of(context)?.step2FindHighestDesc ??
+                  "Glide upwards to your highest comfortable note (chest or head voice) and hold it steady.",
           currentLowest: _lowestNoteFound,
           currentHighest: _highestNoteFound,
           onLockManual: () {
@@ -339,7 +342,8 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
             } else {
               CustomSnackbar.show(
                 context,
-                'Sing a high note into the microphone first!',
+                AppLocalizations.of(context)?.singHighNotePrompt ??
+                    'Sing a high note into the microphone first!',
                 isError: true,
               );
             }
@@ -351,6 +355,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
   }
 
   Widget _buildIntroView(ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -388,7 +393,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                 .scaleXY(end: 1.06, duration: 1200.ms, curve: Curves.easeInOut),
             const SizedBox(height: 28),
             Text(
-              'Discover Your Vocal Range',
+              l10n.vocalRangeFinder,
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 fontSize: 26,
@@ -397,7 +402,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
             ).animate().fadeIn().slideY(begin: 0.3),
             const SizedBox(height: 12),
             Text(
-              'Find your vocal classification (Tenor, Soprano, Baritone) and explore your full range in 2 quick steps.',
+              l10n.voiceTypeDisclaimer,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.7),
@@ -414,21 +419,21 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                   color: theme.colorScheme.outline.withOpacity(0.1),
                 ),
               ),
-              child: const Padding(
-                padding: EdgeInsets.all(20.0),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
                     _StepInfoRow(
                       number: '1',
-                      title: 'Lowest Note',
-                      subtitle: 'Sing down to your lowest steady pitch',
+                      title: l10n.findLowestNote,
+                      subtitle: l10n.findLowestNoteDesc,
                       color: Colors.blueAccent,
                     ),
-                    Divider(height: 28),
+                    const Divider(height: 28),
                     _StepInfoRow(
                       number: '2',
-                      title: 'Highest Note',
-                      subtitle: 'Sing up to your highest steady pitch',
+                      title: l10n.findHighestNote,
+                      subtitle: l10n.findHighestNoteDesc,
                       color: Colors.purpleAccent,
                     ),
                   ],
@@ -442,9 +447,9 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
               child: ElevatedButton.icon(
                 onPressed: _startGuidedTest,
                 icon: const Icon(Icons.play_arrow_rounded, size: 28),
-                label: const Text(
-                  'Start Range Test',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                label: Text(
+                  l10n.startFindingLowest,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   elevation: 2,
@@ -551,8 +556,8 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                           const SizedBox(width: 6),
                           Text(
                             _stabilityProgress > 0
-                                ? "Hold note steady..."
-                                : "Listening...",
+                                ? (AppLocalizations.of(context)?.holdingSteady ?? "Hold note steady...")
+                                : (AppLocalizations.of(context)?.listening ?? "Listening..."),
                             style: theme.textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
@@ -601,7 +606,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                 children: [
                   Expanded(
                     child: _CapturedNoteCard(
-                      label: "Lowest Note",
+                      label: AppLocalizations.of(context)?.lowestNote ?? "Lowest Note",
                       note: currentLowest.isNotEmpty
                           ? currentLowest
                           : (_currentStep == GuidedStep.lowNote &&
@@ -614,7 +619,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _CapturedNoteCard(
-                      label: "Highest Note",
+                      label: AppLocalizations.of(context)?.highestNote ?? "Highest Note",
                       note: currentHighest.isNotEmpty
                           ? currentHighest
                           : (_currentStep == GuidedStep.highNote &&
@@ -637,7 +642,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                   onPressed: displayNote.isNotEmpty ? onLockManual : null,
                   icon: const Icon(Icons.check_circle_outline_rounded),
                   label: Text(
-                      'Lock Note (${displayNote.isEmpty ? "--" : displayNote})'),
+                      '${AppLocalizations.of(context)?.lockNote ?? 'Lock Note'} (${displayNote.isEmpty ? "--" : displayNote})'),
                   style: OutlinedButton.styleFrom(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -653,11 +658,12 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
   }
 
   Widget _buildResultsView(ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
     final voiceRangeInfo = _pitchService.getVoiceTypeRange(
       _lowestNoteFound,
       _highestNoteFound,
     );
-    final voiceTypeName = voiceRangeInfo?.name ?? 'Unique Range';
+    final voiceTypeName = voiceRangeInfo?.name ?? l10n.uniqueRange;
     final rangeSpan = _pitchService.getVocalRangeSpan(
       _lowestNoteFound,
       _highestNoteFound,
@@ -679,7 +685,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
               child: Column(
                 children: [
                   Text(
-                    'YOUR VOCAL RANGE RESULTS',
+                    l10n.yourResults.toUpperCase(),
                     style: theme.textTheme.labelMedium?.copyWith(
                       letterSpacing: 1.5,
                       fontWeight: FontWeight.bold,
@@ -803,12 +809,11 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                 child:
                     const Icon(Icons.music_note_rounded, color: Colors.white),
               ),
-              title: const Text(
-                'Train Your Voice Pitch',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              title: Text(
+                l10n.trainYourVoicePitch,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              subtitle: const Text(
-                  'Practice hitting notes accurately with the Pitch Trainer'),
+              subtitle: Text(l10n.practiceHittingNotes),
               trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
               onTap: () {
                 Navigator.push(
@@ -828,7 +833,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => _resetState(keepIntro: true),
                   icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Retest Range'),
+                  label: Text(l10n.retestRange),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -842,7 +847,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _shareResults,
                   icon: const Icon(Icons.share_rounded),
-                  label: const Text('Share Results'),
+                  label: Text(l10n.shareResults),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(

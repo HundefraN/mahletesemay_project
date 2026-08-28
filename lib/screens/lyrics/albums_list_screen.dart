@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/album_model.dart';
 import '../../models/artist_model.dart';
 import '../../providers/song_provider.dart';
@@ -36,7 +37,8 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
   }
 
   void _onScroll() {
-    final scrolled = _scrollController.hasClients && _scrollController.offset > 120;
+    final scrolled =
+        _scrollController.hasClients && _scrollController.offset > 120;
     if (scrolled != _isScrolled) {
       setState(() => _isScrolled = scrolled);
     }
@@ -51,15 +53,20 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
 
   List<Album> _getAlbums(SongProvider songProvider) {
     final artistAlbums = songProvider.getAlbumsByArtist(widget.artist.id);
-    final artistSingles = songProvider.allSongs.where(
-      (song) => song.artistId == widget.artist.id && song.albumId == singlesAlbumId,
-    ).toList();
+    final artistSingles = songProvider.allSongs
+        .where(
+          (song) =>
+              song.artistId == widget.artist.id &&
+              song.albumId == singlesAlbumId,
+        )
+        .toList();
 
     final List<Album> list = List.from(artistAlbums);
     if (artistSingles.isNotEmpty) {
       final singlesAlbum = Album(
         id: singlesAlbumId,
-        title: "Singles & Standalone",
+        title: AppLocalizations.of(context)?.singlesAndStandalone ??
+            "Singles & Standalone",
         artistId: widget.artist.id,
         artistName: widget.artist.name,
         coverImageUrl: '',
@@ -77,16 +84,21 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     final albums = _getAlbums(songProvider);
-    final allArtistSongs = songProvider.allSongs.where((s) => s.artistId == widget.artist.id).toList();
-    final totalViews = allArtistSongs.fold<int>(0, (sum, s) => sum + s.viewCount);
+    final allArtistSongs = songProvider.allSongs
+        .where((s) => s.artistId == widget.artist.id)
+        .toList();
+    final totalViews =
+        allArtistSongs.fold<int>(0, (sum, s) => sum + s.viewCount);
 
     if (isTablet) {
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         body: Column(
           children: [
-            _buildTabletHeader(theme, totalViews, allArtistSongs.length, albums),
-            Expanded(child: _buildAlbumGrid(songProvider, theme, isDark, albums)),
+            _buildTabletHeader(
+                theme, totalViews, allArtistSongs.length, albums),
+            Expanded(
+                child: _buildAlbumGrid(songProvider, theme, isDark, albums)),
           ],
         ),
       );
@@ -106,13 +118,16 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
     );
   }
 
-  Widget _buildTabletHeader(ThemeData theme, int totalViews, int totalSongs, List<Album> albums) {
+  Widget _buildTabletHeader(
+      ThemeData theme, int totalViews, int totalSongs, List<Album> albums) {
     final compactViews = NumberFormat.compact().format(totalViews);
     return Container(
       height: 160,
       decoration: BoxDecoration(
         color: theme.cardColor,
-        border: Border(bottom: BorderSide(color: theme.colorScheme.onSurface.withOpacity(0.06))),
+        border: Border(
+            bottom: BorderSide(
+                color: theme.colorScheme.onSurface.withOpacity(0.06))),
       ),
       child: Stack(
         fit: StackFit.expand,
@@ -138,7 +153,8 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: theme.colorScheme.primary, width: 3),
+                      border: Border.all(
+                          color: theme.colorScheme.primary, width: 3),
                       boxShadow: [
                         BoxShadow(
                           color: theme.colorScheme.primary.withOpacity(0.3),
@@ -168,7 +184,8 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                           color: Colors.transparent,
                           child: Text(
                             widget.artist.name,
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 26),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w800, fontSize: 26),
                           ),
                         ),
                       ),
@@ -180,7 +197,8 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                           _buildBadge(theme, '$totalSongs Tracks'),
                           if (totalViews > 0) ...[
                             const SizedBox(width: 8),
-                            _buildBadge(theme, '$compactViews Views', icon: IconsaxPlusLinear.eye),
+                            _buildBadge(theme, '$compactViews ${AppLocalizations.of(context)?.views ?? "Views"}',
+                                icon: IconsaxPlusLinear.eye),
                           ],
                         ],
                       ),
@@ -195,14 +213,17 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
     );
   }
 
-  SliverAppBar _buildSliverAppBar(ThemeData theme, int totalViews, int totalSongs, List<Album> albums) {
+  SliverAppBar _buildSliverAppBar(
+      ThemeData theme, int totalViews, int totalSongs, List<Album> albums) {
     final compactViews = NumberFormat.compact().format(totalViews);
 
     return SliverAppBar(
       expandedHeight: 280,
       pinned: true,
       stretch: true,
-      backgroundColor: _isScrolled ? theme.scaffoldBackgroundColor.withOpacity(0.9) : Colors.transparent,
+      backgroundColor: _isScrolled
+          ? theme.scaffoldBackgroundColor.withOpacity(0.9)
+          : Colors.transparent,
       elevation: 0,
       leading: Padding(
         padding: const EdgeInsets.all(8),
@@ -215,7 +236,8 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                    color: Colors.white, size: 18),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
@@ -310,7 +332,10 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.3,
                           shadows: [
-                            Shadow(offset: Offset(0, 2), blurRadius: 6, color: Colors.black54),
+                            Shadow(
+                                offset: Offset(0, 2),
+                                blurRadius: 6,
+                                color: Colors.black54),
                           ],
                         ),
                         textAlign: TextAlign.center,
@@ -323,12 +348,15 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildWhiteBadge('${albums.length} Releases'),
+                      _buildWhiteBadge(
+                          '${albums.length} ${albums.length == 1 ? (AppLocalizations.of(context)?.albumSingular ?? 'Album') : (AppLocalizations.of(context)?.albumsPlural ?? 'Albums')}'),
                       const SizedBox(width: 8),
-                      _buildWhiteBadge('$totalSongs Tracks'),
+                      _buildWhiteBadge(
+                          '$totalSongs ${AppLocalizations.of(context)?.tracksPlural ?? 'Tracks'}'),
                       if (totalViews > 0) ...[
                         const SizedBox(width: 8),
-                        _buildWhiteBadge('$compactViews Views', icon: IconsaxPlusLinear.eye),
+                        _buildWhiteBadge('$compactViews ${AppLocalizations.of(context)?.views ?? "Views"}',
+                            icon: IconsaxPlusLinear.eye),
                       ],
                     ],
                   ),
@@ -341,7 +369,8 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
     );
   }
 
-  Widget _buildAlbumGrid(SongProvider songProvider, ThemeData theme, bool isDark, List<Album> albums) {
+  Widget _buildAlbumGrid(SongProvider songProvider, ThemeData theme,
+      bool isDark, List<Album> albums) {
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
       sliver: SliverGrid(
@@ -354,7 +383,8 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
         delegate: SliverChildBuilderDelegate(
           (context, index) {
             final album = albums[index];
-            return _buildVinylAlbumCard(context, album, songProvider, theme, isDark);
+            return _buildVinylAlbumCard(
+                context, album, songProvider, theme, isDark);
           },
           childCount: albums.length,
         ),
@@ -374,7 +404,8 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
 
     final songsInAlbum = isSinglesAlbum
         ? songProvider.allSongs
-            .where((s) => s.artistId == album.artistId && s.albumId == singlesAlbumId)
+            .where((s) =>
+                s.artistId == album.artistId && s.albumId == singlesAlbumId)
             .toList()
         : songProvider.getSongsByAlbum(album.id);
 
@@ -383,7 +414,8 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
       transitionDuration: const Duration(milliseconds: 450),
       closedElevation: 0,
       openElevation: 0,
-      closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      closedShape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       closedColor: Colors.transparent,
       openColor: Colors.transparent,
       closedBuilder: (context, openContainer) {
@@ -404,12 +436,14 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: theme.colorScheme.onSurface.withOpacity(isDark ? 0.1 : 0.06),
+                              color: theme.colorScheme.onSurface
+                                  .withOpacity(isDark ? 0.1 : 0.06),
                               width: 1,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
+                                color: Colors.black
+                                    .withOpacity(isDark ? 0.35 : 0.08),
                                 blurRadius: 12,
                                 offset: const Offset(0, 5),
                               ),
@@ -452,14 +486,18 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                         top: 8,
                         left: 8,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: Colors.black.withOpacity(0.6),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Text(
                             'Singles',
-                            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
@@ -489,7 +527,7 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
               Row(
                 children: [
                   Text(
-                    '${songsInAlbum.length} ${songsInAlbum.length == 1 ? 'track' : 'tracks'}',
+                    '${songsInAlbum.length} ${songsInAlbum.length == 1 ? (AppLocalizations.of(context)?.trackSingular ?? 'track') : (AppLocalizations.of(context)?.tracksPlural ?? 'tracks')}',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
@@ -512,7 +550,8 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
           ),
         );
       },
-      openBuilder: (context, _) => SongsListScreen(album: album, albumHeroTag: albumHeroTag),
+      openBuilder: (context, _) =>
+          SongsListScreen(album: album, albumHeroTag: albumHeroTag),
     );
   }
 
@@ -532,7 +571,10 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
           ],
           Text(
             text,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
+            style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.primary),
           ),
         ],
       ),
@@ -556,7 +598,8 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
           ],
           Text(
             text,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+            style: const TextStyle(
+                fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
           ),
         ],
       ),

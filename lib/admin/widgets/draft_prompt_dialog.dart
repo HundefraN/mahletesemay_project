@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'admin_ui_kit.dart';
 
+import '../../l10n/app_localizations.dart';
+
 /// Result of the draft prompt dialog.
 enum DraftPromptResult {
   /// User chose to save the current form data as a draft.
@@ -35,6 +37,7 @@ class DraftPromptDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -95,7 +98,7 @@ class DraftPromptDialog extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Unsaved Changes',
+                    l10n?.unsavedDraftFound ?? 'Unsaved Changes',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
@@ -111,7 +114,8 @@ class DraftPromptDialog extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 4),
               child: Text(
-                'You have unsaved changes in this $entityType form. Would you like to save them as a draft so you can continue later?',
+                l10n?.unsavedDraftDesc ??
+                    'You have unsaved changes in this $entityType form. Would you like to save them as a draft so you can continue later?',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 13.5,
                   height: 1.5,
@@ -128,7 +132,7 @@ class DraftPromptDialog extends StatelessWidget {
                 children: [
                   // Save Draft — primary action
                   AdminPrimaryButton(
-                    label: 'Save Draft',
+                    label: l10n?.restoreDraft ?? 'Save Draft',
                     icon: Icons.save_rounded,
                     height: 42,
                     color: AdminUiKit.emeraldGreen,
@@ -141,7 +145,7 @@ class DraftPromptDialog extends StatelessWidget {
 
                   // Discard — destructive
                   AdminPrimaryButton(
-                    label: 'Discard Changes',
+                    label: l10n?.discardDraft ?? 'Discard Changes',
                     icon: Icons.delete_outline_rounded,
                     height: 42,
                     color: AdminUiKit.roseRed,
@@ -154,7 +158,7 @@ class DraftPromptDialog extends StatelessWidget {
 
                   // Cancel — stay on page
                   AdminPrimaryButton(
-                    label: 'Keep Editing',
+                    label: l10n?.cancel ?? 'Keep Editing',
                     icon: Icons.edit_rounded,
                     height: 42,
                     isSecondary: true,

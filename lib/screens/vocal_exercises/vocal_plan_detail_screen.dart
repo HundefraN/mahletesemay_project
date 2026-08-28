@@ -17,6 +17,7 @@ import 'package:mahlete_semay_project/services/notification_service.dart';
 import 'package:mahlete_semay_project/utils/responsive_sizer.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
 import 'package:mahlete_semay_project/widgets/real_audio_waveform_visualizer.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 
 class VocalPlanDetailScreen extends StatefulWidget {
   final String planId;
@@ -82,10 +83,11 @@ class _VocalPlanDetailScreenState extends State<VocalPlanDetailScreen>
     final lastCompleted = progressProvider.getLastCompletedDay(widget.planId);
     if (_days.isEmpty || lastCompleted >= _days.length) return;
 
+    final l10n = AppLocalizations.of(context);
     await NotificationService.schedulePracticeContinuation(
       delay: const Duration(hours: 1),
-      title: 'Finish ${widget.planTitle}',
-      body:
+      title: l10n?.finishPlanReminderTitle(widget.planTitle) ?? 'Finish ${widget.planTitle}',
+      body: l10n?.finishPlanReminderBody(lastCompleted + 1) ??
           'You stopped just before Day ${lastCompleted + 1}. Pick up where you left off and keep your streak going.',
     );
   }
@@ -240,7 +242,8 @@ class _VocalPlanDetailScreenState extends State<VocalPlanDetailScreen>
                         ),
                         SizedBox(height: context.w(20)),
                         Text(
-                          'Exercises coming soon for this plan.',
+                          AppLocalizations.of(context)?.exercisesComingSoon ??
+                              'Exercises coming soon for this plan.',
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                             fontSize: context.sp(16),
@@ -346,7 +349,8 @@ class _VocalPlanDetailScreenState extends State<VocalPlanDetailScreen>
               if (isLocked) {
                 CustomSnackbar.show(
                   context,
-                  'Complete Day ${lastCompletedDay + 1} to unlock this lesson.',
+                  AppLocalizations.of(context)?.completeDayToUnlock(lastCompletedDay + 1) ??
+                      'Complete Day ${lastCompletedDay + 1} to unlock this lesson.',
                   isError: true,
                 );
                 return;
@@ -401,7 +405,8 @@ class _DayCardState extends State<_DayCard> {
           HapticFeedback.vibrate();
           CustomSnackbar.show(
             context,
-            'Complete Day ${widget.lastCompletedDay + 1} to unlock this lesson.',
+            AppLocalizations.of(context)?.completeDayToUnlock(widget.lastCompletedDay + 1) ??
+                'Complete Day ${widget.lastCompletedDay + 1} to unlock this lesson.',
             isError: true,
           );
         },
@@ -464,7 +469,7 @@ class _DayCardState extends State<_DayCard> {
                         ),
                       ),
                       child: Text(
-                        "Locked Lesson",
+                        AppLocalizations.of(context)?.lockedLesson ?? "Locked Lesson",
                         style: GoogleFonts.poppins(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -544,7 +549,7 @@ class _DayCardState extends State<_DayCard> {
         ).animate().scale(duration: 500.ms, curve: Curves.easeOutBack),
         SizedBox(height: context.w(24)),
         Text(
-          'Day ${widget.day.dayNumber}: Vocal Rest',
+          '${AppLocalizations.of(context)?.dayNumber(widget.day.dayNumber) ?? 'Day ${widget.day.dayNumber}'}: ${AppLocalizations.of(context)?.vocalRest ?? 'Vocal Rest'}',
           style: GoogleFonts.poppins(
             fontSize: context.sp(22),
             fontWeight: FontWeight.w800,
@@ -585,7 +590,7 @@ class _DayCardState extends State<_DayCard> {
                 borderRadius: BorderRadius.circular(context.w(16)),
               ),
               child: Text(
-                'DAY ${widget.day.dayNumber}',
+                (AppLocalizations.of(context)?.dayNumber(widget.day.dayNumber) ?? 'DAY ${widget.day.dayNumber}').toUpperCase(),
                 style: GoogleFonts.poppins(
                   color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w800,
@@ -613,7 +618,7 @@ class _DayCardState extends State<_DayCard> {
                         color: const Color(0xFF10B981), size: context.w(16)),
                     SizedBox(width: context.w(4)),
                     Text(
-                      'Completed',
+                      AppLocalizations.of(context)?.completed ?? 'Completed',
                       style: GoogleFonts.poppins(
                         color: const Color(0xFF10B981),
                         fontWeight: FontWeight.w700,
@@ -689,7 +694,9 @@ class _DayCardState extends State<_DayCard> {
           key: const ValueKey('next'),
           onPressed: widget.isLastDay ? null : widget.onNext,
           icon: Icon(Icons.skip_next_rounded, size: context.w(22)),
-          label: Text(widget.isLastDay ? 'Plan Complete!' : 'Next Exercise'),
+          label: Text(widget.isLastDay
+              ? (AppLocalizations.of(context)?.planComplete ?? 'Plan Complete!')
+              : (AppLocalizations.of(context)?.nextExercise ?? 'Next Exercise')),
           style: FilledButton.styleFrom(
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(context.w(18))),
@@ -708,7 +715,7 @@ class _DayCardState extends State<_DayCard> {
           key: const ValueKey('complete_enabled'),
           onPressed: widget.onCompleted,
           icon: Icon(Icons.check_circle_rounded, size: context.w(22)),
-          label: const Text('Mark as Done'),
+          label: Text(AppLocalizations.of(context)?.markAsDone ?? 'Mark as Done'),
           style: FilledButton.styleFrom(
             backgroundColor: const Color(0xFF10B981),
             foregroundColor: Colors.white,
@@ -730,7 +737,7 @@ class _DayCardState extends State<_DayCard> {
         key: const ValueKey('complete_disabled'),
         onPressed: null,
         icon: Icon(Icons.play_circle_outline_rounded, size: context.w(22)),
-        label: const Text('Listen to Exercise First'),
+        label: Text(AppLocalizations.of(context)?.listenFirst ?? 'Listen to Exercise First'),
         style: FilledButton.styleFrom(
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(context.w(18))),

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:mahlete_semay_project/screens/auth/claim_account_screen.dart';
 import 'package:mahlete_semay_project/screens/auth/waiting_for_approval_screen.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
@@ -87,6 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authProvider = Provider.of<AuthProvider>(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: Container(
@@ -132,30 +134,30 @@ class _LoginScreenState extends State<LoginScreen> {
                   ).animate().fadeIn(duration: 500.ms).scale(begin: const Offset(0.8, 0.8)),
 
                   const SizedBox(height: 24),
-                  Text('Moderator Portal', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 32, color: Colors.white)),
+                  Text(l10n.moderatorPortal, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 32, color: Colors.white)),
                   const SizedBox(height: 8),
-                  Text('Please sign in to continue', style: GoogleFonts.poppins(color: Colors.white.withOpacity(0.8), fontSize: 16)),
+                  Text(l10n.pleaseSignInToContinue, style: GoogleFonts.poppins(color: Colors.white.withOpacity(0.8), fontSize: 16)),
                   const SizedBox(height: 48),
 
                   TextFormField(
                     controller: _emailController,
-                    decoration: _inputDecoration('Email', Icons.email_outlined),
+                    decoration: _inputDecoration(l10n.email, Icons.email_outlined),
                     style: const TextStyle(color: Colors.white),
                     keyboardType: TextInputType.emailAddress,
-                    validator: (value) => value!.isEmpty ? 'Please enter your email' : null,
+                    validator: (value) => value!.isEmpty ? l10n.pleaseEnterEmail : null,
                   ),
                   const SizedBox(height: 20),
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscureText,
-                    decoration: _inputDecoration('Password', Icons.lock_outline_rounded).copyWith(
+                    decoration: _inputDecoration(l10n.password, Icons.lock_outline_rounded).copyWith(
                       suffixIcon: IconButton(
                         icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: Colors.white.withOpacity(0.7)),
                         onPressed: () => setState(() => _obscureText = !_obscureText),
                       ),
                     ),
                     style: const TextStyle(color: Colors.white),
-                    validator: (value) => value!.isEmpty ? 'Please enter your password' : null,
+                    validator: (value) => value!.isEmpty ? l10n.pleaseEnterPassword : null,
                   ),
                   const SizedBox(height: 32),
                   SizedBox(
@@ -170,17 +172,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       child: authProvider.isSigningIn
                           ? SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: theme.colorScheme.primary))
-                          : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          : Text(l10n.signIn, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text("First time here?", style: TextStyle(color: Colors.white.withOpacity(0.8))),
+                      Text(l10n.firstTimeHere, style: TextStyle(color: Colors.white.withOpacity(0.8))),
                       TextButton(
                         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClaimAccountScreen())),
-                        child: const Text("Claim Account", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: Text(l10n.claimAccount, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                       )
                     ],
                   )

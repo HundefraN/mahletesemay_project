@@ -8,6 +8,7 @@ import '../../providers/auth_proveider.dart';
 import '../../services/firebase_service.dart';
 import '../../widgets/custom_snackbar.dart';
 import '../../widgets/loading_placeholders.dart';
+import '../../l10n/app_localizations.dart';
 import 'add_edit_vocal_day_screen.dart';
 
 class ManagePlanDaysScreen extends StatelessWidget {
@@ -21,21 +22,22 @@ class ManagePlanDaysScreen extends StatelessWidget {
   });
 
   Future<void> _deleteDay(BuildContext context, VocalExerciseDay day) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete Day ${day.dayNumber}?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
-        content: Text('Are you sure you want to delete Day ${day.dayNumber} ("${day.title}")?'),
+        title: Text(l10n?.deletePrompt('Day ${day.dayNumber}') ?? 'Delete Day ${day.dayNumber}?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        content: Text(l10n?.deleteConfirmPrompt('Day ${day.dayNumber} ("${day.title}")') ?? 'Are you sure you want to delete Day ${day.dayNumber} ("${day.title}")?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n?.cancel ?? 'Cancel')),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: AdminUiKit.roseRed,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: Text(l10n?.delete ?? 'Delete'),
           ),
         ],
       ),
@@ -57,11 +59,11 @@ class ManagePlanDaysScreen extends StatelessWidget {
         }
 
         if (context.mounted) {
-          CustomSnackbar.show(context, 'Day deleted successfully.');
+          CustomSnackbar.show(context, l10n?.dayDeleted ?? 'Day deleted successfully.');
         }
       } catch (e) {
         if (context.mounted) {
-          CustomSnackbar.show(context, 'Failed to delete day: $e', isError: true);
+          CustomSnackbar.show(context, '${l10n?.failedToDeleteDay ?? "Failed to delete day"}: $e', isError: true);
         }
       }
     }
@@ -71,6 +73,7 @@ class ManagePlanDaysScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final firebaseService = FirebaseService();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF070E1B) : const Color(0xFFF5F7FB),
@@ -89,16 +92,16 @@ class ManagePlanDaysScreen extends StatelessWidget {
           if (snapshot.hasError) {
             return AdminEmptyState(
               icon: Icons.error_outline_rounded,
-              title: 'Failed to load plan days',
+              title: l10n?.failedToLoadPlanDays ?? 'Failed to load plan days',
               description: snapshot.error.toString(),
             );
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return AdminEmptyState(
               icon: Icons.fitness_center_rounded,
-              title: 'No Days Added Yet',
-              description: 'Start building this vocal curriculum by adding Day 1.',
-              actionLabel: 'Add First Day',
+              title: l10n?.noDaysAddedYet ?? 'No Days Added Yet',
+              description: l10n?.startBuildingCurriculum ?? 'Start building this vocal curriculum by adding Day 1.',
+              actionLabel: l10n?.addFirstDay ?? 'Add First Day',
               onAction: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => AddEditVocalDayScreen(planId: planId)),
@@ -118,7 +121,10 @@ class ManagePlanDaysScreen extends StatelessWidget {
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => AddEditVocalDayScreen(planId: planId, existingDay: day),
+                      builder: (_) => AddEditVocalDayScreen(
+                        planId: planId,
+                        existingDay: day,
+                      ),
                     ),
                   ),
                   padding: const EdgeInsets.all(14),
@@ -130,9 +136,7 @@ class ManagePlanDaysScreen extends StatelessWidget {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AdminUiKit.goldAccent, AdminUiKit.goldHighlight],
-                          ),
+                          color: isDark ? Colors.white.withOpacity(0.08) : AdminUiKit.royalBlue.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(
@@ -141,7 +145,7 @@ class ManagePlanDaysScreen extends StatelessWidget {
                             style: GoogleFonts.plusJakartaSans(
                               fontWeight: FontWeight.w800,
                               fontSize: 18,
-                              color: AdminUiKit.primaryNavy,
+                              color: isDark ? Colors.white : AdminUiKit.royalBlue,
                             ),
                           ),
                         ),
@@ -169,14 +173,14 @@ class ManagePlanDaysScreen extends StatelessWidget {
                                 ),
                                 if (day.isRestDay)
                                   AdminStatusBadge(
-                                    label: 'REST DAY',
+                                    label: l10n?.restDayBadge ?? 'REST DAY',
                                     color: AdminUiKit.amberOrange,
                                     icon: Icons.hotel_rounded,
                                     fontSize: 9.5,
                                   )
                                 else if (day.audioUrl != null && day.audioUrl!.isNotEmpty)
                                   AdminStatusBadge(
-                                    label: 'AUDIO ATTACHED',
+                                    label: l10n?.audioAttachedBadge ?? 'AUDIO ATTACHED',
                                     color: AdminUiKit.emeraldGreen,
                                     icon: Icons.graphic_eq_rounded,
                                     fontSize: 9.5,
@@ -185,7 +189,7 @@ class ManagePlanDaysScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              day.isRestDay ? 'Scheduled vocal rest & recovery' : day.description,
+                              day.isRestDay ? (l10n?.scheduledRest ?? 'Scheduled vocal rest & recovery') : day.description,
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
@@ -201,7 +205,7 @@ class ManagePlanDaysScreen extends StatelessWidget {
                       // Actions
                       IconButton(
                         icon: const Icon(Icons.delete_outline_rounded, size: 20, color: AdminUiKit.roseRed),
-                        tooltip: 'Delete Day',
+                        tooltip: l10n?.deleteDay ?? 'Delete Day',
                         onPressed: () => _deleteDay(context, day),
                       ),
                       const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
@@ -222,7 +226,7 @@ class ManagePlanDaysScreen extends StatelessWidget {
         foregroundColor: isDark ? AdminUiKit.primaryNavy : Colors.white,
         icon: const Icon(Icons.add_rounded, size: 22),
         label: Text(
-          'Add Day',
+          l10n?.addDay ?? 'Add Day',
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 14.5),
         ),
       ),

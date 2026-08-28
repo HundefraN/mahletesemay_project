@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:mahlete_semay_project/models/lesson_model.dart';
 import 'package:mahlete_semay_project/services/search_service.dart';
 import 'package:mahlete_semay_project/widgets/cached_image.dart';
@@ -235,19 +236,19 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Filter & Sort', style: Theme.of(context).textTheme.titleLarge),
+                Text(AppLocalizations.of(context)?.filterAndSort ?? 'Filter & Sort', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 20),
-                Text('Level', style: Theme.of(context).textTheme.titleMedium),
+                Text(AppLocalizations.of(context)?.lessonLevel ?? 'Level', style: Theme.of(context).textTheme.titleMedium),
                 Wrap(spacing: 8, children: ['All Levels', 'Beginner', 'Intermediate', 'Advanced'].map((level) => ChoiceChip(label: Text(level), selected: _levelFilter == level, onSelected: (selected) => setModalState(() { if (selected) _levelFilter = level; }))).toList()),
                 const SizedBox(height: 20),
-                Text('Sort By', style: Theme.of(context).textTheme.titleMedium),
+                Text(AppLocalizations.of(context)?.sortBy ?? 'Sort By', style: Theme.of(context).textTheme.titleMedium),
                 Wrap(spacing: 8, children: [
-                  ChoiceChip(label: const Text('Newest'), selected: _sortOption == SortOption.newest, onSelected: (s) => setModalState(() { if (s) _sortOption = SortOption.newest; })),
-                  ChoiceChip(label: const Text('Oldest'), selected: _sortOption == SortOption.oldest, onSelected: (s) => setModalState(() { if (s) _sortOption = SortOption.oldest; })),
-                  ChoiceChip(label: const Text('Popular'), selected: _sortOption == SortOption.popular, onSelected: (s) => setModalState(() { if (s) _sortOption = SortOption.popular; })),
+                  ChoiceChip(label: Text(AppLocalizations.of(context)?.sortNewest ?? 'Newest'), selected: _sortOption == SortOption.newest, onSelected: (s) => setModalState(() { if (s) _sortOption = SortOption.newest; })),
+                  ChoiceChip(label: Text(AppLocalizations.of(context)?.sortOldest ?? 'Oldest'), selected: _sortOption == SortOption.oldest, onSelected: (s) => setModalState(() { if (s) _sortOption = SortOption.oldest; })),
+                  ChoiceChip(label: Text(AppLocalizations.of(context)?.sortPopular ?? 'Popular'), selected: _sortOption == SortOption.popular, onSelected: (s) => setModalState(() { if (s) _sortOption = SortOption.popular; })),
                 ]),
                 const SizedBox(height: 20),
-                SizedBox(width: double.infinity, child: ElevatedButton(child: const Text('Apply Filters'), onPressed: () { setState((){}); Navigator.pop(context); })),
+                SizedBox(width: double.infinity, child: ElevatedButton(child: Text(AppLocalizations.of(context)?.applyFilters ?? 'Apply Filters'), onPressed: () { setState((){}); Navigator.pop(context); })),
               ],
             ),
           );
@@ -259,9 +260,10 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lessons & Tutorials'),
+        title: Text(l10n.lessonsAndTutorials),
         actions: [IconButton(icon: const Icon(Icons.filter_list_rounded), onPressed: _showFilterSheet)],
       ),
       body: _isLoading
@@ -280,7 +282,7 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
                   onChanged: _onSearchChanged,
                   onTapOutside: (_) => FocusScope.of(context).unfocus(),
                   decoration: InputDecoration(
-                    hintText: 'Search in lessons...',
+                    hintText: l10n.searchHint,
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: value.text.isNotEmpty
                         ? IconButton(
@@ -328,13 +330,14 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
 
   Widget _buildLessonsList(String categoryId) {
     final lessonsToShow = _filteredAndSortedLessons;
+    final l10n = AppLocalizations.of(context)!;
     if (lessonsToShow.isEmpty && !_isLoading) {
-      String message = 'No lessons found in this category.';
+      String message = l10n.noLessonsFound;
       if (_apiFailed) {
         return _buildErrorState();
       }
       if (_searchQuery.isNotEmpty) {
-        message = 'No results found for "$_searchQuery"';
+        message = l10n.noLessonsFound;
       }
 
       return Center(
@@ -467,7 +470,7 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
             const SizedBox(height: 32),
             ElevatedButton.icon(
               icon: const Icon(IconsaxPlusBroken.refresh, size: 18),
-              label: const Text('Retry'),
+              label: Text(AppLocalizations.of(context)?.retry ?? 'Retry'),
               onPressed: () {
                 setState(() {
                   _isLoading = true;

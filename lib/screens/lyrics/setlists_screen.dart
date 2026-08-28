@@ -10,12 +10,15 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
+
 class SetlistsScreen extends StatelessWidget {
   const SetlistsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return CustomScrollView(
       slivers: [
         SliverAppBar(
@@ -29,7 +32,7 @@ class SetlistsScreen extends StatelessWidget {
                 titlePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 centerTitle: false,
                 title: Text(
-                  'My Setlists',
+                  l10n.mySetlists,
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.bold,
                     color: theme.appBarTheme.titleTextStyle?.color,
@@ -52,8 +55,8 @@ class SetlistsScreen extends StatelessWidget {
                   hasScrollBody: false,
                   child: _EmptyState(
                     icon: Icons.queue_music_rounded,
-                    title: 'No Setlists Yet',
-                    message: 'Tap the "+" button below to create your first setlist and organize your worship songs.',
+                    title: l10n.noSetlistsYet,
+                    message: l10n.noSetlistsDesc,
                   ),
                 );
               }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:animations/animations.dart';
 import 'package:mahlete_semay_project/models/album_model.dart';
@@ -62,10 +63,11 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
   }
 
   void _createTutorial() {
+    final l10n = AppLocalizations.of(context);
     tutorialCoachMark = TutorialCoachMark(
       targets: _createTargets(),
       colorShadow: Theme.of(context).colorScheme.primary.withOpacity(0.9),
-      textSkip: "SKIP",
+      textSkip: l10n?.skip.toUpperCase() ?? "SKIP",
       onFinish: () {
         _completeTutorial();
         return true;
@@ -83,6 +85,7 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
   }
 
   List<TargetFocus> _createTargets() {
+    final l10n = AppLocalizations.of(context);
     return [
       TargetFocus(
         identify: "Scale Filter",
@@ -94,8 +97,8 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
           TargetContent(
             align: ContentAlign.bottom,
             child: _buildTutorialContent(
-              "Filter by Scale",
-              "First, press a scale like 'Tizita Minor' to see all songs in that musical key.",
+              l10n?.tutorialFilterScaleTitle ?? "Filter by Scale",
+              l10n?.tutorialFilterScaleDesc ?? "First, press a scale like 'Tizita Minor' to see all songs in that musical key.",
             ),
           ),
         ],
@@ -110,8 +113,8 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
           TargetContent(
             align: ContentAlign.bottom,
             child: _buildTutorialContent(
-              "Filter by Rhythm",
-              "Then, press a rhythm like 'Waltz' to find songs that match both the key and the beat.",
+              l10n?.tutorialFilterRhythmTitle ?? "Filter by Rhythm",
+              l10n?.tutorialFilterRhythmDesc ?? "Then, press a rhythm like 'Waltz' to find songs that match both the key and the beat.",
             ),
           ),
         ],
@@ -125,8 +128,8 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
           TargetContent(
             align: ContentAlign.bottom,
             child: _buildTutorialContent(
-              "Or, Search Directly",
-              "Alternatively, press the search icon to find any song by its title, artist, or lyrics.",
+              l10n?.tutorialSearchTitle ?? "Or, Search Directly",
+              l10n?.tutorialSearchDesc ?? "Alternatively, press the search icon to find any song by its title, artist, or lyrics.",
             ),
           ),
         ],
@@ -293,7 +296,7 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
                 )
               else
                 IconButton(
-                  tooltip: "Sync from Server",
+                  tooltip: AppLocalizations.of(context)?.syncFromServer ?? "Sync from Server",
                   iconSize: 20,
                   icon: Icon(
                     Icons.sync_rounded,
@@ -305,7 +308,7 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
                 margin: const EdgeInsets.only(right: 12),
                 child: IconButton(
                   key: searchKey,
-                  tooltip: "Search Songs",
+                  tooltip: AppLocalizations.of(context)?.searchSongs ?? "Search Songs",
                   iconSize: 20,
                   icon: Icon(
                     Icons.search_rounded,
@@ -357,7 +360,7 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
                         children: [
                           const Icon(Icons.flag_rounded, size: 14),
                           const SizedBox(width: 6),
-                          Text('ETHIOPIAN (${ethiopianSongs.length})'),
+                          Text('${AppLocalizations.of(context)?.ethiopianArtists.toUpperCase() ?? 'ETHIOPIAN'} (${ethiopianSongs.length})'),
                         ],
                       ),
                     ),
@@ -367,7 +370,7 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
                         children: [
                           const Icon(Icons.public_rounded, size: 14),
                           const SizedBox(width: 6),
-                          Text('WORLDWIDE (${worldwideSongs.length})'),
+                          Text('${AppLocalizations.of(context)?.worldwideArtists.toUpperCase() ?? 'WORLDWIDE'} (${worldwideSongs.length})'),
                         ],
                       ),
                     ),
@@ -638,7 +641,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
         ),
         const SizedBox(height: 20),
         Text(
-          'No Mashup Songs Found',
+          AppLocalizations.of(context)?.noMashupMatch ?? 'No Mashup Songs Found',
           textAlign: TextAlign.center,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
@@ -646,7 +649,8 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
         ),
         const SizedBox(height: 8),
         Text(
-          'Songs with assigned scale and rhythm information will appear here automatically when fetched from the server.',
+          AppLocalizations.of(context)?.selectRhythmPatternDesc ??
+              'Songs with assigned scale and rhythm information will appear here automatically when fetched from the server.',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurface.withOpacity(0.7),
@@ -665,7 +669,9 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
                   )
                 : const Icon(Icons.sync_rounded, size: 18),
             label: Text(
-                songProvider.isSyncing ? 'Syncing...' : 'Fetch from Server'),
+                songProvider.isSyncing
+                    ? (AppLocalizations.of(context)?.syncing ?? 'Syncing...')
+                    : (AppLocalizations.of(context)?.fetchFromServer ?? 'Fetch from Server')),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: Colors.white,
@@ -704,7 +710,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
         onTapOutside: (_) => FocusScope.of(context).unfocus(),
         style: const TextStyle(fontSize: 13),
         decoration: InputDecoration(
-          hintText: 'Search songs, artists, lyrics...',
+          hintText: AppLocalizations.of(context)?.searchHint ?? 'Search songs, artists, lyrics...',
           hintStyle: TextStyle(
             fontSize: 13,
             color: theme.colorScheme.onSurface.withOpacity(0.5),
@@ -751,7 +757,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
       children: [
         _buildModernChipList(
           key: widget.scaleFilterKey,
-          title: 'Musical Scale (Key)',
+          title: AppLocalizations.of(context)?.musicalScaleKey ?? 'Musical Scale (Key)',
           icon: Icons.tune_rounded,
           items: _sortedScales,
           selectedItem: _selectedScale,
@@ -776,7 +782,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
         if (sortedRhythms != null)
           _buildModernChipList(
             key: widget.rhythmFilterKey,
-            title: 'Rhythm Pattern',
+            title: AppLocalizations.of(context)?.rhythmPattern ?? 'Rhythm Pattern',
             icon: Icons.speed_rounded,
             items: sortedRhythms,
             selectedItem: _selectedRhythm,
@@ -817,14 +823,15 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
             ),
             const SizedBox(height: 12),
             Text(
-              'Select a Rhythm Pattern',
+              AppLocalizations.of(context)?.selectRhythmPattern ?? 'Select a Rhythm Pattern',
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 6),
             Text(
-              'Pick a rhythm beat pattern above to display matching mashup songs.',
+              AppLocalizations.of(context)?.selectRhythmPatternDesc ??
+                  'Pick a rhythm beat pattern above to display matching mashup songs.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.7),
@@ -897,14 +904,15 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
           ),
           const SizedBox(height: 12),
           Text(
-            'No matching songs found',
+            AppLocalizations.of(context)?.noMatchingSongs ?? 'No matching songs found',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            'Try searching with different song titles or lyric keywords',
+            AppLocalizations.of(context)?.noMatchingSongsDesc ??
+                'Try searching with different song titles or lyric keywords',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurface.withOpacity(0.7),
             ),

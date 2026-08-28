@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import '../../services/pitch_service.dart';
 import '../../utils/generated_tones.dart';
 import '../../utils/responsive_sizer.dart';
@@ -642,7 +643,9 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
     } else {
       if (mounted) {
         CustomSnackbar.show(
-            context, 'Microphone permission required for Guitar Tuner');
+            context,
+            AppLocalizations.of(context)?.micPermissionRequired ??
+                'Microphone permission required for Guitar Tuner');
       }
     }
   }
@@ -855,6 +858,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
     final targetString = _currentPreset.strings[_selectedStringIndex];
 
     Color statusColor = const Color(0xFFFFB300);
@@ -881,7 +885,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'GUITAR TUNER',
+          l10n.guitarTuner.toUpperCase(),
           style: GoogleFonts.syne(
             fontWeight: FontWeight.w800,
             fontSize: context.sp(17),
@@ -928,7 +932,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                     ),
                     SizedBox(width: context.w(6)),
                     Text(
-                      _isAutoMode ? 'AUTO' : 'MANUAL',
+                      _isAutoMode ? l10n.auto.toUpperCase() : l10n.manual.toUpperCase(),
                       style: GoogleFonts.outfit(
                         fontWeight: FontWeight.w800,
                         fontSize: context.sp(11),
@@ -1100,12 +1104,12 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                           ),
                           child: Text(
                             _currentPitch == 0.0
-                                ? 'PLUCK STRING'
+                                ? l10n.pluckString
                                 : _isInTune
-                                    ? 'IN TUNE ✓'
+                                    ? l10n.inTuneStatus
                                     : _centsOffset < 0
-                                        ? 'TOO FLAT ▼'
-                                        : 'TOO SHARP ▲',
+                                        ? l10n.tooFlat
+                                        : l10n.tooSharp,
                             style: GoogleFonts.outfit(
                               fontSize: context.sp(10.5),
                               fontWeight: FontWeight.w900,
@@ -1118,7 +1122,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                         Text(
                           _currentPitch > 0
                               ? '${_currentPitch.toStringAsFixed(1)} Hz / ${targetString.frequency.toStringAsFixed(1)} Hz'
-                              : 'Target: ${targetString.frequency.toStringAsFixed(1)} Hz',
+                              : l10n.targetFrequency(targetString.frequency.toStringAsFixed(1)),
                           style: GoogleFonts.outfit(
                             fontSize: context.sp(11),
                             fontWeight: FontWeight.w600,
@@ -1139,13 +1143,13 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('-50 cents',
+                  Text('-50 ${l10n.centsUnit}',
                       style: GoogleFonts.outfit(
                           fontSize: context.sp(10), color: Colors.grey)),
                   Text(
                     _currentPitch > 0
-                        ? '${_centsOffset > 0 ? "+" : ""}${_centsOffset.toStringAsFixed(1)} CENTS'
-                        : '0.0 CENTS',
+                        ? '${_centsOffset > 0 ? "+" : ""}${_centsOffset.toStringAsFixed(1)} ${l10n.centsUnit}'
+                        : '0.0 ${l10n.centsUnit}',
                     style: GoogleFonts.outfit(
                       fontSize: context.sp(12.5),
                       fontWeight: FontWeight.w800,
@@ -1153,7 +1157,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                       letterSpacing: 0.8,
                     ),
                   ),
-                  Text('+50 cents',
+                  Text('+50 ${l10n.centsUnit}',
                       style: GoogleFonts.outfit(
                           fontSize: context.sp(10), color: Colors.grey)),
                 ],
@@ -1328,7 +1332,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                 ),
               ),
               Text(
-                'Str ${string.index + 1}',
+                AppLocalizations.of(context)?.strNumber(string.index + 1) ?? 'Str ${string.index + 1}',
                 style: TextStyle(
                   fontSize: context.sp(9),
                   fontWeight: FontWeight.bold,

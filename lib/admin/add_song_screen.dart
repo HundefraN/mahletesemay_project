@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -330,8 +331,8 @@ class _AddSongScreenState extends State<AddSongScreen> {
               if (_hasDraftBanner) _buildDraftBanner(isDark),
 
               // Section 1: Association
-              const AdminSectionHeader(
-                title: 'Song Association',
+              AdminSectionHeader(
+                title: AppLocalizations.of(context)?.songAssociationSection ?? 'Song Association',
                 icon: Icons.link_rounded,
                 padding: EdgeInsets.only(top: 4, bottom: 6),
               ),
@@ -418,7 +419,7 @@ class _AddSongScreenState extends State<AddSongScreen> {
                       opacity: _isSingle ? 0.4 : 1.0,
                       duration: const Duration(milliseconds: 250),
                       child: SearchableDropdown<Album>(
-                        label: '2. Select Album *',
+                        label: AppLocalizations.of(context)?.selectAlbumPrompt ?? '2. Select Album *',
                         icon: Icons.album_rounded,
                         isEnabled: !_isSingle && _selectedArtist != null,
                         selectedItem: _selectedAlbum,
@@ -455,8 +456,8 @@ class _AddSongScreenState extends State<AddSongScreen> {
               const SizedBox(height: 12),
 
               // Section 2: Song Details & Lyrics
-              const AdminSectionHeader(
-                title: 'Song Details & Metadata',
+              AdminSectionHeader(
+                title: AppLocalizations.of(context)?.songDetailsMetadataSection ?? 'Song Details & Metadata',
                 icon: Icons.queue_music_rounded,
                 padding: EdgeInsets.only(top: 4, bottom: 6),
               ),

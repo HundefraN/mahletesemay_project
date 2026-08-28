@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 
 class OfflineBanner extends StatefulWidget {
   const OfflineBanner({super.key});
@@ -39,6 +40,7 @@ class _OfflineBannerState extends State<OfflineBanner> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -51,14 +53,14 @@ class _OfflineBannerState extends State<OfflineBanner> {
           child: Container(
             color: Colors.amber.shade700,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.wifi_off_rounded, color: Colors.white, size: 18),
-                SizedBox(width: 8),
+                const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
                 Text(
-                  "You are currently offline. Data may be limited.",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  l10n?.offlineNotice ?? "You are currently offline. Data may be limited.",
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ],
             ),

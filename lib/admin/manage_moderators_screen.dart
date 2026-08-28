@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -120,7 +121,7 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
         title: Text('$actionName Moderator?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
         content: Text('Are you sure you want to $actionName "${moderator.fullName}"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel')),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: newStatus == 'blocked' ? AdminUiKit.roseRed : AdminUiKit.emeraldGreen,
@@ -152,17 +153,17 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Remove Moderator?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
-        content: Text('Are you sure you want to completely remove "${moderator.fullName}" from the team?'),
+        title: Text(AppLocalizations.of(context)?.removeModPrompt ?? 'Remove Moderator?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        content: Text(AppLocalizations.of(context)?.removeModConfirm(moderator.fullName) ?? 'Are you sure you want to completely remove "${moderator.fullName}" from the team?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel')),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: AdminUiKit.roseRed,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
           ),
         ],
       ),
@@ -249,17 +250,17 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
             ),
             const Divider(height: 32),
 
-            _buildDetailTile(Icons.info_outline_rounded, 'Status', mod.status.toUpperCase()),
-            _buildDetailTile(Icons.phone_android_rounded, 'Current Device', mod.currentDeviceModel ?? 'None bound'),
+            _buildDetailTile(Icons.info_outline_rounded, AppLocalizations.of(context)?.status ?? 'Status', mod.status.toUpperCase()),
+            _buildDetailTile(Icons.phone_android_rounded, AppLocalizations.of(context)?.currentDevice ?? 'Current Device', mod.currentDeviceModel ?? (AppLocalizations.of(context)?.noneBound ?? 'None bound')),
             if (mod.lastLogin != null)
-              _buildDetailTile(Icons.access_time_rounded, 'Last Active', timeago.format(mod.lastLogin!)),
+              _buildDetailTile(Icons.access_time_rounded, AppLocalizations.of(context)?.lastActive ?? 'Last Active', timeago.format(mod.lastLogin!, locale: Localizations.localeOf(context).languageCode)),
 
             const SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
                   child: AdminPrimaryButton(
-                    label: mod.role == 'admin' ? 'Demote to Moderator' : 'Promote to Admin',
+                    label: mod.role == 'admin' ? (AppLocalizations.of(context)?.demoteToModerator ?? 'Demote to Moderator') : (AppLocalizations.of(context)?.promoteToAdmin ?? 'Promote to Admin'),
                     icon: Icons.shield_rounded,
                     isSecondary: true,
                     height: 46,
@@ -290,7 +291,7 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
               child: TextButton.icon(
                 style: TextButton.styleFrom(foregroundColor: AdminUiKit.roseRed),
                 icon: const Icon(Icons.delete_forever_rounded, size: 18),
-                label: const Text('Permanently Remove Moderator Account'),
+                label: Text(AppLocalizations.of(context)?.permanentlyRemoveMod ?? 'Permanently Remove Moderator Account'),
                 onPressed: () {
                   Navigator.pop(ctx);
                   _deleteModerator(mod);
@@ -368,7 +369,7 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                   child: AdminSearchBar(
                     controller: _searchController,
-                    hintText: 'Search by name or email...',
+                    hintText: AppLocalizations.of(context)?.searchByNameOrEmail ?? 'Search by name or email...',
                   ),
                 ),
 
@@ -401,7 +402,7 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
                   child: filteredModerators.isEmpty
                       ? AdminEmptyState(
                           icon: Icons.shield_outlined,
-                          title: 'No Moderators Found',
+                          title: AppLocalizations.of(context)?.noModeratorsFound ?? 'No Moderators Found',
                           description: 'No moderators match your current search or filter criteria.',
                           actionLabel: 'Invite New Moderator',
                           onAction: () => Navigator.push(
@@ -572,7 +573,7 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),
                             icon: const Icon(Icons.check_rounded, size: 16),
-                            label: const Text('Approve Device'),
+                            label: Text(AppLocalizations.of(context)?.approveDevice ?? 'Approve Device'),
                             onPressed: () => _approveDevice(mod),
                           ),
                         ),
@@ -586,7 +587,7 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),
                             icon: const Icon(Icons.close_rounded, size: 16),
-                            label: const Text('Reject'),
+                            label: Text(AppLocalizations.of(context)?.rejectAction ?? 'Reject'),
                             onPressed: () => _rejectDevice(mod),
                           ),
                         ),

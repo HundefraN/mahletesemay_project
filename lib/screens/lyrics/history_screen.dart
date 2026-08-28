@@ -11,6 +11,8 @@ import 'song_detail_screen.dart';
 import '../../models/song_model.dart';
 import '../../providers/song_provider.dart';
 
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
+
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
@@ -53,6 +55,7 @@ class HistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: Consumer<SongProvider>(
         builder: (context, songProvider, child) {
@@ -61,7 +64,7 @@ class HistoryScreen extends StatelessWidget {
           return CustomScrollView(
             slivers: [
               SliverAppBar(
-                title: const Text('Viewing History'),
+                title: Text(l10n.viewingHistory),
                 backgroundColor: theme.scaffoldBackgroundColor,
                 pinned: true,
                 elevation: 0,
@@ -69,7 +72,7 @@ class HistoryScreen extends StatelessWidget {
               if (history.isEmpty)
                 SliverFillRemaining(
                   child: Center(
-                    child: Text('Your recently viewed songs will appear here.', style: theme.textTheme.bodyMedium),
+                    child: Text(l10n.noHistoryDesc, style: theme.textTheme.bodyMedium),
                   ),
                 )
               else
@@ -79,10 +82,10 @@ class HistoryScreen extends StatelessWidget {
                       final historyEntry = history[index];
                       final song = songProvider.allSongs.firstWhere(
                             (s) => s.id == historyEntry.songId,
-                        orElse: () => Song(id: '', title: 'Not Found', artistName: '', artistId: '', albumId: '', albumTitle: '', lyrics: '', viewCount: 0, createdAt: DateTime.now()),
+                        orElse: () => Song(id: '', title: l10n.notFound, artistName: '', artistId: '', albumId: '', albumTitle: '', lyrics: '', viewCount: 0, createdAt: DateTime.now()),
                       );
 
-                      if (song.title == 'Not Found') return const SizedBox.shrink();
+                      if (song.title == l10n.notFound) return const SizedBox.shrink();
 
                       final coverUrl = _getCoverUrlForSong(song, songProvider);
                       final heroTag = 'history-list-${song.id}';
@@ -111,7 +114,7 @@ class HistoryScreen extends StatelessWidget {
                             ),
                             subtitle: _SongMetadataRow(song: song, fontSize: 13),
                             trailing: Text(
-                              timeago.format(historyEntry.viewedAt),
+                              timeago.format(historyEntry.viewedAt, locale: Localizations.localeOf(context).languageCode),
                               style: theme.textTheme.bodySmall,
                             ),
                           );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:mahlete_semay_project/utils/constants.dart';
 
 class VocalPianoRoll extends StatelessWidget {
@@ -335,17 +336,17 @@ class VocalPianoRoll extends StatelessWidget {
               children: [
                 _LegendPill(
                   color: theme.colorScheme.primary.withOpacity(0.4),
-                  label: 'Analyzed Range',
+                  label: AppLocalizations.of(context)?.analyzedRange ?? 'Analyzed Range',
                 ),
                 const SizedBox(width: 12),
-                const _LegendPill(
+                _LegendPill(
                   color: Colors.blueAccent,
-                  label: 'Low Note',
+                  label: AppLocalizations.of(context)?.lowNote ?? 'Low Note',
                 ),
                 const SizedBox(width: 12),
-                const _LegendPill(
+                _LegendPill(
                   color: Colors.purpleAccent,
-                  label: 'High Note',
+                  label: AppLocalizations.of(context)?.highNote ?? 'High Note',
                 ),
               ],
             ),

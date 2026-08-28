@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -151,11 +152,11 @@ class _EditSongScreenState extends State<EditSongScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete Song?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
-        content: Text('Are you sure you want to delete "${widget.song.title}"? This cannot be undone.'),
+        title: Text(AppLocalizations.of(context)?.deleteSongPrompt ?? 'Delete Song?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        content: Text(AppLocalizations.of(context)?.deleteSongConfirm(widget.song.title) ?? 'Are you sure you want to delete "${widget.song.title}"? This cannot be undone.'),
         actions: [
           TextButton(
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
             onPressed: () => Navigator.of(context).pop(false),
           ),
           FilledButton(
@@ -163,7 +164,7 @@ class _EditSongScreenState extends State<EditSongScreen> {
               backgroundColor: AdminUiKit.roseRed,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
             onPressed: () => Navigator.of(context).pop(true),
           ),
         ],
@@ -225,8 +226,8 @@ class _EditSongScreenState extends State<EditSongScreen> {
           physics: const BouncingScrollPhysics(),
           children: [
             // Section 1: Association
-            const AdminSectionHeader(
-              title: 'Song Association',
+            AdminSectionHeader(
+              title: AppLocalizations.of(context)?.songAssociationSection ?? 'Song Association',
               icon: Icons.link_rounded,
               padding: EdgeInsets.only(top: 4, bottom: 6),
             ),
@@ -309,7 +310,7 @@ class _EditSongScreenState extends State<EditSongScreen> {
                     opacity: _isSingle ? 0.4 : 1.0,
                     duration: const Duration(milliseconds: 250),
                     child: SearchableDropdown<Album>(
-                      label: '2. Select Album *',
+                      label: AppLocalizations.of(context)?.selectAlbumPrompt ?? '2. Select Album *',
                       icon: Icons.album_rounded,
                       isEnabled: !_isSingle && _selectedArtist != null,
                       selectedItem: _selectedAlbum,
@@ -351,8 +352,8 @@ class _EditSongScreenState extends State<EditSongScreen> {
             const SizedBox(height: 12),
 
             // Section 2: Song Details & Lyrics
-            const AdminSectionHeader(
-              title: 'Song Details & Lyrics',
+            AdminSectionHeader(
+              title: AppLocalizations.of(context)?.songDetailsLyricsSection ?? 'Song Details & Lyrics',
               icon: Icons.queue_music_rounded,
               padding: EdgeInsets.only(top: 4, bottom: 6),
             ),
@@ -417,7 +418,7 @@ class _EditSongScreenState extends State<EditSongScreen> {
             const SizedBox(height: 16),
 
             AdminPrimaryButton(
-              label: 'Update Song Changes',
+              label: AppLocalizations.of(context)?.updateSongChanges ?? 'Update Song Changes',
               icon: Icons.save_rounded,
               isLoading: _isLoading,
               onPressed: _submit,

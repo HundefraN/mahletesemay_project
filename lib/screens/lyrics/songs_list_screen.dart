@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/album_model.dart';
 import '../../models/artist_model.dart';
 import '../../models/song_model.dart';
@@ -283,7 +284,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
                             border: Border.all(color: Colors.white.withOpacity(0.3)),
                           ),
                           child: Text(
-                            '${allSongs.length} ${allSongs.length == 1 ? 'Track' : 'Tracks'}',
+                            '${allSongs.length} ${allSongs.length == 1 ? (AppLocalizations.of(context)?.trackSingular ?? 'Track') : (AppLocalizations.of(context)?.tracksPlural ?? 'Tracks')}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -320,7 +321,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
             onTapOutside: (_) => FocusScope.of(context).unfocus(),
             style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
             decoration: InputDecoration(
-              hintText: 'Search tracks in this album...',
+              hintText: AppLocalizations.of(context)?.searchHint ?? 'Search tracks in this album...',
               hintStyle: TextStyle(
                 color: theme.colorScheme.onSurface.withOpacity(0.45),
                 fontSize: 13.5,
@@ -564,7 +565,7 @@ class _SongTile extends StatelessWidget {
                               ),
                               const SizedBox(width: 3),
                               Text(
-                                compactViews,
+                                '$compactViews ${AppLocalizations.of(context)?.views ?? "Views"}',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: theme.colorScheme.onSurface.withOpacity(0.5),

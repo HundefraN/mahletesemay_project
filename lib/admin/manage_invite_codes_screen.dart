@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -62,16 +63,16 @@ This code is single-use and linked to your email.
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete Invitation?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
-        content: Text('Are you sure you want to delete the invitation code for "${invite.email}"?'),
+        title: Text(AppLocalizations.of(context)?.deleteInvitePrompt ?? 'Delete Invitation?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        content: Text(AppLocalizations.of(context)?.deleteInviteConfirm(invite.email) ?? 'Are you sure you want to delete the invitation code for "${invite.email}"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel')),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: AdminUiKit.roseRed,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
             onPressed: () => Navigator.pop(ctx, true),
           ),
         ],
@@ -147,7 +148,7 @@ This code is single-use and linked to your email.
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: AdminSearchBar(
                   controller: _searchController,
-                  hintText: 'Search by name, email, or code...',
+                  hintText: AppLocalizations.of(context)?.searchByNameOrEmail ?? 'Search by name, email, or code...',
                 ),
               ),
 
@@ -169,7 +170,7 @@ This code is single-use and linked to your email.
                 child: filteredInvites.isEmpty
                     ? AdminEmptyState(
                         icon: Icons.vpn_key_off_rounded,
-                        title: 'No Invitations Found',
+                        title: AppLocalizations.of(context)?.noInvitationsFound ?? 'No Invitations Found',
                         description: 'No invitation codes match your current filter or search criteria.',
                         actionLabel: 'Create Invitation',
                         onAction: () => Navigator.push(
@@ -330,7 +331,7 @@ This code is single-use and linked to your email.
             ),
             const SizedBox(height: 8),
             Text(
-              'Created ${timeago.format(invite.createdAt)}',
+              AppLocalizations.of(context)?.createdAgo(timeago.format(invite.createdAt, locale: Localizations.localeOf(context).languageCode)) ?? 'Created ${timeago.format(invite.createdAt, locale: Localizations.localeOf(context).languageCode)}',
               style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: Colors.grey),
             ),
           ],

@@ -80,16 +80,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _showCreateSetlistDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
-      barrierLabel: 'Create Setlist',
+      barrierLabel: l10n.createSetlist,
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (dialogCtx, anim1, anim2) {
         return _CreateSetlistDialog(
           onCreate: (name) {
             Provider.of<SetlistProvider>(context, listen: false).createSetlist(name);
-            CustomSnackbar.show(context, 'Setlist "$name" created!');
+            CustomSnackbar.show(context, l10n.setlistCreated);
           },
         );
       },
@@ -98,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget? _buildFloatingActionButton() {
     bool isSetlistScreen = _selectedIndex == HomePageTab.setlists.index;
+    final l10n = AppLocalizations.of(context);
 
     return Stack(
       children: <Widget>[
@@ -122,8 +124,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             right: 0,
             child: FloatingActionButton(
               onPressed: () => _showCreateSetlistDialog(context),
-              tooltip: 'Create Setlist',
-              child:  const Icon(IconsaxPlusBold.add_circle),
+              tooltip: l10n?.createSetlist ?? 'Create Setlist',
+              child: const Icon(IconsaxPlusBold.add_circle),
             ).animate().slide(begin: const Offset(0, 2)).fadeIn(),
           ),
       ],
@@ -313,7 +315,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         if (backButtonHasNotBeenPressedOrSnackBarHasBeenClosed) {
           _lastPressedAt = now;
-          CustomSnackbar.show(context, 'Press back again to exit the app');
+          CustomSnackbar.show(context, l10n.pressBackToExit);
         } else {
           SystemNavigator.pop();
         }
@@ -386,7 +388,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           labels: [
             l10n.lyrics,
             l10n.mashup,
-            "Setlists",
+            l10n.setlists,
             l10n.exercises,
             l10n.range,
             l10n.settings,
@@ -625,6 +627,7 @@ class _CreateSetlistDialogState extends State<_CreateSetlistDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(24),
@@ -641,20 +644,20 @@ class _CreateSetlistDialogState extends State<_CreateSetlistDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Create New Setlist', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                Text(l10n.createSetlist, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 24),
                 TextFormField(
                   controller: _controller,
-                  decoration: InputDecoration(labelText: 'Setlist Name', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                  validator: (value) => value!.trim().isEmpty ? 'Please enter a name' : null,
+                  decoration: InputDecoration(labelText: l10n.setlists, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                  validator: (value) => value!.trim().isEmpty ? l10n.searchHint : null,
                 ),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                    TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
                     const SizedBox(width: 8),
-                    FilledButton(onPressed: _submit, child: const Text('Create')),
+                    FilledButton(onPressed: _submit, child: Text(l10n.createSetlist)),
                   ],
                 ),
               ],

@@ -12,6 +12,7 @@ import '../../services/firebase_service.dart';
 import '../../services/supabase_storage_service.dart';
 import '../../utils/permission_helper.dart';
 import '../../widgets/custom_snackbar.dart';
+import '../../l10n/app_localizations.dart';
 
 class AddEditVocalDayScreen extends StatefulWidget {
   final String? planId;
@@ -32,6 +33,8 @@ class AddEditVocalDayScreen extends StatefulWidget {
 }
 
 class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
+  AppLocalizations? get l10n => AppLocalizations.of(context);
+
   final _formKey = GlobalKey<FormState>();
   final _firebaseService = FirebaseService();
 
@@ -76,7 +79,8 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
     if (!hasPermission) return;
 
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.audio);
+      FilePickerResult? result =
+          await FilePicker.platform.pickFiles(type: FileType.audio);
       if (result != null && result.files.single.path != null) {
         setState(() {
           _pickedAudioPath = result.files.single.path;
@@ -85,7 +89,8 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
       }
     } catch (e) {
       if (mounted) {
-        CustomSnackbar.show(context, 'Error picking audio file: $e', isError: true);
+        CustomSnackbar.show(context, '${l10n?.errorPickingAudio ?? "Error picking audio file"}: $e',
+            isError: true);
       }
     }
   }
@@ -99,13 +104,16 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
         if (_pickedAudioPath != null) {
           final uploadedUrl = await SupabaseStorageService.uploadAudio(
             File(_pickedAudioPath!),
-            onProgress: (count, total) => setState(() => _uploadProgress = count / total),
+            onProgress: (count, total) =>
+                setState(() => _uploadProgress = count / total),
           );
           if (uploadedUrl != null) {
             finalAudioUrl = uploadedUrl;
           } else {
             if (mounted) {
-              CustomSnackbar.show(context, 'Audio upload failed. Please try again.', isError: true);
+              CustomSnackbar.show(
+                  context, l10n?.audioUploadFailed ?? 'Audio upload failed. Please try again.',
+                  isError: true);
             }
             setState(() => _isSaving = false);
             return;
@@ -118,7 +126,9 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
 
         if (!_isRestDay && (finalAudioUrl == null || finalAudioUrl.isEmpty)) {
           if (mounted) {
-            CustomSnackbar.show(context, 'An audio file is required for this vocal exercise.', isError: true);
+            CustomSnackbar.show(
+                context, l10n?.audioRequired ?? 'An audio file is required for this vocal exercise.',
+                isError: true);
           }
           setState(() => _isSaving = false);
           return;
@@ -137,7 +147,8 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
 
         if (widget.isGeneralExercise) {
           if (widget.isEditing) {
-            await _firebaseService.updateGeneralExercise(dayData.id, dayData.toJson());
+            await _firebaseService.updateGeneralExercise(
+                dayData.id, dayData.toJson());
             if (authProvider.currentModerator != null) {
               _firebaseService.logActivity(
                 moderatorId: authProvider.currentUser!.uid,
@@ -159,13 +170,15 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
           }
         } else {
           if (widget.isEditing) {
-            await _firebaseService.updateVocalExerciseDay(widget.planId!, dayData.id, dayData.toJson());
+            await _firebaseService.updateVocalExerciseDay(
+                widget.planId!, dayData.id, dayData.toJson());
             if (authProvider.currentModerator != null) {
               _firebaseService.logActivity(
                 moderatorId: authProvider.currentUser!.uid,
                 moderatorName: authProvider.currentModerator!.fullName,
                 action: 'UPDATE_EXERCISE_DAY',
-                details: 'Updated vocal plan day ${dayData.dayNumber}: "${dayData.title}"',
+                details:
+                    'Updated vocal plan day ${dayData.dayNumber}: "${dayData.title}"',
               );
             }
           } else {
@@ -175,7 +188,8 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
                 moderatorId: authProvider.currentUser!.uid,
                 moderatorName: authProvider.currentModerator!.fullName,
                 action: 'CREATE_EXERCISE_DAY',
-                details: 'Added vocal plan day ${dayData.dayNumber}: "${dayData.title}"',
+                details:
+                    'Added vocal plan day ${dayData.dayNumber}: "${dayData.title}"',
               );
             }
           }
@@ -186,13 +200,16 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
           Navigator.pop(context, true);
           CustomSnackbar.show(
             context,
-            widget.isEditing ? 'Exercise updated successfully!' : 'Exercise added successfully!',
+            widget.isEditing
+                ? (l10n?.exerciseUpdated ?? 'Exercise updated successfully!')
+                : (l10n?.exerciseAdded ?? 'Exercise added successfully!'),
           );
         }
       } catch (e) {
         if (mounted) {
           setState(() => _isSaving = false);
-          CustomSnackbar.show(context, 'Failed to save exercise: $e', isError: true);
+          CustomSnackbar.show(context, '${l10n?.failedToSaveExercise ?? "Failed to save exercise"}: $e',
+              isError: true);
         }
       }
     }
@@ -201,13 +218,18 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF070E1B) : const Color(0xFFF5F7FB),
+      backgroundColor:
+          isDark ? const Color(0xFF070E1B) : const Color(0xFFF5F7FB),
       appBar: AppBar(
         title: Text(
-          widget.isEditing ? 'Edit Vocal Drill' : 'Add Vocal Drill',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 19),
+          widget.isEditing
+              ? (l10n?.editVocalDrill ?? 'Edit Vocal Drill')
+              : (l10n?.addVocalDrill ?? 'Add Vocal Drill'),
+          style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700, fontSize: 19),
         ),
       ),
       body: Form(
@@ -217,10 +239,10 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
           physics: const BouncingScrollPhysics(),
           children: [
             // Section 1: Details
-            const AdminSectionHeader(
-              title: 'Exercise Information',
+            AdminSectionHeader(
+              title: l10n?.exerciseInformation ?? 'Exercise Information',
               icon: Icons.fitness_center_rounded,
-              padding: EdgeInsets.only(top: 8, bottom: 10),
+              padding: const EdgeInsets.only(top: 8, bottom: 10),
             ),
             AdminGlassCard(
               padding: const EdgeInsets.all(16),
@@ -231,26 +253,38 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
                       controller: _dayController,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
-                      decoration: _inputDecoration('Day Number in Curriculum *', Icons.format_list_numbered_rounded),
-                      validator: (v) => v!.trim().isEmpty ? 'Day number is required' : null,
+                      style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w600),
+                      decoration: _inputDecoration(
+                          l10n?.dayNumberCurriculum ?? 'Day Number in Curriculum *',
+                          Icons.format_list_numbered_rounded),
+                      validator: (v) =>
+                          v!.trim().isEmpty ? (l10n?.dayNumberRequired ?? 'Day number is required') : null,
                     ),
                     const SizedBox(height: 14),
                   ],
                   TextFormField(
                     controller: _titleController,
-                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
-                    decoration: _inputDecoration('Exercise Title *', Icons.title_rounded),
-                    validator: (v) => v!.trim().isEmpty ? 'Title is required' : null,
+                    style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w600),
+                    decoration: _inputDecoration(
+                        l10n?.exerciseTitleField ?? 'Exercise Title *', Icons.title_rounded),
+                    validator: (v) =>
+                        v!.trim().isEmpty ? (l10n?.titleRequired ?? 'Title is required') : null,
                   ),
                   const SizedBox(height: 14),
                   TextFormField(
                     controller: _descriptionController,
-                    style: GoogleFonts.plusJakartaSans(fontSize: 14.5, height: 1.4),
-                    decoration: _inputDecoration('Description & Instructions *', Icons.description_outlined, alignLabel: true),
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14.5, height: 1.4),
+                    decoration: _inputDecoration(
+                        l10n?.descriptionInstructionsField ?? 'Description & Instructions *',
+                        Icons.description_outlined,
+                        alignLabel: true),
                     minLines: 4,
                     maxLines: 8,
-                    validator: (v) => v!.trim().isEmpty ? 'Description is required' : null,
+                    validator: (v) =>
+                        v!.trim().isEmpty ? (l10n?.descriptionRequired ?? 'Description is required') : null,
                   ),
                   if (!widget.isGeneralExercise) ...[
                     const SizedBox(height: 14),
@@ -258,21 +292,27 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
                       decoration: BoxDecoration(
                         color: _isRestDay
                             ? AdminUiKit.amberOrange.withOpacity(0.12)
-                            : (isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03)),
+                            : (isDark
+                                ? Colors.white.withOpacity(0.04)
+                                : Colors.black.withOpacity(0.03)),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: _isRestDay ? AdminUiKit.amberOrange.withOpacity(0.3) : Colors.transparent,
+                          color: _isRestDay
+                              ? AdminUiKit.amberOrange.withOpacity(0.3)
+                              : Colors.transparent,
                         ),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       child: SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(
-                          'Is this a Rest & Recovery Day?',
-                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 14),
+                          l10n?.restDayPrompt ?? 'Is this a Rest & Recovery Day?',
+                          style: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.w700, fontSize: 14),
                         ),
                         subtitle: Text(
-                          'Rest days do not require audio drills.',
+                          l10n?.restDayDescription ?? 'Rest days do not require audio drills.',
                           style: GoogleFonts.plusJakartaSans(fontSize: 12),
                         ),
                         value: _isRestDay,
@@ -291,21 +331,23 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
             // Section 2: Audio File
             if (!_isRestDay) ...[
               const SizedBox(height: 20),
-              const AdminSectionHeader(
-                title: 'Exercise Audio Guide',
+              AdminSectionHeader(
+                title: l10n?.exerciseAudioGuide ?? 'Exercise Audio Guide',
                 icon: Icons.graphic_eq_rounded,
-                padding: EdgeInsets.only(top: 8, bottom: 10),
+                padding: const EdgeInsets.only(top: 8, bottom: 10),
               ),
               AdminGlassCard(
                 padding: const EdgeInsets.all(16),
-                child: _buildAudioPicker(isDark),
+                child: _buildAudioPicker(isDark, l10n),
               ),
             ],
 
             const SizedBox(height: 28),
 
             AdminPrimaryButton(
-              label: widget.isEditing ? 'Save Drill Changes' : 'Publish Vocal Drill',
+              label: widget.isEditing
+                  ? (l10n?.saveDrillChanges ?? 'Save Drill Changes')
+                  : (l10n?.publishVocalDrill ?? 'Publish Vocal Drill'),
               icon: Icons.check_circle_rounded,
               isLoading: _isSaving,
               onPressed: _submit,
@@ -317,8 +359,9 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
     );
   }
 
-  Widget _buildAudioPicker(bool isDark) {
-    final hasAudio = _pickedAudioFileName.isNotEmpty || (_existingAudioUrl != null && _existingAudioUrl!.isNotEmpty);
+  Widget _buildAudioPicker(bool isDark, AppLocalizations? l10n) {
+    final hasAudio = _pickedAudioFileName.isNotEmpty ||
+        (_existingAudioUrl != null && _existingAudioUrl!.isNotEmpty);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -328,10 +371,14 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
           decoration: BoxDecoration(
             color: hasAudio
                 ? AdminUiKit.emeraldGreen.withOpacity(0.12)
-                : (isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.02)),
+                : (isDark
+                    ? Colors.white.withOpacity(0.04)
+                    : Colors.black.withOpacity(0.02)),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: hasAudio ? AdminUiKit.emeraldGreen.withOpacity(0.4) : (isDark ? Colors.white12 : Colors.black12),
+              color: hasAudio
+                  ? AdminUiKit.emeraldGreen.withOpacity(0.4)
+                  : (isDark ? Colors.white12 : Colors.black12),
             ),
           ),
           child: Row(
@@ -339,7 +386,9 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: hasAudio ? AdminUiKit.emeraldGreen.withOpacity(0.2) : Colors.grey.withOpacity(0.15),
+                  color: hasAudio
+                      ? AdminUiKit.emeraldGreen.withOpacity(0.2)
+                      : Colors.grey.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -356,7 +405,9 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
                     Text(
                       _pickedAudioFileName.isNotEmpty
                           ? _pickedAudioFileName
-                          : (_existingAudioUrl != null ? 'Audio drill attached' : 'No audio file selected'),
+                          : (_existingAudioUrl != null
+                              ? (l10n?.audioDrillAttached ?? 'Audio drill attached')
+                              : (l10n?.noAudioFileSelected ?? 'No audio file selected')),
                       style: GoogleFonts.plusJakartaSans(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
@@ -367,8 +418,11 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      hasAudio ? 'Ready for playback' : 'Upload MP3, WAV, or AAC audio drill',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.grey),
+                      hasAudio
+                          ? (l10n?.readyForPlayback ?? 'Ready for playback')
+                          : (l10n?.uploadAudioDrillPrompt ?? 'Upload MP3, WAV, or AAC audio drill'),
+                      style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -376,29 +430,37 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
               FilledButton(
                 onPressed: _pickAudio,
                 style: FilledButton.styleFrom(
-                  backgroundColor: isDark ? AdminUiKit.goldAccent : AdminUiKit.primaryNavy,
-                  foregroundColor: isDark ? AdminUiKit.primaryNavy : Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  backgroundColor:
+                      isDark ? AdminUiKit.goldAccent : AdminUiKit.primaryNavy,
+                  foregroundColor:
+                      isDark ? AdminUiKit.primaryNavy : Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
-                child: Text(hasAudio ? 'Change' : 'Upload'),
+                child: Text(hasAudio
+                    ? (l10n?.changeAudio ?? 'Change')
+                    : (l10n?.uploadAudio ?? 'Upload')),
               ),
             ],
           ),
         ),
         if (_isSaving && _uploadProgress > 0 && _uploadProgress < 1) ...[
           const SizedBox(height: 12),
-          LinearProgressIndicator(value: _uploadProgress, color: AdminUiKit.goldAccent),
+          LinearProgressIndicator(
+              value: _uploadProgress, color: AdminUiKit.goldAccent),
           const SizedBox(height: 4),
           Text(
-            'Uploading audio file: ${(_uploadProgress * 100).toInt()}%',
-            style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.grey),
+            '${l10n?.uploadingAudio ?? "Uploading audio file"}: ${(_uploadProgress * 100).toInt()}%',
+            style:
+                GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.grey),
           ),
         ],
       ],
     );
   }
 
-  InputDecoration _inputDecoration(String label, IconData icon, {bool alignLabel = false}) {
+  InputDecoration _inputDecoration(String label, IconData icon,
+      {bool alignLabel = false}) {
     return InputDecoration(
       labelText: label,
       labelStyle: GoogleFonts.plusJakartaSans(fontSize: 13.5),

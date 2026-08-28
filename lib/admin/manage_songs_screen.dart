@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
@@ -150,7 +151,7 @@ class _ManageSongsScreenState extends State<ManageSongsScreen> with SingleTicker
           if (snapshot.hasError) {
             return AdminEmptyState(
               icon: Icons.error_outline_rounded,
-              title: 'Failed to load songs',
+              title: AppLocalizations.of(context)?.failedToLoadSongs ?? 'Failed to load songs',
               description: snapshot.error.toString(),
               actionLabel: 'Retry',
               onAction: _refreshData,
@@ -289,7 +290,7 @@ class _SongListTabState extends State<_SongListTab> {
         ),
         actions: [
           TextButton(
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
             onPressed: () => Navigator.of(context).pop(false),
           ),
           FilledButton(
@@ -297,7 +298,7 @@ class _SongListTabState extends State<_SongListTab> {
               backgroundColor: AdminUiKit.roseRed,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
             onPressed: () => Navigator.of(context).pop(true),
           ),
         ],
@@ -393,14 +394,14 @@ class _SongListTabState extends State<_SongListTab> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         icon: const Icon(Icons.delete_sweep_rounded, size: 18),
-                        label: const Text('Delete'),
+                        label: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
                       ),
                     ],
                   ),
                 )
               : AdminSearchBar(
                   controller: _searchController,
-                  hintText: 'Search by title, artist, or lyrics...',
+                  hintText: AppLocalizations.of(context)?.searchSongsHint ?? 'Search by title, artist, or lyrics...',
                   onChanged: (_) => _filterSongs(),
                 ),
         ),
@@ -410,7 +411,7 @@ class _SongListTabState extends State<_SongListTab> {
           child: _filteredSongs.isEmpty
               ? AdminEmptyState(
                   icon: Icons.music_off_rounded,
-                  title: 'No Songs Found',
+                  title: AppLocalizations.of(context)?.noSongsFound ?? 'No Songs Found',
                   description: _searchController.text.isNotEmpty
                       ? 'No matching songs for "${_searchController.text}".'
                       : 'There are no ${widget.category.toLowerCase()} songs added yet.',

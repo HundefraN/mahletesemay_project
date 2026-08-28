@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 
 class SearchableDropdown<T> extends StatefulWidget {
   final String label;
@@ -189,7 +190,7 @@ class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
                     autofocus: true,
                     onTapOutside: (_) => FocusScope.of(context).unfocus(),
                     decoration: InputDecoration(
-                      hintText: 'Search...',
+                      hintText: AppLocalizations.of(context)?.searchDropdownHint ?? 'Search...',
                       prefixIcon: const Icon(Icons.search),
                       suffixIcon: value.text.isNotEmpty
                           ? IconButton(
@@ -213,7 +214,7 @@ class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _items.isEmpty
-                  ? const Center(child: Text('No items found'))
+                  ? Center(child: Text(AppLocalizations.of(context)?.noItemsFound ?? 'No items found'))
                   : _buildList(),
             ),
           ],

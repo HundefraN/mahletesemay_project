@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/notification_settings_provider.dart';
@@ -15,6 +16,7 @@ class NotificationSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: Container(
@@ -39,7 +41,7 @@ class NotificationSettingsScreen extends StatelessWidget {
                   backgroundColor: Colors.transparent,
                   flexibleSpace: FlexibleSpaceBar(
                     title: Text(
-                      'Notifications',
+                      l10n.notifications,
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.bold,
                         color: theme.appBarTheme.titleTextStyle?.color,
@@ -52,16 +54,16 @@ class NotificationSettingsScreen extends StatelessWidget {
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       _PermissionBanner(settings: settings),
-                      _SectionHeader('Practice', theme),
+                      _SectionHeader(l10n.practice, theme),
                       _Card(
                         theme: theme,
                         children: [
                           _SwitchTile(
                             icon: Icons.notifications_active_outlined,
-                            title: 'Daily practice reminder',
+                            title: l10n.dailyPracticeReminder,
                             subtitle: settings.dailyRemindersEnabled
-                                ? 'Every day at ${settings.dailyReminderTime.format(context)}'
-                                : 'Off',
+                                ? l10n.dailyReminderAt(settings.dailyReminderTime.format(context))
+                                : l10n.dailyReminderOff,
                             value: settings.dailyRemindersEnabled,
                             onChanged: settings.setDailyRemindersEnabled,
                           ),
@@ -69,7 +71,7 @@ class NotificationSettingsScreen extends StatelessWidget {
                             _Divider(),
                             _NavTile(
                               icon: Icons.schedule_outlined,
-                              title: 'Reminder time',
+                              title: l10n.reminderTime,
                               subtitle:
                                   settings.dailyReminderTime.format(context),
                               onTap: () => _pickTime(context, settings),
@@ -78,21 +80,20 @@ class NotificationSettingsScreen extends StatelessWidget {
                           _Divider(),
                           _SwitchTile(
                             icon: Icons.replay_circle_filled_outlined,
-                            title: 'Unfinished session nudge',
-                            subtitle:
-                                'Remind me to come back if I leave a vocal plan halfway',
+                            title: l10n.unfinishedSessionNudge,
+                            subtitle: l10n.unfinishedSessionDesc,
                             value: settings.practiceFollowUpsEnabled,
                             onChanged: settings.setPracticeFollowUpsEnabled,
                           ),
                         ],
                       ),
-                      _SectionHeader('Services', theme),
+                      _SectionHeader(l10n.services, theme),
                       _Card(
                         theme: theme,
                         children: [
                           _NavTile(
                             icon: Icons.event_available_outlined,
-                            title: 'Service reminders',
+                            title: l10n.serviceReminders,
                             subtitle: _serviceSubtitle(reminders),
                             onTap: () => Navigator.push(
                               context,
@@ -109,7 +110,7 @@ class NotificationSettingsScreen extends StatelessWidget {
                         children: [
                           _SwitchTile(
                             icon: Icons.library_music_outlined,
-                            title: 'New songs & content',
+                            title: AppLocalizations.of(context)?.newSongsAlertTitle ?? 'New songs & content',
                             subtitle:
                                 'Tell me when new songs are added to the library',
                             value: settings.newContentAlertsEnabled,
@@ -123,7 +124,7 @@ class NotificationSettingsScreen extends StatelessWidget {
                         children: [
                           _NavTile(
                             icon: Icons.send_outlined,
-                            title: 'Send a test notification',
+                            title: AppLocalizations.of(context)?.sendTestNotification ?? 'Send a test notification',
                             subtitle:
                                 'Check that alerts reach this device correctly',
                             onTap: () => _sendTest(context, settings),
@@ -209,7 +210,7 @@ class _PermissionBanner extends StatelessWidget {
       return _Banner(
         color: theme.colorScheme.error,
         icon: Icons.notifications_off_outlined,
-        title: 'Notifications are blocked',
+        title: AppLocalizations.of(context)?.notificationsBlockedTitle ?? 'Notifications are blocked',
         message:
             'Mahlete Semay cannot send reminders until notifications are allowed for this app.',
         actionLabel: 'Allow notifications',
@@ -231,7 +232,7 @@ class _PermissionBanner extends StatelessWidget {
       return _Banner(
         color: theme.colorScheme.secondary,
         icon: Icons.timer_outlined,
-        title: 'Reminders may arrive late',
+        title: AppLocalizations.of(context)?.remindersLateTitle ?? 'Reminders may arrive late',
         message:
             'Your device is batching scheduled alarms to save battery, so reminders can be delayed by a few minutes. Allow precise alarms for on-time delivery.',
         actionLabel: 'Allow precise timing',

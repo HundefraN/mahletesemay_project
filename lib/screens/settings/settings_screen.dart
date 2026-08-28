@@ -55,9 +55,10 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   /// Summarises the notification setup for the settings row, so the state is
   /// visible without opening the sub-screen.
   String _notificationSummary(NotificationSettingsProvider settings) {
-    if (!settings.permission.notificationsEnabled) return 'Blocked by system';
-    if (!settings.dailyRemindersEnabled) return 'Daily reminder off';
-    return 'Daily reminder at ${settings.dailyReminderTime.format(context)}';
+    final l10n = AppLocalizations.of(context)!;
+    if (!settings.permission.notificationsEnabled) return l10n.blockedBySystem;
+    if (!settings.dailyRemindersEnabled) return l10n.dailyReminderOff;
+    return l10n.dailyReminderAt(settings.dailyReminderTime.format(context));
   }
 
   Future<void> _shareApp() {
@@ -67,20 +68,21 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   }
 
   Future<void> _showExitDialog() async {
+    final l10n = AppLocalizations.of(context)!;
     final didRequestExit = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Exit App?'),
-        content: const Text('Are you sure you want to close the application?'),
+        title: Text(l10n.exitApp),
+        content: Text(l10n.exitAppConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Exit'),
+            child: Text(l10n.exit),
           ),
         ],
       ),
@@ -124,8 +126,23 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
-                _buildLanguageOption(languageProvider, 'English', 'en'),
-                _buildLanguageOption(languageProvider, 'አማርኛ', 'am'),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.5,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildLanguageOption(languageProvider, 'English', 'en'),
+                        _buildLanguageOption(languageProvider, 'አማርኛ', 'am'),
+                        _buildLanguageOption(languageProvider, 'Afaan Oromoo', 'om'),
+                        _buildLanguageOption(languageProvider, 'ትግርኛ', 'ti'),
+                        _buildLanguageOption(languageProvider, 'Af Soomaali', 'so'),
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 16),
               ],
             ),
@@ -154,8 +171,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         ),
         child: Row(
           children: [
-            Text(code == 'en' ? '🇺🇸' : '🇪🇹', style: const TextStyle(fontSize: 24)),
-            const SizedBox(width: 16),
             Expanded(
               child: Text(
                 language,
@@ -232,7 +247,20 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                           _buildSettingsCard(
                             theme: theme,
                             children: [
-                              _buildSettingsTile(icon: Icon(Icons.language_outlined, size: 20, color: theme.colorScheme.primary), title: l10n.language, subtitle: Provider.of<LanguageProvider>(context).currentLocale.languageCode == 'en' ? 'English' : 'አማርኛ', onTap: _showLanguagePicker, trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14)),
+                              _buildSettingsTile(
+                                icon: Icon(Icons.language_outlined, size: 20, color: theme.colorScheme.primary),
+                                title: l10n.language,
+                                subtitle: () {
+                                  final code = Provider.of<LanguageProvider>(context).currentLocale.languageCode;
+                                  if (code == 'am') return 'አማርኛ';
+                                  if (code == 'om') return 'Afaan Oromoo';
+                                  if (code == 'ti') return 'ትግርኛ';
+                                  if (code == 'so') return 'Af Soomaali';
+                                  return 'English';
+                                }(),
+                                onTap: _showLanguagePicker,
+                                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                              ),
                               _buildDivider(),
                               _buildSettingsTile(icon: Icon(isDark ? Icons.dark_mode : Icons.light_mode, size: 20, color: theme.colorScheme.primary), title: l10n.darkMode, trailing: Transform.scale(scale: 0.75, child: Switch.adaptive(value: isDark, onChanged: (_) => themeProvider.toggleTheme(), activeColor: theme.colorScheme.primary))),
                               _buildDivider(),
@@ -247,7 +275,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                                         ? theme.colorScheme.error
                                         : theme.colorScheme.primary,
                                   ),
-                                  title: 'Notifications',
+                                  title: l10n.notifications,
                                   subtitle: _notificationSummary(settings),
                                   onTap: () => Navigator.push(
                                     context,
@@ -293,7 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                               _buildDivider(),
                               _buildSettingsTile(
                                 icon: Icon(Icons.share_rounded, size: 20, color: theme.colorScheme.primary),
-                                title: "Share The App",
+                                title: l10n.shareApp,
                                 onTap: _shareApp,
                               ),
                             ],
@@ -312,7 +340,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                                   : ElevatedButton.icon(
                                 onPressed: _showExitDialog,
                                 icon: const Icon(Icons.exit_to_app_rounded, size: 18),
-                                label: const Text('Exit App', style: TextStyle(fontSize: 13)),
+                                label: Text(l10n.exitApp, style: const TextStyle(fontSize: 13)),
                                 style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error.withOpacity(0.1), foregroundColor: theme.colorScheme.error, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24))),
                               ),
                             ),

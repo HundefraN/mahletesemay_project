@@ -9,6 +9,7 @@ import 'package:mahlete_semay_project/utils/responsive_sizer.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 
 class ServiceReminderScreen extends StatelessWidget {
   const ServiceReminderScreen({super.key});
@@ -17,6 +18,7 @@ class ServiceReminderScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
@@ -35,11 +37,11 @@ class ServiceReminderScreen extends StatelessWidget {
             return CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
-                _buildSliverAppBar(theme, isDark, provider),
+                _buildSliverAppBar(theme, isDark, provider, l10n),
                 provider.reminders.isEmpty
                     ? SliverFillRemaining(
                         hasScrollBody: false,
-                        child: _buildEmptyState(context))
+                        child: _buildEmptyState(context, l10n))
                     : SliverPadding(
                         padding: EdgeInsets.fromLTRB(
                           context.w(16),
@@ -72,7 +74,7 @@ class ServiceReminderScreen extends StatelessWidget {
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: Colors.white,
         elevation: 8,
-        label: Text('New Reminder',
+        label: Text(l10n.newReminder,
             style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         icon: const Icon(Icons.add_alert_rounded),
       ),
@@ -80,7 +82,7 @@ class ServiceReminderScreen extends StatelessWidget {
   }
 
   SliverAppBar _buildSliverAppBar(
-      ThemeData theme, bool isDark, ServiceReminderProvider provider) {
+      ThemeData theme, bool isDark, ServiceReminderProvider provider, AppLocalizations l10n) {
     final upcoming = provider.upcomingReminders.length;
     return SliverAppBar(
       expandedHeight: 160,
@@ -90,7 +92,7 @@ class ServiceReminderScreen extends StatelessWidget {
           ? const Color(0xFF0D1B2A).withOpacity(0.95)
           : const Color(0xFFF0F4FF).withOpacity(0.95),
       flexibleSpace: FlexibleSpaceBar(
-        title: Text('Service Reminders',
+        title: Text(l10n.serviceReminders,
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
               fontSize: 18,
@@ -148,7 +150,7 @@ class ServiceReminderScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState(BuildContext context, AppLocalizations l10n) {
     final theme = Theme.of(context);
     return Center(
       child: Padding(
@@ -176,7 +178,7 @@ class ServiceReminderScreen extends StatelessWidget {
             ),
             const SizedBox(height: 28),
             Text(
-              'No Reminders Set',
+              l10n.noServiceReminders,
               style: GoogleFonts.poppins(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -186,11 +188,11 @@ class ServiceReminderScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Set a reminder for your next service.\nYou\'ll receive countdown alerts starting\n5 days before — even if the app is closed.',
+              l10n.noServiceRemindersDesc,
               style: TextStyle(
-                fontSize: 15,
-                height: 1.5,
-                color: theme.colorScheme.onSurface.withOpacity(0.55),
+                fontSize: 14,
+                height: 1.6,
+                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -198,7 +200,7 @@ class ServiceReminderScreen extends StatelessWidget {
             FilledButton.icon(
               onPressed: () => _showAddEditReminderDialog(context),
               icon: const Icon(Icons.add_alert_rounded),
-              label: Text('Set Your First Reminder',
+              label: Text(AppLocalizations.of(context)?.setYourFirstReminder ?? 'Set Your First Reminder',
                   style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
               style: FilledButton.styleFrom(
                 padding:
@@ -513,13 +515,13 @@ class _ReminderCardState extends State<_ReminderCard>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _CountdownDigit(value: days, label: 'DAYS', color: urgency),
+          _CountdownDigit(value: days, label: AppLocalizations.of(context)?.daysCountdown ?? 'DAYS', color: urgency),
           _CountdownSeparator(color: urgency),
-          _CountdownDigit(value: hours, label: 'HRS', color: urgency),
+          _CountdownDigit(value: hours, label: AppLocalizations.of(context)?.hoursCountdown ?? 'HRS', color: urgency),
           _CountdownSeparator(color: urgency),
-          _CountdownDigit(value: minutes, label: 'MIN', color: urgency),
+          _CountdownDigit(value: minutes, label: AppLocalizations.of(context)?.minutesCountdown ?? 'MIN', color: urgency),
           _CountdownSeparator(color: urgency),
-          _CountdownDigit(value: seconds, label: 'SEC', color: urgency),
+          _CountdownDigit(value: seconds, label: AppLocalizations.of(context)?.secondsCountdown ?? 'SEC', color: urgency),
         ],
       ),
     );
@@ -620,7 +622,7 @@ class _ReminderCardState extends State<_ReminderCard>
             Icon(Icons.warning_amber_rounded,
                 color: theme.colorScheme.error),
             const SizedBox(width: 10),
-            const Text('Cancel Reminder'),
+            Text(AppLocalizations.of(context)?.cancelReminderPrompt ?? 'Cancel Reminder'),
           ],
         ),
         content: Text(
@@ -630,7 +632,7 @@ class _ReminderCardState extends State<_ReminderCard>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Keep'),
+            child: Text(AppLocalizations.of(context)?.keepAction ?? 'Keep'),
           ),
           FilledButton(
             onPressed: () {
@@ -642,7 +644,7 @@ class _ReminderCardState extends State<_ReminderCard>
             },
             style: FilledButton.styleFrom(
                 backgroundColor: theme.colorScheme.error),
-            child: const Text('Cancel Reminder'),
+            child: Text(AppLocalizations.of(context)?.cancelReminderPrompt ?? 'Cancel Reminder'),
           ),
         ],
       ),
@@ -1222,16 +1224,16 @@ class _AddEditReminderDialogState extends State<_AddEditReminderDialog> {
           builder: (ctx) => AlertDialog(
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20)),
-            title: const Text('Confirm Schedule'),
+            title: Text(AppLocalizations.of(context)?.confirmSchedule ?? 'Confirm Schedule'),
             content: const Text(
                 'You already have a service scheduled for this hour. Are you sure you want to add another one?'),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('Cancel')),
+                  child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel')),
               FilledButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Add Anyway')),
+                  child: Text(AppLocalizations.of(context)?.addAnyway ?? 'Add Anyway')),
             ],
           ),
         );
@@ -1312,8 +1314,8 @@ class _AddEditReminderDialogState extends State<_AddEditReminderDialog> {
                 TextFormField(
                   controller: _titleController,
                   decoration: InputDecoration(
-                    labelText: 'Service Title',
-                    hintText: 'e.g., Sunday Worship',
+                    labelText: AppLocalizations.of(context)?.serviceTitleLabel ?? 'Service Title',
+                    hintText: AppLocalizations.of(context)?.serviceTitleHint ?? 'e.g., Sunday Worship',
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14)),
                     prefixIcon: const Icon(Icons.title_rounded),
@@ -1327,7 +1329,7 @@ class _AddEditReminderDialogState extends State<_AddEditReminderDialog> {
                   borderRadius: BorderRadius.circular(14),
                   child: InputDecorator(
                     decoration: InputDecoration(
-                      labelText: 'Date & Time',
+                      labelText: AppLocalizations.of(context)?.dateTimeLabel ?? 'Date & Time',
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14)),
                       prefixIcon: const Icon(Icons.calendar_month_rounded),
@@ -1353,8 +1355,8 @@ class _AddEditReminderDialogState extends State<_AddEditReminderDialog> {
                 TextFormField(
                   controller: _notesController,
                   decoration: InputDecoration(
-                    labelText: 'Notes (Optional)',
-                    hintText: 'Song set, rehearsal notes, etc.',
+                    labelText: AppLocalizations.of(context)?.reminderNotesLabel ?? 'Notes (Optional)',
+                    hintText: AppLocalizations.of(context)?.reminderNotesHint ?? 'Song set, rehearsal notes, etc.',
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14)),
                     prefixIcon: const Icon(Icons.note_alt_outlined),
@@ -1367,7 +1369,7 @@ class _AddEditReminderDialogState extends State<_AddEditReminderDialog> {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
+                      child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
                     ),
                     const SizedBox(width: 8),
                     FilledButton.icon(
@@ -1598,7 +1600,7 @@ void _showConfirmationSheet(
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: Text('Got it',
+                  child: Text(AppLocalizations.of(context)?.gotIt ?? 'Got it',
                       style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                 ),
               ),

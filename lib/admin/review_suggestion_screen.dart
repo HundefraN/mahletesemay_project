@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -72,10 +73,10 @@ class _ReviewSuggestionsScreenState extends State<ReviewSuggestionsScreen> with 
               unselectedLabelColor: isDark ? Colors.white60 : Colors.black54,
               labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13),
               unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13),
-              tabs: const [
-                Tab(text: '⏳ Pending'),
-                Tab(text: '✅ Approved'),
-                Tab(text: '❌ Rejected'),
+              tabs: [
+                Tab(text: '⏳ ${AppLocalizations.of(context)?.pendingTab ?? "Pending"}'),
+                Tab(text: '✅ ${AppLocalizations.of(context)?.approvedTab ?? "Approved"}'),
+                Tab(text: '❌ ${AppLocalizations.of(context)?.rejectedTab ?? "Rejected"}'),
               ],
             ),
           ),
@@ -88,9 +89,9 @@ class _ReviewSuggestionsScreenState extends State<ReviewSuggestionsScreen> with 
             return const Center(child: CircularProgressIndicator(color: AdminUiKit.goldAccent));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const AdminEmptyState(
+            return AdminEmptyState(
               icon: Icons.rate_review_outlined,
-              title: 'No Suggestions Submitted',
+              title: AppLocalizations.of(context)?.noSuggestionsSubmitted ?? 'No Suggestions Submitted',
               description: 'User song suggestions and lyric corrections will appear here for moderation.',
             );
           }
@@ -129,7 +130,7 @@ class _SuggestionList extends StatelessWidget {
     if (suggestions.isEmpty) {
       return AdminEmptyState(
         icon: Icons.check_circle_outline_rounded,
-        title: 'All Clear',
+        title: AppLocalizations.of(context)?.allClear ?? 'All Clear',
         description: emptyLabel,
       );
     }
@@ -256,17 +257,17 @@ class _SuggestionCard extends StatelessWidget {
                         context: context,
                         builder: (ctx) => AlertDialog(
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          title: Text('Delete Suggestion?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
-                          content: const Text('Are you sure you want to permanently delete this submission?'),
+                          title: Text(AppLocalizations.of(context)?.deleteSuggestionPrompt ?? 'Delete Suggestion?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+                          content: Text(AppLocalizations.of(context)?.deleteSuggestionConfirm ?? 'Are you sure you want to permanently delete this submission?'),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel')),
                             FilledButton(
                               style: FilledButton.styleFrom(
                                 backgroundColor: AdminUiKit.roseRed,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               onPressed: () => Navigator.pop(ctx, true),
-                              child: const Text('Delete'),
+                              child: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
                             ),
                           ],
                         ),
@@ -290,7 +291,7 @@ class _SuggestionCard extends StatelessWidget {
                   ),
                   IconButton(
                     icon: const Icon(Icons.video_library_rounded, size: 20),
-                    tooltip: 'Search YouTube for Audio Reference',
+                    tooltip: AppLocalizations.of(context)?.searchYouTubeForAudioRef ?? 'Search YouTube for Audio Reference',
                     color: AdminUiKit.royalBlue,
                     onPressed: () async {
                       final query = Uri.encodeComponent('${suggestion.songTitle} ${suggestion.artistName} lyrics');
@@ -312,7 +313,7 @@ class _SuggestionCard extends StatelessWidget {
                         side: BorderSide(color: AdminUiKit.roseRed.withOpacity(0.5)),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: const Text('Reject'),
+                      child: Text(AppLocalizations.of(context)?.rejectAction ?? 'Reject'),
                       onPressed: () async {
                         try {
                           await firebaseService.updateSuggestionStatus(suggestion.id, SuggestionStatus.rejected);
@@ -344,7 +345,7 @@ class _SuggestionCard extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       icon: const Icon(Icons.check_rounded, size: 16),
-                      label: const Text('Approve'),
+                      label: Text(AppLocalizations.of(context)?.approve ?? 'Approve'),
                       onPressed: () async {
                         try {
                           await firebaseService.updateSuggestionStatus(suggestion.id, SuggestionStatus.approved);

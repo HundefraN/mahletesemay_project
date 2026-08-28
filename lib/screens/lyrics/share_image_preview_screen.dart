@@ -1,3 +1,4 @@
+import '../../l10n/app_localizations.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -356,9 +357,9 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                         maxLines: null,
                         expands: true,
                         style: const TextStyle(fontSize: 13.5, height: 1.4),
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: InputBorder.none,
-                          hintText: 'Enter or edit lyrics quote here...',
+                          hintText: AppLocalizations.of(context)?.quoteInputHint ?? 'Enter or edit lyrics quote here...',
                         ),
                       ),
                     ),
@@ -381,7 +382,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                             textController.clear();
                             setModalState(() {});
                           },
-                          child: const Text('Clear All',
+                          child: Text(AppLocalizations.of(context)?.clearAll ?? 'Clear All',
                               style: TextStyle(fontSize: 12)),
                         ),
                       ],
@@ -483,7 +484,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14)),
                         ),
-                        child: const Text('Apply Lyrics Text',
+                        child: Text(AppLocalizations.of(context)?.applyLyricsText ?? 'Apply Lyrics Text',
                             style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ),
@@ -505,7 +506,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF090912) : const Color(0xFFF4F4F8),
       appBar: AppBar(
-        title: const Text('Share Studio',
+        title: Text(AppLocalizations.of(context)?.shareStudioTitle ?? 'Share Studio',
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
@@ -579,7 +580,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                 const SizedBox(width: 6),
                 ActionChip(
                   avatar: const Icon(IconsaxPlusBold.edit_2, size: 13),
-                  label: const Text('Edit Text',
+                  label: Text(AppLocalizations.of(context)?.editText ?? 'Edit Text',
                       style: TextStyle(
                           fontSize: 11.5, fontWeight: FontWeight.w600)),
                   visualDensity: VisualDensity.compact,
@@ -1669,7 +1670,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
       child: Row(
         children: [
           FilterChip(
-            label: const Text('Title', style: TextStyle(fontSize: 11)),
+            label: Text(AppLocalizations.of(context)?.shareStudioTitleOption ?? 'Title', style: const TextStyle(fontSize: 11)),
             selected: _showSongInfo,
             visualDensity: VisualDensity.compact,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -1677,7 +1678,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
           ),
           const SizedBox(width: 6),
           FilterChip(
-            label: const Text('App Logo', style: TextStyle(fontSize: 11)),
+            label: Text(AppLocalizations.of(context)?.shareStudioAppLogoOption ?? 'App Logo', style: const TextStyle(fontSize: 11)),
             selected: _showBranding,
             visualDensity: VisualDensity.compact,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -1685,7 +1686,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
           ),
           const SizedBox(width: 6),
           FilterChip(
-            label: const Text('Artist Name', style: TextStyle(fontSize: 11)),
+            label: Text(AppLocalizations.of(context)?.shareStudioArtistNameOption ?? 'Artist Name', style: const TextStyle(fontSize: 11)),
             selected: _showArtistName,
             visualDensity: VisualDensity.compact,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -1693,7 +1694,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
           ),
           const SizedBox(width: 6),
           FilterChip(
-            label: const Text('Waves / Ambient', style: TextStyle(fontSize: 11)),
+            label: Text(AppLocalizations.of(context)?.shareStudioWavesOption ?? 'Waves / Ambient', style: const TextStyle(fontSize: 11)),
             selected: _showVisualizer,
             visualDensity: VisualDensity.compact,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,

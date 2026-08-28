@@ -10,6 +10,8 @@ import 'package:mahlete_semay_project/providers/song_provider.dart';
 import 'package:mahlete_semay_project/screens/lyrics/song_detail_screen.dart';
 import 'package:provider/provider.dart';
 
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
+
 class SetlistDetailScreen extends StatelessWidget {
   final Setlist setlist;
 
@@ -18,6 +20,7 @@ class SetlistDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final setlistProvider = Provider.of<SetlistProvider>(context);
     final songsInSetlist = setlistProvider.getSongsForSetlist(setlist.id!);
 
@@ -44,16 +47,16 @@ class SetlistDetailScreen extends StatelessWidget {
             actions: [
               IconButton(
                 icon: const Icon(Icons.delete_outline),
-                tooltip: 'Delete Setlist',
+                tooltip: l10n.deleteSetlist,
                 onPressed: () async {
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (ctx) => AlertDialog(
-                      title: const Text('Delete Setlist?'),
-                      content: Text('Are you sure you want to delete "${setlist.name}"? This cannot be undone.'),
+                      title: Text(l10n.deleteSetlist),
+                      content: Text(l10n.deleteSetlistConfirm),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-                        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete'), style: FilledButton.styleFrom(backgroundColor: Colors.red)),
+                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+                        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.delete), style: FilledButton.styleFrom(backgroundColor: Colors.red)),
                       ],
                     ),
                   );
@@ -66,10 +69,10 @@ class SetlistDetailScreen extends StatelessWidget {
             ],
           ),
           if (songsInSetlist.isEmpty)
-            const SliverFillRemaining(
+            SliverFillRemaining(
               hasScrollBody: false,
               child: Center(
-                child: Text('This setlist is empty.\nAdd songs from the song detail page.', textAlign: TextAlign.center),
+                child: Text(l10n.emptySetlist, textAlign: TextAlign.center),
               ),
             )
           else
@@ -139,7 +142,7 @@ class _SetlistSongCard extends StatelessWidget {
 
     final song = songProvider.allSongs.firstWhere(
           (s) => s.id == setlistSong.songId,
-      orElse: () => Song(id: 'deleted', title: 'Song Not Found', artistName: 'Please remove', artistId: '', albumId: '', albumTitle: '', lyrics: '', viewCount: 0, createdAt: setlistCreationDate.toUtc()),
+      orElse: () => Song(id: 'deleted', title: AppLocalizations.of(context)?.songNotFound ?? 'Song Not Found', artistName: AppLocalizations.of(context)?.pleaseRemove ?? 'Please remove', artistId: '', albumId: '', albumTitle: '', lyrics: '', viewCount: 0, createdAt: setlistCreationDate.toUtc()),
     );
     final bool isDeleted = song.id == 'deleted';
 
@@ -154,7 +157,7 @@ class _SetlistSongCard extends StatelessWidget {
             backgroundColor: theme.colorScheme.error,
             foregroundColor: Colors.white,
             icon: Icons.delete_outline_rounded,
-            label: 'Remove',
+            label: AppLocalizations.of(context)?.remove ?? 'Remove',
             borderRadius: const BorderRadius.only(topRight: Radius.circular(16), bottomRight: Radius.circular(16)),
           ),
         ],
@@ -169,7 +172,7 @@ class _SetlistSongCard extends StatelessWidget {
             child: const Icon(Icons.drag_handle),
           ),
           title: Text(song.title, style: TextStyle(fontWeight: FontWeight.bold, color: isDeleted ? Colors.red : null)),
-          subtitle: Text(setlistSong.customKey != null && setlistSong.customKey!.isNotEmpty ? 'Key: ${setlistSong.customKey}' : song.artistName),
+          subtitle: Text(setlistSong.customKey != null && setlistSong.customKey!.isNotEmpty ? (AppLocalizations.of(context)?.keyPrefix(setlistSong.customKey!) ?? 'Key: ${setlistSong.customKey}') : song.artistName),
           trailing: isDeleted ? null : IconButton(
             icon: const Icon(Icons.edit_note_rounded),
             onPressed: () => _editSongDetails(context, song),
@@ -233,23 +236,23 @@ class _EditSetlistSongDialogState extends State<_EditSetlistSongDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Edit Details for "${widget.songTitle}"', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+              Text(AppLocalizations.of(context)?.editDetailsFor(widget.songTitle) ?? 'Edit Details for "${widget.songTitle}"', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
               const SizedBox(height: 24),
-              TextField(controller: _keyController, decoration: InputDecoration(labelText: 'Custom Key (e.g., G#)', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+              TextField(controller: _keyController, decoration: InputDecoration(labelText: AppLocalizations.of(context)?.customKeyField ?? 'Custom Key (e.g., G#)', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
               const SizedBox(height: 16),
-              TextField(controller: _notesController, decoration: InputDecoration(labelText: 'Performance Notes', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), maxLines: 3),
+              TextField(controller: _notesController, decoration: InputDecoration(labelText: AppLocalizations.of(context)?.performanceNotesField ?? 'Performance Notes', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), maxLines: 3),
               const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                  TextButton(onPressed: () => Navigator.pop(context), child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel')),
                   const SizedBox(width: 8),
                   FilledButton(
                     onPressed: () {
                       widget.onSave(_keyController.text.trim(), _notesController.text.trim());
                       Navigator.pop(context);
                     },
-                    child: const Text('Save'),
+                    child: Text(AppLocalizations.of(context)?.save ?? 'Save'),
                   ),
                 ],
               ),

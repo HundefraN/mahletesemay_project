@@ -5,6 +5,7 @@ import '../models/performance_tip_model.dart';
 const String singlesArtistId = 'singles_artist';
 const String singlesAlbumId = 'singles_album';
 
+const String prefLanguageSelected = 'language_selected';
 const String prefPermissionsCompleted = 'permissions_completed';
 const String prefOnboardingCompleted = 'onboarding_completed';
 const String prefGuidedTourCompletedV2 = 'guided_tour_completed_v2';

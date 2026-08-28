@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -148,7 +149,7 @@ class _ManageAlbumsScreenState extends State<ManageAlbumsScreen> with SingleTick
           if (snapshot.hasError) {
             return AdminEmptyState(
               icon: Icons.error_outline_rounded,
-              title: 'Failed to load albums',
+              title: AppLocalizations.of(context)?.failedToLoadAlbums ?? 'Failed to load albums',
               description: snapshot.error.toString(),
               actionLabel: 'Retry',
               onAction: _refreshData,
@@ -277,14 +278,14 @@ class _AlbumListTabState extends State<_AlbumListTab> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete $count Album(s)?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        title: Text(AppLocalizations.of(context)?.deleteSelectedAlbumsTitle(count) ?? 'Delete $count Album(s)?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
         content: Text(
           'Are you sure you want to permanently delete these $count album(s)? All attached songs will be affected.',
           style: GoogleFonts.plusJakartaSans(fontSize: 14),
         ),
         actions: [
           TextButton(
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
             onPressed: () => Navigator.of(context).pop(false),
           ),
           FilledButton(
@@ -292,7 +293,7 @@ class _AlbumListTabState extends State<_AlbumListTab> {
               backgroundColor: AdminUiKit.roseRed,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
             onPressed: () => Navigator.of(context).pop(true),
           ),
         ],
@@ -387,14 +388,14 @@ class _AlbumListTabState extends State<_AlbumListTab> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         icon: const Icon(Icons.delete_sweep_rounded, size: 18),
-                        label: const Text('Delete'),
+                        label: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
                       ),
                     ],
                   ),
                 )
               : AdminSearchBar(
                   controller: _searchController,
-                  hintText: 'Search by album title or artist...',
+                  hintText: AppLocalizations.of(context)?.searchAlbumsHint ?? 'Search by album title or artist...',
                   onChanged: (_) => _filterAlbums(),
                 ),
         ),
@@ -403,7 +404,7 @@ class _AlbumListTabState extends State<_AlbumListTab> {
           child: _filteredAlbums.isEmpty
               ? AdminEmptyState(
                   icon: Icons.album_rounded,
-                  title: 'No Albums Found',
+                  title: AppLocalizations.of(context)?.noAlbumsFound ?? 'No Albums Found',
                   description: _searchController.text.isNotEmpty
                       ? 'No matching albums for "${_searchController.text}".'
                       : 'There are no ${widget.category.toLowerCase()} albums added yet.',

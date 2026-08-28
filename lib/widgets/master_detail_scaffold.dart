@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 
 class MasterDetailScaffold extends StatelessWidget {
   final Widget masterPane;
@@ -30,8 +31,8 @@ class MasterDetailScaffold extends StatelessWidget {
         Expanded(
           child: isDetailPaneVisible
               ? detailPane
-              : const Center(
-            child: Text('Select an item from the list'),
+              : Center(
+            child: Text(AppLocalizations.of(context)?.selectItemFromList ?? 'Select an item from the list'),
           ),
         ),
       ],

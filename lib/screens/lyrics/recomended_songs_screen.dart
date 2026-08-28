@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:animations/animations.dart';
 import 'package:mahlete_semay_project/models/album_model.dart';
@@ -158,7 +159,7 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
               title: FadeTransition(
                 opacity: fadeAnimation,
                 child: Text(
-                  'Recommended For You',
+                  AppLocalizations.of(context)?.recommendedForYou ?? 'Recommended For You',
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 20,
@@ -222,6 +223,7 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
   }
 
   Widget _buildSortMenu() {
+    final l10n = AppLocalizations.of(context)!;
     return PopupMenuButton<dynamic>(
       icon: const Icon(Icons.sort_rounded),
       onSelected: (value) {
@@ -233,38 +235,26 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
         _sortSongs();
       },
       itemBuilder: (context) => [
-        const PopupMenuItem(enabled: false, child: Text('Sort by', style: TextStyle(fontWeight: FontWeight.bold))),
+        PopupMenuItem(enabled: false, child: Text(l10n.sortBy, style: const TextStyle(fontWeight: FontWeight.bold))),
         CheckedPopupMenuItem(
           value: SongSortType.popularity,
           checked: _sortType == SongSortType.popularity,
-          child: const Text('Popularity'),
+          child: Text(l10n.popularity),
         ),
         CheckedPopupMenuItem(
           value: SongSortType.title,
           checked: _sortType == SongSortType.title,
-          child: const Text('Title'),
+          child: Text(l10n.title),
         ),
         CheckedPopupMenuItem(
           value: SongSortType.artist,
           checked: _sortType == SongSortType.artist,
-          child: const Text('Artist'),
+          child: Text(l10n.artist),
         ),
         CheckedPopupMenuItem(
           value: SongSortType.date,
           checked: _sortType == SongSortType.date,
-          child: const Text('Date Added'),
-        ),
-        const PopupMenuDivider(),
-        const PopupMenuItem(enabled: false, child: Text('Order', style: TextStyle(fontWeight: FontWeight.bold))),
-        CheckedPopupMenuItem(
-          value: SortOrder.descending,
-          checked: _sortOrder == SortOrder.descending,
-          child: const Text('Descending'),
-        ),
-        CheckedPopupMenuItem(
-          value: SortOrder.ascending,
-          checked: _sortOrder == SortOrder.ascending,
-          child: const Text('Ascending'),
+          child: Text(l10n.date),
         ),
       ],
     );

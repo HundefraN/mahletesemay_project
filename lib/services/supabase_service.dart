@@ -1032,14 +1032,50 @@ class SupabaseService {
     try {
       final res = await _client
           .from('app_settings')
-          .select('min_required_version');
+          .select('min_required_version, updated_at')
+          .order('updated_at', ascending: false)
+          .limit(1);
       if (res.isNotEmpty && res.first['min_required_version'] != null) {
-        return res.first['min_required_version'] as String;
+        final version = res.first['min_required_version'].toString().trim();
+        return version.isEmpty ? null : version;
       }
       return null;
     } catch (e) {
       debugPrint('Error fetching min_required_version: $e');
       return null;
+    }
+  }
+
+  /// Sets or clears the `min_required_version` in the `app_settings` table.
+  /// Pass `null` or empty string to disable the force-update requirement.
+  Future<void> setMinRequiredVersion(String? version, String adminId, String adminName) async {
+    try {
+      final sanitized = (version == null || version.trim().isEmpty) ? null : version.trim();
+      final res = await _client.from('app_settings').select('id');
+      if (res.isNotEmpty) {
+        for (final row in res) {
+          await _client.from('app_settings').update({
+            'min_required_version': sanitized,
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          }).eq('id', row['id']);
+        }
+      } else {
+        await _client.from('app_settings').insert({
+          'min_required_version': sanitized,
+          'is_repair_mode': false,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        });
+      }
+
+      await logActivity(
+        moderatorId: adminId,
+        moderatorName: adminName,
+        action: 'MIN_VERSION_UPDATED',
+        details: 'Minimum required version set to ${sanitized ?? "NONE (Disabled)"}',
+      );
+    } catch (e) {
+      debugPrint('Error setting min_required_version: $e');
+      rethrow;
     }
   }
 

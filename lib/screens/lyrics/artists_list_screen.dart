@@ -171,7 +171,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                     ),
                   ),
                   Text(
-                    'Filter Search',
+                    AppLocalizations.of(context)?.filterSearch ??
+                        'Filter Search',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold, fontSize: context.sp(24)),
                   ),
@@ -197,6 +198,20 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
   Widget _buildFilterOption(BuildContext context, String type, IconData icon) {
     final isSelected = _filterType == type;
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    String label = type;
+    if (type == 'All')
+      label = l10n?.all ?? 'All';
+    else if (type == 'Songs')
+      label = l10n?.songs ?? 'Songs';
+    else if (type == 'Artists')
+      label = l10n?.artists ?? 'Artists';
+    else if (type == 'Albums')
+      label = l10n?.albums ?? 'Albums';
+    else if (type == 'Lyrics')
+      label = l10n?.lyrics ?? 'Lyrics';
+    else if (type == 'Exercises') label = l10n?.exercises ?? 'Exercises';
+
     return InkWell(
       onTap: () {
         setState(() => _filterType = type);
@@ -234,7 +249,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
             ),
             SizedBox(width: context.w(16)),
             Text(
-              type,
+              label,
               style: TextStyle(
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 color: isSelected
@@ -338,7 +353,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                         }
                       },
                       icon: Icon(Icons.download_rounded, size: context.w(14)),
-                      label: Text('Download',
+                      label: Text(
+                          AppLocalizations.of(context)?.download ?? 'Download',
                           style: TextStyle(fontSize: context.sp(12))),
                       style: FilledButton.styleFrom(
                         padding: EdgeInsets.symmetric(
@@ -382,7 +398,9 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                     color:
                         Theme.of(context).colorScheme.primary.withOpacity(0.4)),
                 const SizedBox(height: 16),
-                const Text('Select an artist to see their albums',
+                Text(
+                    AppLocalizations.of(context)?.selectArtistToSeeAlbums ??
+                        'Select an artist to see their albums',
                     style: TextStyle(fontSize: 18)),
               ],
             ),
@@ -495,7 +513,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                         ),
                                         SizedBox(height: context.w(4)),
                                         Text(
-                                          'Discover amazing music',
+                                          l10n.discoverAmazingMusic ??
+                                              'Discover amazing music',
                                           style: theme.textTheme.bodyMedium
                                               ?.copyWith(
                                             color: theme
@@ -570,7 +589,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                   child: TextField(
                                     controller: _searchController,
                                     focusNode: _searchFocusNode,
-                                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                                    onTapOutside: (_) =>
+                                        FocusScope.of(context).unfocus(),
                                     style: TextStyle(fontSize: context.sp(14)),
                                     decoration: InputDecoration(
                                       hintText: l10n.searchHint,
@@ -603,13 +623,15 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                           ? IconButton(
                                               icon: Icon(
                                                 Icons.close_rounded,
-                                                color: theme.colorScheme.onSurface
+                                                color: theme
+                                                    .colorScheme.onSurface
                                                     .withOpacity(0.7),
                                                 size: context.w(20),
                                               ),
                                               onPressed: () {
                                                 _searchController.clear();
-                                                FocusScope.of(context).unfocus();
+                                                FocusScope.of(context)
+                                                    .unfocus();
                                               },
                                             )
                                           : null,
@@ -800,7 +822,9 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                   color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             SizedBox(height: context.w(20)),
-            Text('No results found for "$_searchQuery"',
+            Text(
+                AppLocalizations.of(context)?.noResultsFoundFor(_searchQuery) ??
+                    'No results found for "$_searchQuery"',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold, fontSize: context.sp(22))),
             SizedBox(height: context.w(8)),
@@ -1000,7 +1024,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
     final theme = Theme.of(context);
     final songProvider = Provider.of<SongProvider>(context, listen: false);
     final albums = songProvider.getAlbumsByArtist(artist.id);
-    final songs = songProvider.allSongs.where((s) => s.artistId == artist.id).toList();
+    final songs =
+        songProvider.allSongs.where((s) => s.artistId == artist.id).toList();
 
     return Container(
       margin: EdgeInsets.only(bottom: context.w(10)),
@@ -1051,7 +1076,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
         ),
         title: Hero(
           tag: 'artist-name-${artist.id}',
-          flightShuttleBuilder: (flightContext, animation, flightDirection, fromHeroContext, toHeroContext) {
+          flightShuttleBuilder: (flightContext, animation, flightDirection,
+              fromHeroContext, toHeroContext) {
             return Material(
               color: Colors.transparent,
               child: Text(
@@ -1085,7 +1111,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                 borderRadius: BorderRadius.circular(context.w(6)),
               ),
               child: Text(
-                '${albums.length} ${albums.length == 1 ? 'Album' : 'Albums'}',
+                '${albums.length} ${albums.length == 1 ? (AppLocalizations.of(context)?.albumSingular ?? 'Album') : (AppLocalizations.of(context)?.albumsPlural ?? 'Albums')}',
                 style: TextStyle(
                   fontSize: context.sp(11),
                   fontWeight: FontWeight.w600,
@@ -1214,7 +1240,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
           ),
         ),
         subtitle: TextHighlighter(
-            text: 'Album • $songCountText',
+            text:
+                '${AppLocalizations.of(context)?.albumSingular ?? 'Album'} • $songCountText',
             query: _searchQuery,
             style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
@@ -1381,7 +1408,9 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                             .onSurface
                             .withOpacity(0.3)),
                     SizedBox(height: context.w(8)),
-                    Text('No artists in this category.',
+                    Text(
+                        AppLocalizations.of(context)?.noArtistsInCategory ??
+                            'No artists in this category.',
                         style: TextStyle(
                             color: Theme.of(context)
                                 .colorScheme
@@ -1502,7 +1531,11 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                           SizedBox(height: context.w(8)),
                           Hero(
                             tag: 'artist-name-${artist.id}',
-                            flightShuttleBuilder: (flightContext, animation, flightDirection, fromHeroContext, toHeroContext) {
+                            flightShuttleBuilder: (flightContext,
+                                animation,
+                                flightDirection,
+                                fromHeroContext,
+                                toHeroContext) {
                               return AnimatedBuilder(
                                 animation: animation,
                                 builder: (context, child) {
@@ -1515,11 +1548,23 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontWeight: FontWeight.w800,
-                                        fontSize: context.sp(12) + (animation.value * 14),
+                                        fontSize: context.sp(12) +
+                                            (animation.value * 14),
                                         letterSpacing: -0.3,
-                                        color: flightDirection == HeroFlightDirection.push
-                                            ? ColorTween(begin: Theme.of(context).colorScheme.onSurface, end: Colors.white).evaluate(animation)
-                                            : ColorTween(begin: Colors.white, end: Theme.of(context).colorScheme.onSurface).evaluate(animation),
+                                        color: flightDirection ==
+                                                HeroFlightDirection.push
+                                            ? ColorTween(
+                                                    begin: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurface,
+                                                    end: Colors.white)
+                                                .evaluate(animation)
+                                            : ColorTween(
+                                                    begin: Colors.white,
+                                                    end: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurface)
+                                                .evaluate(animation),
                                       ),
                                     ),
                                   );
@@ -1550,7 +1595,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                   borderRadius:
                                       BorderRadius.circular(context.w(8))),
                               child: Text(
-                                  '$albumCount Album${albumCount == 1 ? '' : 's'}',
+                                  '$albumCount ${albumCount == 1 ? (AppLocalizations.of(context)?.albumSingular ?? 'Album') : (AppLocalizations.of(context)?.albumsPlural ?? 'Albums')}',
                                   style: TextStyle(
                                       fontSize: context.sp(10),
                                       fontWeight: FontWeight.w500,

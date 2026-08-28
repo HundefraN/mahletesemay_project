@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:mahlete_semay_project/models/artist_model.dart';
 import 'package:mahlete_semay_project/models/search_result_model.dart';
 import 'package:mahlete_semay_project/providers/song_provider.dart';
@@ -123,7 +124,9 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                   color: theme.colorScheme.primary,
                   size: 22,
                 ),
-                tooltip: _isGridView ? 'Switch to list view' : 'Switch to grid view',
+                tooltip: _isGridView
+                    ? (AppLocalizations.of(context)?.switchToList ?? 'Switch to list view')
+                    : (AppLocalizations.of(context)?.switchToGrid ?? 'Switch to grid view'),
                 onPressed: () => setState(() => _isGridView = !_isGridView),
               ),
               const SizedBox(width: 8),
@@ -159,7 +162,7 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                       onTapOutside: (_) => FocusScope.of(context).unfocus(),
                       style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface),
                       decoration: InputDecoration(
-                        hintText: 'Search artists in English or Amharic...',
+                        hintText: AppLocalizations.of(context)?.searchArtistsHint ?? 'Search artists in English, Amharic or Afaan Oromoo...',
                         hintStyle: TextStyle(
                           color: theme.colorScheme.onSurface.withOpacity(0.4),
                           fontSize: 13.5,
@@ -190,31 +193,13 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                       Row(
                         children: [
                           Text(
-                            '${filteredArtists.length} ${filteredArtists.length == 1 ? 'Artist' : 'Artists'}',
+                            '${filteredArtists.length} ${AppLocalizations.of(context)?.artists ?? 'Artists'}',
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 13,
                               color: theme.colorScheme.onSurface.withOpacity(0.7),
                             ),
                           ),
-                          if (_searchQuery.isNotEmpty) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                'Filtered',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ],
@@ -249,8 +234,8 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                       const SizedBox(height: 16),
                       Text(
                         _searchQuery.isNotEmpty
-                            ? 'No artists match "$_searchQuery"'
-                            : 'No artists found in this category',
+                            ? (AppLocalizations.of(context)?.noArtistsFound ?? 'No artists match your search')
+                            : (AppLocalizations.of(context)?.noArtistsFound ?? 'No artists found in this category'),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -258,17 +243,6 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      if (_searchQuery.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          'Tip: Try typing in Amharic (e.g. ሊሊ) or English (e.g. Lily, Hanna, Bereket)',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: theme.colorScheme.onSurface.withOpacity(0.55),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -453,7 +427,7 @@ class _ArtistListTile extends StatelessWidget {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              '${albums.length} ${albums.length == 1 ? 'Album' : 'Albums'}',
+                              '${albums.length} ${albums.length == 1 ? (AppLocalizations.of(context)?.albumSingular ?? 'Album') : (AppLocalizations.of(context)?.albumsPlural ?? 'Albums')}',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
@@ -472,7 +446,7 @@ class _ArtistListTile extends StatelessWidget {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              '${songs.length} ${songs.length == 1 ? 'Track' : 'Tracks'}',
+                              '${songs.length} ${songs.length == 1 ? (AppLocalizations.of(context)?.trackSingular ?? 'Track') : (AppLocalizations.of(context)?.tracksPlural ?? 'Tracks')}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: theme.colorScheme.onSurface.withOpacity(0.6),
@@ -497,7 +471,7 @@ class _ArtistListTile extends StatelessWidget {
                             ),
                             const SizedBox(width: 3),
                             Text(
-                              compactViews,
+                              '$compactViews ${AppLocalizations.of(context)?.views ?? "Views"}',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: theme.colorScheme.onSurface.withOpacity(0.6),
@@ -654,7 +628,7 @@ class _ArtistGridCard extends StatelessWidget {
                   ),
                 const SizedBox(height: 4),
                 Text(
-                  '${albums.length} ${albums.length == 1 ? 'Album' : 'Albums'} • ${songs.length} Tracks',
+                  '${albums.length} ${albums.length == 1 ? (AppLocalizations.of(context)?.albumSingular ?? 'Album') : (AppLocalizations.of(context)?.albumsPlural ?? 'Albums')} • ${songs.length} ${AppLocalizations.of(context)?.tracksPlural ?? 'Tracks'}',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,

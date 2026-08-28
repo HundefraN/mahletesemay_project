@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -25,6 +24,7 @@ import '../../services/supabase_service.dart';
 import '../home_screen.dart';
 import 'manage_vocal_plans_screen.dart';
 import '../../widgets/custom_snackbar.dart';
+import '../../l10n/app_localizations.dart';
 
 class PortalHomeScreen extends StatelessWidget {
   const PortalHomeScreen({super.key});
@@ -216,31 +216,29 @@ class PortalHomeScreen extends StatelessWidget {
           ),
 
           // Main Content
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate(
-                [
-                  // Quick Actions Grid Header
-                  const AdminSectionHeader(
-                    title: 'Quick Actions',
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AdminSectionHeader(
+                    title: AppLocalizations.of(context)?.quickActions ?? 'Quick Actions',
                     icon: Icons.bolt_rounded,
                   ),
-                  const SizedBox(height: 4),
-
-                  // 2x2 Quick Actions Grid
+                  const SizedBox(height: 12),
                   GridView.count(
                     crossAxisCount: 2,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 14,
-                    mainAxisSpacing: 14,
-                    childAspectRatio: 1.15,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 1.6,
                     children: [
                       _buildQuickActionCard(
                         context,
-                        title: 'Add Artist',
-                        subtitle: 'Create profile',
+                        title: AppLocalizations.of(context)?.addArtist ?? 'Add Artist',
+                        subtitle: AppLocalizations.of(context)?.createProfileSubtitle ?? 'Create profile',
                         icon: Icons.person_add_alt_1_rounded,
                         accentColor: AdminUiKit.royalBlue,
                         onTap: () => Navigator.push(
@@ -250,8 +248,8 @@ class PortalHomeScreen extends StatelessWidget {
                       ),
                       _buildQuickActionCard(
                         context,
-                        title: 'Add Album',
-                        subtitle: 'Upload release',
+                        title: AppLocalizations.of(context)?.addAlbum ?? 'Add Album',
+                        subtitle: AppLocalizations.of(context)?.uploadReleaseSubtitle ?? 'Upload release',
                         icon: Icons.album_rounded,
                         accentColor: AdminUiKit.amberOrange,
                         onTap: () => Navigator.push(
@@ -261,8 +259,8 @@ class PortalHomeScreen extends StatelessWidget {
                       ),
                       _buildQuickActionCard(
                         context,
-                        title: 'Add Song',
-                        subtitle: 'Lyrics & scales',
+                        title: AppLocalizations.of(context)?.addSong ?? 'Add Song',
+                        subtitle: AppLocalizations.of(context)?.lyricsScalesSubtitle ?? 'Lyrics & scales',
                         icon: Icons.music_note_rounded,
                         accentColor: AdminUiKit.emeraldGreen,
                         onTap: () => Navigator.push(
@@ -272,8 +270,8 @@ class PortalHomeScreen extends StatelessWidget {
                       ),
                       _buildQuickActionCard(
                         context,
-                        title: 'Suggestions',
-                        subtitle: 'Review submissions',
+                        title: AppLocalizations.of(context)?.reviewSuggestions ?? 'Suggestions',
+                        subtitle: AppLocalizations.of(context)?.reviewSubmissionsSubtitle ?? 'Review submissions',
                         icon: Icons.rate_review_rounded,
                         accentColor: AdminUiKit.violetPurple,
                         badgeStream: firebaseService.getSuggestionsStream().map(
@@ -286,20 +284,16 @@ class PortalHomeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Content Management
-                  const AdminSectionHeader(
-                    title: 'Content Management',
+                  AdminSectionHeader(
+                    title: AppLocalizations.of(context)?.contentManagement ?? 'Content Management',
                     icon: Icons.folder_copy_rounded,
                   ),
                   const SizedBox(height: 4),
-
                   _buildModernListTile(
                     context,
-                    title: 'Manage Songs',
-                    subtitle: 'Edit lyrics, scales, rhythms, and batch delete',
+                    title: AppLocalizations.of(context)?.manageSongs ?? 'Manage Songs',
+                    subtitle: AppLocalizations.of(context)?.batchEditSubtitle ?? 'Edit lyrics, scales, rhythms, and batch delete',
                     icon: Icons.queue_music_rounded,
                     accentColor: AdminUiKit.emeraldGreen,
                     onTap: () => Navigator.push(
@@ -309,8 +303,8 @@ class PortalHomeScreen extends StatelessWidget {
                   ),
                   _buildModernListTile(
                     context,
-                    title: 'Manage Albums',
-                    subtitle: 'Organize albums, covers, and track lists',
+                    title: AppLocalizations.of(context)?.manageAlbums ?? 'Manage Albums',
+                    subtitle: AppLocalizations.of(context)?.organizeAlbumsSubtitle ?? 'Organize albums, covers, and track lists',
                     icon: Icons.library_music_rounded,
                     accentColor: AdminUiKit.amberOrange,
                     onTap: () => Navigator.push(
@@ -320,8 +314,8 @@ class PortalHomeScreen extends StatelessWidget {
                   ),
                   _buildModernListTile(
                     context,
-                    title: 'Manage Artists',
-                    subtitle: 'Update artist photos, bio, and regions',
+                    title: AppLocalizations.of(context)?.manageArtists ?? 'Manage Artists',
+                    subtitle: AppLocalizations.of(context)?.updateArtistBioSubtitle ?? 'Update artist photos, bio, and regions',
                     icon: Icons.people_outline_rounded,
                     accentColor: AdminUiKit.royalBlue,
                     onTap: () => Navigator.push(
@@ -331,8 +325,8 @@ class PortalHomeScreen extends StatelessWidget {
                   ),
                   _buildModernListTile(
                     context,
-                    title: 'Manage Vocal Plans',
-                    subtitle: 'Daily, weekly, monthly & quarterly routines',
+                    title: AppLocalizations.of(context)?.manageVocalPlans ?? 'Manage Vocal Plans',
+                    subtitle: AppLocalizations.of(context)?.vocalRoutinesSubtitle ?? 'Daily, weekly, monthly & quarterly routines',
                     icon: Icons.fitness_center_rounded,
                     accentColor: AdminUiKit.goldAccent,
                     onTap: () => Navigator.push(
@@ -342,8 +336,8 @@ class PortalHomeScreen extends StatelessWidget {
                   ),
                   _buildModernListTile(
                     context,
-                    title: 'General Vocal Exercises',
-                    subtitle: 'Independent workout audio drills',
+                    title: AppLocalizations.of(context)?.generalVocalExercises ?? 'General Vocal Exercises',
+                    subtitle: AppLocalizations.of(context)?.independentDrillsSubtitle ?? 'Independent workout audio drills',
                     icon: Icons.graphic_eq_rounded,
                     accentColor: AdminUiKit.violetPurple,
                     onTap: () => Navigator.push(
@@ -351,20 +345,17 @@ class PortalHomeScreen extends StatelessWidget {
                       MaterialPageRoute(builder: (_) => const ManageGeneralExercisesScreen()),
                     ),
                   ),
-
-                  // Admin-Only Section
                   if (authProvider.isAdmin) ...[
                     const SizedBox(height: 24),
-                    const AdminSectionHeader(
-                      title: 'Admin Controls & Security',
+                    AdminSectionHeader(
+                      title: AppLocalizations.of(context)?.adminControlsSecurity ?? 'Admin Controls & Security',
                       icon: Icons.security_rounded,
                     ),
                     const SizedBox(height: 4),
-
                     _buildModernListTile(
                       context,
-                      title: 'Manage Moderators',
-                      subtitle: 'Device authorizations, role elevation, blocks',
+                      title: AppLocalizations.of(context)?.manageModerators ?? 'Manage Moderators',
+                      subtitle: AppLocalizations.of(context)?.deviceAuthSubtitle ?? 'Device authorizations, role elevation, blocks',
                       icon: Icons.admin_panel_settings_rounded,
                       accentColor: AdminUiKit.goldAccent,
                       onTap: () => Navigator.push(
@@ -374,8 +365,8 @@ class PortalHomeScreen extends StatelessWidget {
                     ),
                     _buildModernListTile(
                       context,
-                      title: 'Create Invitation Code',
-                      subtitle: 'Generate secure single-use access credentials',
+                      title: AppLocalizations.of(context)?.createInvitationCode ?? 'Create Invitation Code',
+                      subtitle: AppLocalizations.of(context)?.generateCredentialsSubtitle ?? 'Generate secure single-use access credentials',
                       icon: Icons.send_rounded,
                       accentColor: AdminUiKit.royalBlue,
                       onTap: () => Navigator.push(
@@ -385,8 +376,8 @@ class PortalHomeScreen extends StatelessWidget {
                     ),
                     _buildModernListTile(
                       context,
-                      title: 'Invitation Codes History',
-                      subtitle: 'Track claimed, active & pending invitations',
+                      title: AppLocalizations.of(context)?.invitationCodesHistory ?? 'Invitation Codes History',
+                      subtitle: AppLocalizations.of(context)?.trackInvitationsSubtitle ?? 'Track claimed, active & pending invitations',
                       icon: Icons.vpn_key_rounded,
                       accentColor: AdminUiKit.amberOrange,
                       onTap: () => Navigator.push(
@@ -396,8 +387,8 @@ class PortalHomeScreen extends StatelessWidget {
                     ),
                     _buildModernListTile(
                       context,
-                      title: 'Audit Activity Logs',
-                      subtitle: 'Real-time moderator action timeline',
+                      title: AppLocalizations.of(context)?.auditActivityLogs ?? 'Audit Activity Logs',
+                      subtitle: AppLocalizations.of(context)?.actionTimelineSubtitle ?? 'Real-time moderator action timeline',
                       icon: Icons.history_rounded,
                       accentColor: AdminUiKit.violetPurple,
                       badgeStream: firebaseService
@@ -410,8 +401,8 @@ class PortalHomeScreen extends StatelessWidget {
                     ),
                     _buildModernListTile(
                       context,
-                      title: 'App Analytics & Insights',
-                      subtitle: 'Live traffic, view charts, and database metrics',
+                      title: AppLocalizations.of(context)?.appAnalyticsInsights ?? 'App Analytics & Insights',
+                      subtitle: AppLocalizations.of(context)?.liveMetricsSubtitle ?? 'Live traffic, view charts, and database metrics',
                       icon: Icons.analytics_rounded,
                       accentColor: AdminUiKit.emeraldGreen,
                       onTap: () => Navigator.push(
@@ -427,10 +418,10 @@ class PortalHomeScreen extends StatelessWidget {
                         final isRepairMode = snapshot.data ?? false;
                         return _buildModernListTile(
                           context,
-                          title: 'App Repair Mode',
+                          title: AppLocalizations.of(context)?.appRepairMode ?? 'App Repair Mode',
                           subtitle: isRepairMode
-                              ? 'Active • App locked for maintenance'
-                              : 'Inactive • App is live & accessible',
+                              ? (AppLocalizations.of(context)?.repairModeActive ?? 'Active • App locked for maintenance')
+                              : (AppLocalizations.of(context)?.repairModeInactive ?? 'Inactive • App is live & accessible'),
                           icon: isRepairMode ? Icons.build_circle_rounded : Icons.build_circle_outlined,
                           accentColor: isRepairMode ? AdminUiKit.roseRed : AdminUiKit.emeraldGreen,
                           onTap: () => _showBeautifulRepairDialog(context, isRepairMode, moderator, authProvider),
@@ -442,6 +433,15 @@ class PortalHomeScreen extends StatelessWidget {
                           ),
                         );
                       }
+                    ),
+                    const SizedBox(height: 12),
+                    _buildModernListTile(
+                      context,
+                      title: 'Force Update Version',
+                      subtitle: 'Configure minimum required app version for all users',
+                      icon: Icons.system_update_rounded,
+                      accentColor: AdminUiKit.royalBlue,
+                      onTap: () => _showMinVersionDialog(context, moderator, authProvider),
                     ),
                   ],
 
@@ -501,7 +501,9 @@ class PortalHomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  isRepairMode ? 'Deactivate Repair Mode?' : 'Activate Repair Mode?',
+                  isRepairMode
+                      ? (AppLocalizations.of(context)?.repairModeDialogTitleActive ?? 'Deactivate Repair Mode?')
+                      : (AppLocalizations.of(context)?.repairModeDialogTitleInactive ?? 'Activate Repair Mode?'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
@@ -512,8 +514,10 @@ class PortalHomeScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   isRepairMode
-                      ? 'This will deactivate repair mode and unlock the app. All users will regain full access to all features immediately.'
-                      : 'This will activate repair mode and lock the app for everyone except Admins. Users will see a maintenance screen. Proceed with caution!',
+                      ? (AppLocalizations.of(context)?.repairModeDialogDescActive ??
+                          'This will deactivate repair mode and unlock the app. All users will regain full access to all features immediately.')
+                      : (AppLocalizations.of(context)?.repairModeDialogDescInactive ??
+                          'This will activate repair mode and lock the app for everyone except Admins. Users will see a maintenance screen. Proceed with caution!'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
@@ -534,7 +538,7 @@ class PortalHomeScreen extends StatelessWidget {
                         ),
                         onPressed: () => Navigator.pop(context),
                         child: Text(
-                          'Cancel',
+                          AppLocalizations.of(context)?.cancel ?? 'Cancel',
                           style: GoogleFonts.plusJakartaSans(
                             fontWeight: FontWeight.w700,
                             fontSize: 13.5,
@@ -577,6 +581,161 @@ class PortalHomeScreen extends StatelessWidget {
                         },
                         child: Text(
                           'Confirm',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13.5,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showMinVersionDialog(BuildContext context, dynamic moderator, AuthProvider authProvider) async {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final currentMinVersion = await SupabaseService().getMinRequiredVersion();
+    final controller = TextEditingController(text: currentMinVersion ?? '');
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 380),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0F1D33) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AdminUiKit.royalBlue.withOpacity(0.3),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AdminUiKit.royalBlue.withOpacity(0.15),
+                  blurRadius: 24,
+                  spreadRadius: 4,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AdminUiKit.royalBlue.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.system_update_rounded,
+                    color: AdminUiKit.royalBlue,
+                    size: 36,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Minimum Required Version',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : AdminUiKit.primaryNavy,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Users with app versions lower than this will be prompted to update. Leave blank or empty to disable force update.',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    labelText: 'Min Version (e.g. 1.0.0)',
+                    hintText: 'Leave empty to disable',
+                    prefixIcon: const Icon(Icons.tag_rounded, size: 20),
+                    filled: true,
+                    fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          side: BorderSide(color: isDark ? Colors.white24 : Colors.black12, width: 1.5),
+                        ),
+                        onPressed: () => Navigator.pop(ctx),
+                        child: Text(
+                          AppLocalizations.of(context)?.cancel ?? 'Cancel',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13.5,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AdminUiKit.royalBlue,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                        ),
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          final adminId = moderator?.id ?? authProvider.currentUser?.id ?? 'admin';
+                          final adminName = moderator?.fullName ?? authProvider.currentUser?.email ?? 'Admin';
+                          try {
+                            await SupabaseService().setMinRequiredVersion(
+                              controller.text.trim(),
+                              adminId,
+                              adminName,
+                            );
+                            if (context.mounted) {
+                              CustomSnackbar.show(
+                                context,
+                                controller.text.trim().isEmpty
+                                    ? 'Force Update requirement disabled'
+                                    : 'Minimum version set to ${controller.text.trim()}',
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              CustomSnackbar.show(context, 'Error: $e', isError: true);
+                            }
+                          }
+                        },
+                        child: Text(
+                          'Save',
                           style: GoogleFonts.plusJakartaSans(
                             fontWeight: FontWeight.w700,
                             fontSize: 13.5,

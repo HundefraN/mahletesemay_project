@@ -3,8 +3,10 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../admin/permissions/permission_screen.dart';
 import '../services/force_update_service.dart';
+import '../utils/constants.dart';
 import '../widgets/force_update_dialog.dart';
 import 'home_screen.dart';
+import 'onboarding/language_selection_screen.dart';
 import 'onboarding/onboarding_screen.dart';
 
 /// ──────────────────────────────────────────────────────────────────────────────
@@ -18,14 +20,13 @@ import 'onboarding/onboarding_screen.dart';
 ///    and compares it against the installed version. If an update is required,
 ///    an un-dismissible dialog blocks the user (see [ForceUpdateDialog]).
 ///
-/// 2. **Permissions** — first-run permission request screen.
+/// 2. **Language Selection** — first-run language picker (EN / AM / OM).
 ///
-/// 3. **Onboarding** — first-run onboarding carousel.
+/// 3. **Permissions** — first-run professional permission request screen.
 ///
-/// 4. **HomeScreen** — the main app.
+/// 4. **Onboarding** — modern 2026 onboarding carousel.
 ///
-/// Place any other startup-gate checks (maintenance mode, auth, etc.) alongside
-/// step 1 inside [_checkAppStatus].
+/// 5. **HomeScreen** — the main app.
 /// ──────────────────────────────────────────────────────────────────────────────
 class SplashWrapper extends StatefulWidget {
   const SplashWrapper({super.key});
@@ -34,7 +35,14 @@ class SplashWrapper extends StatefulWidget {
   State<SplashWrapper> createState() => _SplashWrapperState();
 }
 
-enum AppStatus { checking, needsUpdate, needsPermissions, needsOnboarding, ready }
+enum AppStatus {
+  checking,
+  needsUpdate,
+  needsLanguage,
+  needsPermissions,
+  needsOnboarding,
+  ready,
+}
 
 class _SplashWrapperState extends State<SplashWrapper> {
   late Future<AppStatus> _statusFuture;
@@ -59,14 +67,18 @@ class _SplashWrapperState extends State<SplashWrapper> {
       return AppStatus.needsUpdate;
     }
 
-    // ── 2. Local preferences (permissions / onboarding) ─────────────────────
+    // ── 2. Local preferences (language / permissions / onboarding) ──────────
     final prefs = await SharedPreferences.getInstance();
+    final bool hasSelectedLanguage =
+        prefs.getBool(prefLanguageSelected) ?? false;
     final bool hasCompletedPermissions =
-        prefs.getBool('permissions_completed') ?? false;
+        prefs.getBool(prefPermissionsCompleted) ?? false;
     final bool hasCompletedOnboarding =
-        prefs.getBool('onboarding_completed') ?? false;
+        prefs.getBool(prefOnboardingCompleted) ?? false;
 
-    if (!hasCompletedPermissions) {
+    if (!hasSelectedLanguage) {
+      return AppStatus.needsLanguage;
+    } else if (!hasCompletedPermissions) {
       return AppStatus.needsPermissions;
     } else if (!hasCompletedOnboarding) {
       return AppStatus.needsOnboarding;
@@ -83,18 +95,17 @@ class _SplashWrapperState extends State<SplashWrapper> {
         if (snapshot.connectionState == ConnectionState.done) {
           final status = snapshot.data;
           switch (status) {
-            // Force update: show the home screen underneath but immediately
-            // present the blocking dialog. Using addPostFrameCallback ensures
-            // the dialog is shown after the widget tree is built.
+            // Force update: show an empty scaffold and immediately present the blocking dialog.
             case AppStatus.needsUpdate:
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) ForceUpdateDialog.show(context);
               });
-              // Show an empty scaffold behind the dialog.
               return Scaffold(
                 backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                 body: const SizedBox.shrink(),
               );
+            case AppStatus.needsLanguage:
+              return const LanguageSelectionScreen();
             case AppStatus.needsPermissions:
               return const PermissionScreen();
             case AppStatus.needsOnboarding:
@@ -106,8 +117,7 @@ class _SplashWrapperState extends State<SplashWrapper> {
           }
         }
 
-        // While the future is resolving, the native splash screen is shown,
-        // so returning an empty container is fine and prevents any flicker.
+        // While the future is resolving, the native splash screen is shown.
         return const Scaffold(body: SizedBox.shrink());
       },
     );

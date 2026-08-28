@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mahlete_semay_project/admin/widgets/admin_ui_kit.dart';
@@ -200,7 +201,7 @@ class _WaitingForApprovalScreenState extends State<WaitingForApprovalScreen> {
                         child: OutlinedButton.icon(
                           onPressed: () => authProvider.signOut(),
                           icon: const Icon(Icons.logout_rounded, size: 18),
-                          label: const Text('Sign Out & Return'),
+                          label: Text(AppLocalizations.of(context)?.signOutAndReturn ?? 'Sign Out & Return'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AdminUiKit.roseRed,
                             side: BorderSide(color: AdminUiKit.roseRed.withOpacity(0.4)),

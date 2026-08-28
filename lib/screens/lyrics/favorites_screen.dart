@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -67,6 +68,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       extendBodyBehindAppBar: true,
       body: Consumer<SongProvider>(
@@ -81,7 +83,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
                 stretch: true,
                 backgroundColor: theme.colorScheme.surface.withOpacity(0.8),
                 flexibleSpace: FlexibleSpaceBar(
-                  title: const Text('My Favorites', style: TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(l10n.myFavorites, style: const TextStyle(fontWeight: FontWeight.bold)),
                   centerTitle: false,
                   titlePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   background: Container(
@@ -206,6 +208,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -226,13 +229,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
             ),
             const SizedBox(height: 24),
             Text(
-              'No Favorites Yet',
+              l10n.noFavoritesYet,
               style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Tap the heart icon on any song to add it to your favorites.',
+              l10n.noFavoritesDesc,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.7),
               ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:mahlete_semay_project/models/submission_history_model.dart';
 import 'package:mahlete_semay_project/models/suggestion_model.dart';
 import 'package:mahlete_semay_project/screens/lyrics/my_submissions_screen.dart';
@@ -73,6 +74,7 @@ class _SuggestLyricsScreenState extends State<SuggestLyricsScreen> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
@@ -88,10 +90,10 @@ class _SuggestLyricsScreenState extends State<SuggestLyricsScreen> {
 
         if (mounted) {
           Navigator.pop(context, true);
-          CustomSnackbar.show(context, 'Thank you! Your suggestion has been submitted for review.');
+          CustomSnackbar.show(context, l10n.submissionSuccess);
         }
       } catch (e) {
-        if (mounted) CustomSnackbar.show(context, 'Submission failed. Please try again.', isError: true);
+        if (mounted) CustomSnackbar.show(context, l10n.submissionFailed, isError: true);
       } finally {
         if (mounted) setState(() => _isLoading = false);
       }
@@ -100,13 +102,14 @@ class _SuggestLyricsScreenState extends State<SuggestLyricsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Suggest a Song'),
+        title: Text(l10n.suggestASong),
         actions: [
           IconButton(
             icon: const Icon(Icons.history_rounded),
-            tooltip: 'My Submissions',
+            tooltip: l10n.mySubmissions,
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MySubmissionsScreen())),
           ),
         ],
@@ -118,15 +121,15 @@ class _SuggestLyricsScreenState extends State<SuggestLyricsScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            TextFormField(controller: _titleController, decoration: _inputDecoration('Song Title *', Icons.music_note), validator: (v) => v!.isEmpty ? 'Required' : null),
+            TextFormField(controller: _titleController, decoration: _inputDecoration('${l10n.title} *', Icons.music_note), validator: (v) => v!.isEmpty ? l10n.pleaseEnterEmail : null),
             const SizedBox(height: 16),
-            TextFormField(controller: _artistController, decoration: _inputDecoration('Artist Name *', Icons.person), validator: (v) => v!.isEmpty ? 'Required' : null),
+            TextFormField(controller: _artistController, decoration: _inputDecoration('${l10n.artist} *', Icons.person), validator: (v) => v!.isEmpty ? l10n.pleaseEnterEmail : null),
             const SizedBox(height: 16),
-            TextFormField(controller: _lyricsController, decoration: _inputDecoration('Lyrics *', Icons.text_fields, alignLabel: true), minLines: 10, maxLines: 20, validator: (v) => v!.isEmpty ? 'Required' : null),
+            TextFormField(controller: _lyricsController, decoration: _inputDecoration('${l10n.lyrics} *', Icons.text_fields, alignLabel: true), minLines: 10, maxLines: 20, validator: (v) => v!.isEmpty ? l10n.pleaseEnterEmail : null),
             const SizedBox(height: 24),
             ElevatedButton(
                 onPressed: _isOffline ? null : _submit,
-                child: const Text('Submit for Review')
+                child: Text(l10n.submitForReview),
             ),
           ],
         ),

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -151,16 +152,16 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete Album?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
-        content: Text('Are you sure you want to delete "${widget.album.title}"? This cannot be undone.'),
+        title: Text(AppLocalizations.of(context)?.deleteAlbumPrompt ?? 'Delete Album?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        content: Text(AppLocalizations.of(context)?.deleteAlbumConfirm(widget.album.title) ?? 'Are you sure you want to delete "${widget.album.title}"? This cannot be undone.'),
         actions: [
-          TextButton(child: const Text('Cancel'), onPressed: () => Navigator.of(context).pop(false)),
+          TextButton(child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'), onPressed: () => Navigator.of(context).pop(false)),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: AdminUiKit.roseRed,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
             onPressed: () => Navigator.of(context).pop(true),
           ),
         ],
@@ -221,8 +222,8 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
           physics: const BouncingScrollPhysics(),
           children: [
             // Section 1: Details
-            const AdminSectionHeader(
-              title: 'Album Details',
+            AdminSectionHeader(
+              title: AppLocalizations.of(context)?.albumDetailsSection ?? 'Album Details',
               icon: Icons.album_rounded,
               padding: EdgeInsets.only(top: 4, bottom: 6),
             ),
@@ -267,8 +268,8 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
             const SizedBox(height: 12),
 
             // Section 2: Cover Art
-            const AdminSectionHeader(
-              title: 'Album Cover Art',
+            AdminSectionHeader(
+              title: AppLocalizations.of(context)?.albumCoverArt ?? 'Album Cover Art',
               icon: Icons.image_rounded,
               padding: EdgeInsets.only(top: 4, bottom: 6),
             ),
@@ -280,7 +281,7 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
             const SizedBox(height: 16),
 
             AdminPrimaryButton(
-              label: 'Save Album Changes',
+              label: AppLocalizations.of(context)?.saveAlbumChanges ?? 'Save Album Changes',
               icon: Icons.save_rounded,
               isLoading: _isSaving,
               onPressed: _submit,
@@ -321,14 +322,14 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
               TextButton.icon(
                 onPressed: _pickAndCropImage,
                 icon: const Icon(Icons.change_circle_rounded, size: 16),
-                label: Text('Change Cover', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
+                label: Text(AppLocalizations.of(context)?.changeCover ?? 'Change Cover', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
               ),
               if (_pickedImage != null) ...[
                 const SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: () => setState(() => _pickedImage = null),
                   icon: const Icon(Icons.undo_rounded, size: 16),
-                  label: Text('Revert', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
+                  label: Text(AppLocalizations.of(context)?.revert ?? 'Revert', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
                 ),
               ],
             ],

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -284,8 +285,8 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
               if (_hasDraftBanner) _buildDraftBanner(isDark),
 
               // Section 1: Details
-              const AdminSectionHeader(
-                title: 'Artist Information',
+              AdminSectionHeader(
+                title: AppLocalizations.of(context)?.artistInfoSection ?? 'Artist Information',
                 icon: Icons.person_rounded,
                 padding: EdgeInsets.only(top: 4, bottom: 6),
               ),
@@ -323,8 +324,8 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
               const SizedBox(height: 12),
 
               // Section 2: Photo
-              const AdminSectionHeader(
-                title: 'Artist Photo (Optional)',
+              AdminSectionHeader(
+                title: AppLocalizations.of(context)?.artistPhotoOptional ?? 'Artist Photo (Optional)',
                 icon: Icons.add_a_photo_rounded,
                 padding: EdgeInsets.only(top: 4, bottom: 6),
               ),
@@ -487,7 +488,7 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
               TextButton.icon(
                 onPressed: _pickAndCropImage,
                 icon: const Icon(Icons.change_circle_rounded, size: 16),
-                label: Text('Change', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
+                label: Text(AppLocalizations.of(context)?.change ?? 'Change', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
               ),
               const SizedBox(width: 8),
               TextButton.icon(
@@ -496,7 +497,7 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
                   _hasUnsavedChanges = true;
                 }),
                 icon: const Icon(Icons.delete_outline_rounded, size: 16, color: AdminUiKit.roseRed),
-                label: Text('Remove', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AdminUiKit.roseRed)),
+                label: Text(AppLocalizations.of(context)?.remove ?? 'Remove', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AdminUiKit.roseRed)),
               ),
             ],
           ),
