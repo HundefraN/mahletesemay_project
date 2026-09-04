@@ -56,8 +56,9 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final allArtists = songProvider.getRecommendedArtists(region: widget.region);
-    
+    final allArtists =
+        songProvider.getRecommendedArtists(region: widget.region);
+
     // Multi-script professional search
     final filteredArtists = SearchService().filterArtists(
       query: _searchQuery,
@@ -73,9 +74,11 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
           SliverAppBar(
             pinned: true,
             expandedHeight: 140,
-            backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.85),
+            backgroundColor:
+                theme.scaffoldBackgroundColor.withValues(alpha: 0.85),
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 56, bottom: 16, right: 16),
+              titlePadding:
+                  const EdgeInsets.only(left: 56, bottom: 16, right: 16),
               title: Text(
                 widget.title,
                 style: TextStyle(
@@ -94,8 +97,10 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          theme.colorScheme.primary.withValues(alpha: isDark ? 0.15 : 0.08),
-                          theme.colorScheme.secondary.withValues(alpha: isDark ? 0.1 : 0.04),
+                          theme.colorScheme.primary
+                              .withValues(alpha: isDark ? 0.15 : 0.08),
+                          theme.colorScheme.secondary
+                              .withValues(alpha: isDark ? 0.1 : 0.04),
                           theme.scaffoldBackgroundColor,
                         ],
                       ),
@@ -109,7 +114,8 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                       height: 140,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                        color:
+                            theme.colorScheme.primary.withValues(alpha: 0.08),
                       ),
                     ),
                   ),
@@ -119,13 +125,17 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
             actions: [
               IconButton(
                 icon: Icon(
-                  _isGridView ? IconsaxPlusBold.row_vertical : IconsaxPlusBold.grid_1,
+                  _isGridView
+                      ? IconsaxPlusBold.row_vertical
+                      : IconsaxPlusBold.grid_1,
                   color: theme.colorScheme.primary,
                   size: 22,
                 ),
                 tooltip: _isGridView
-                    ? (AppLocalizations.of(context)?.switchToList ?? 'Switch to list view')
-                    : (AppLocalizations.of(context)?.switchToGrid ?? 'Switch to grid view'),
+                    ? (AppLocalizations.of(context)?.switchToList ??
+                        'Switch to list view')
+                    : (AppLocalizations.of(context)?.switchToGrid ??
+                        'Switch to grid view'),
                 onPressed: () => setState(() => _isGridView = !_isGridView),
               ),
               const SizedBox(width: 8),
@@ -146,11 +156,13 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                           : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.08),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                          color: Colors.black
+                              .withValues(alpha: isDark ? 0.2 : 0.04),
                           blurRadius: 10,
                           offset: const Offset(0, 3),
                         ),
@@ -159,11 +171,15 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                     child: TextField(
                       controller: _searchController,
                       onTapOutside: (_) => FocusScope.of(context).unfocus(),
-                      style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface),
+                      style: TextStyle(
+                          fontSize: 15, color: theme.colorScheme.onSurface),
                       decoration: InputDecoration(
-                        hintText: AppLocalizations.of(context)?.searchArtistsHint ?? 'Search artists in English, Amharic or Afaan Oromoo...',
+                        hintText: AppLocalizations.of(context)
+                                ?.searchArtistsHint ??
+                            'Search singers in English, Amharic or Afaan Oromoo...',
                         hintStyle: TextStyle(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.4),
                           fontSize: 13.5,
                         ),
                         prefixIcon: Icon(
@@ -181,7 +197,8 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                               )
                             : null,
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
                       ),
                     ),
                   ),
@@ -196,7 +213,8 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 13,
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -222,23 +240,28 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.1),
                         ),
                         child: Icon(
                           IconsaxPlusBold.user_search,
                           size: 44,
-                          color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.7),
                         ),
                       ),
                       const SizedBox(height: 16),
                       Text(
                         _searchQuery.isNotEmpty
-                            ? (AppLocalizations.of(context)?.noArtistsFound ?? 'No artists match your search')
-                            : (AppLocalizations.of(context)?.noArtistsFound ?? 'No artists found in this category'),
+                            ? (AppLocalizations.of(context)?.noArtistsFound ??
+                                'No singers match your search')
+                            : (AppLocalizations.of(context)?.noArtistsFound ??
+                                'No singers found in this category'),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.8),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -311,7 +334,8 @@ class _ArtistListTile extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final albums = songProvider.getAlbumsByArtist(artist.id);
-    final songs = songProvider.allSongs.where((s) => s.artistId == artist.id).toList();
+    final songs =
+        songProvider.allSongs.where((s) => s.artistId == artist.id).toList();
     final totalViews = songs.fold<int>(0, (sum, song) => sum + song.viewCount);
     final compactViews = NumberFormat.compact().format(totalViews);
 
@@ -321,7 +345,8 @@ class _ArtistListTile extends StatelessWidget {
         color: isDark ? theme.cardColor.withValues(alpha: 0.4) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.onSurface.withValues(alpha: isDark ? 0.06 : 0.05),
+          color: theme.colorScheme.onSurface
+              .withValues(alpha: isDark ? 0.06 : 0.05),
         ),
         boxShadow: isDark
             ? []
@@ -365,7 +390,8 @@ class _ArtistListTile extends StatelessWidget {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.15),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -425,9 +451,11 @@ class _ArtistListTile extends StatelessWidget {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                              color: theme.colorScheme.primary
+                                  .withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -444,7 +472,8 @@ class _ArtistListTile extends StatelessWidget {
                             Text(
                               '•',
                               style: TextStyle(
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.4),
                                 fontSize: 12,
                               ),
                             ),
@@ -453,7 +482,8 @@ class _ArtistListTile extends StatelessWidget {
                               '${songs.length} ${songs.length == 1 ? (AppLocalizations.of(context)?.trackSingular ?? 'Track') : (AppLocalizations.of(context)?.tracksPlural ?? 'Tracks')}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.6),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -463,7 +493,8 @@ class _ArtistListTile extends StatelessWidget {
                             Text(
                               '•',
                               style: TextStyle(
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.4),
                                 fontSize: 12,
                               ),
                             ),
@@ -471,14 +502,16 @@ class _ArtistListTile extends StatelessWidget {
                             Icon(
                               IconsaxPlusLinear.eye,
                               size: 13,
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.5),
                             ),
                             const SizedBox(width: 3),
                             Text(
                               '$compactViews ${AppLocalizations.of(context)?.views ?? "Views"}',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.6),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -525,14 +558,16 @@ class _ArtistGridCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final albums = songProvider.getAlbumsByArtist(artist.id);
-    final songs = songProvider.allSongs.where((s) => s.artistId == artist.id).toList();
+    final songs =
+        songProvider.allSongs.where((s) => s.artistId == artist.id).toList();
 
     return Container(
       decoration: BoxDecoration(
         color: isDark ? theme.cardColor.withValues(alpha: 0.4) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: theme.colorScheme.onSurface.withValues(alpha: isDark ? 0.06 : 0.05),
+          color: theme.colorScheme.onSurface
+              .withValues(alpha: isDark ? 0.06 : 0.05),
         ),
         boxShadow: isDark
             ? []
@@ -577,7 +612,8 @@ class _ArtistGridCard extends StatelessWidget {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.2),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),

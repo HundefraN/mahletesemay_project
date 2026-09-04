@@ -1565,7 +1565,7 @@ abstract class AppLocalizations {
   /// No description provided for @addArtist.
   ///
   /// In en, this message translates to:
-  /// **'Add Artist'**
+  /// **'Add Singer'**
   String get addArtist;
 
   /// No description provided for @addAlbum.
@@ -3161,7 +3161,7 @@ abstract class AppLocalizations {
   /// No description provided for @discoverAmazingMusic.
   ///
   /// In en, this message translates to:
-  /// **'Discover amazing music'**
+  /// **'Discover your favorite music'**
   String get discoverAmazingMusic;
 
   /// No description provided for @filterSearch.

@@ -19,7 +19,8 @@ class ManageArtistsScreen extends StatefulWidget {
   State<ManageArtistsScreen> createState() => _ManageArtistsScreenState();
 }
 
-class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTickerProviderStateMixin {
+class _ManageArtistsScreenState extends State<ManageArtistsScreen>
+    with SingleTickerProviderStateMixin {
   final FirebaseService _firebaseService = FirebaseService();
   late Future<List<Artist>> _artistsFuture;
   List<Artist> _allArtists = [];
@@ -101,7 +102,10 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(AppLocalizations.of(context)?.deleteSelectedArtistsTitle(count) ?? 'Delete $count Artist(s)?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        title: Text(
+            AppLocalizations.of(context)?.deleteSelectedArtistsTitle(count) ??
+                'Delete $count Artist(s)?',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
         content: Text(
           'Are you sure you want to permanently delete $count artist(s)? This will affect associated albums and songs.',
           style: GoogleFonts.plusJakartaSans(fontSize: 14),
@@ -114,7 +118,8 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: AdminUiKit.roseRed,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             child: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
             onPressed: () => Navigator.of(context).pop(true),
@@ -144,13 +149,15 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
         }
 
         if (mounted) {
-          CustomSnackbar.show(context, 'Successfully deleted $count artist(s).');
+          CustomSnackbar.show(
+              context, 'Successfully deleted $count artist(s).');
           _exitSelectionMode();
           _refreshData();
         }
       } catch (e) {
         if (mounted) {
-          CustomSnackbar.show(context, 'Error during deletion: $e', isError: true);
+          CustomSnackbar.show(context, 'Error during deletion: $e',
+              isError: true);
         }
       }
     }
@@ -172,11 +179,13 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF070E1B) : const Color(0xFFF5F7FB),
+      backgroundColor:
+          isDark ? const Color(0xFF070E1B) : const Color(0xFFF5F7FB),
       appBar: AppBar(
         title: Text(
-          'Manage Artists',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 19),
+          'Manage Singers',
+          style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700, fontSize: 19),
         ),
         actions: [
           IconButton(
@@ -194,7 +203,9 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF13233D) : Colors.black.withValues(alpha: 0.04),
+              color: isDark
+                  ? const Color(0xFF13233D)
+                  : Colors.black.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(16),
             ),
             padding: const EdgeInsets.all(4),
@@ -215,11 +226,13 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
               ),
               labelColor: isDark ? AdminUiKit.primaryNavy : Colors.white,
               unselectedLabelColor: isDark ? Colors.white60 : Colors.black54,
-              labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13.5),
-              unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13.5),
+              labelStyle: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w700, fontSize: 13.5),
+              unselectedLabelStyle: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w600, fontSize: 13.5),
               tabs: const [
-                Tab(text: '🇪🇹 Ethiopian Artists'),
-                Tab(text: '🌍 Worldwide Artists'),
+                Tab(text: '🇪🇹 Ethiopian Singers'),
+                Tab(text: '🌍 Worldwide Singers'),
               ],
             ),
           ),
@@ -229,12 +242,14 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
         future: _artistsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AdminUiKit.goldAccent));
+            return const Center(
+                child: CircularProgressIndicator(color: AdminUiKit.goldAccent));
           }
           if (snapshot.hasError) {
             return AdminEmptyState(
               icon: Icons.error_outline_rounded,
-              title: AppLocalizations.of(context)?.failedToLoadArtists ?? 'Failed to load artists',
+              title: AppLocalizations.of(context)?.failedToLoadArtists ??
+                  'Failed to load singers',
               description: snapshot.error.toString(),
               actionLabel: 'Retry',
               onAction: _refreshData,
@@ -242,20 +257,24 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
           }
 
           _allArtists = snapshot.data ?? [];
-          final ethiopianArtists = _allArtists.where((a) => a.region == 'Ethiopian').toList();
-          final worldwideArtists = _allArtists.where((a) => a.region == 'Worldwide').toList();
+          final ethiopianArtists =
+              _allArtists.where((a) => a.region == 'Ethiopian').toList();
+          final worldwideArtists =
+              _allArtists.where((a) => a.region == 'Worldwide').toList();
 
           return Column(
-              children: [
+            children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: _isSelectionMode
                     ? Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
                           color: AdminUiKit.roseRed.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AdminUiKit.roseRed.withValues(alpha: 0.3)),
+                          border: Border.all(
+                              color: AdminUiKit.roseRed.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           children: [
@@ -269,26 +288,35 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
                               style: GoogleFonts.plusJakartaSans(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 15,
-                                color: isDark ? Colors.white : AdminUiKit.roseRed,
+                                color:
+                                    isDark ? Colors.white : AdminUiKit.roseRed,
                               ),
                             ),
                             const Spacer(),
                             FilledButton.icon(
-                              onPressed: _selectedArtistIds.isNotEmpty ? _deleteSelectedArtists : null,
+                              onPressed: _selectedArtistIds.isNotEmpty
+                                  ? _deleteSelectedArtists
+                                  : null,
                               style: FilledButton.styleFrom(
                                 backgroundColor: AdminUiKit.roseRed,
                                 foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                               ),
-                              icon: const Icon(Icons.delete_sweep_rounded, size: 18),
-                              label: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
+                              icon: const Icon(Icons.delete_sweep_rounded,
+                                  size: 18),
+                              label: Text(
+                                  AppLocalizations.of(context)?.deleteAction ??
+                                      'Delete'),
                             ),
                           ],
                         ),
                       )
                     : AdminSearchBar(
                         controller: _searchController,
-                        hintText: AppLocalizations.of(context)?.searchArtistsHint ?? 'Search artists by name...',
+                        hintText:
+                            AppLocalizations.of(context)?.searchArtistsHint ??
+                                'Search singers by name...',
                       ),
               ),
               Expanded(
@@ -309,12 +337,14 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
           AdminUiKit.hapticMedium();
           _navigateToAddArtist();
         },
-        backgroundColor: isDark ? AdminUiKit.goldAccent : AdminUiKit.primaryNavy,
+        backgroundColor:
+            isDark ? AdminUiKit.goldAccent : AdminUiKit.primaryNavy,
         foregroundColor: isDark ? AdminUiKit.primaryNavy : Colors.white,
         icon: const Icon(Icons.person_add_alt_1_rounded, size: 22),
         label: Text(
-          'Add Artist',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 14.5),
+          'Add Singer',
+          style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700, fontSize: 14.5),
         ),
       ),
     );
@@ -322,17 +352,19 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
 
   Widget _buildArtistList(String category, List<Artist> artists) {
     final query = _searchController.text.trim();
-    final displayList = SearchService().filterArtists(query: query, artists: artists);
+    final displayList =
+        SearchService().filterArtists(query: query, artists: artists);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (displayList.isEmpty) {
       return AdminEmptyState(
         icon: Icons.person_off_rounded,
-        title: AppLocalizations.of(context)?.noArtistsFound ?? 'No Artists Found',
+        title:
+            AppLocalizations.of(context)?.noArtistsFound ?? 'No singers Found',
         description: query.isNotEmpty
             ? 'No artist matching "$query".'
-            : 'There are no $category artists added yet.',
-        actionLabel: query.isEmpty ? 'Add Artist' : null,
+            : 'There are no $category singers added yet.',
+        actionLabel: query.isEmpty ? 'Add Singer' : null,
         onAction: query.isEmpty ? _navigateToAddArtist : null,
       );
     }
@@ -380,7 +412,9 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected ? AdminUiKit.goldAccent : AdminUiKit.goldAccent.withValues(alpha: 0.3),
+                        color: isSelected
+                            ? AdminUiKit.goldAccent
+                            : AdminUiKit.goldAccent.withValues(alpha: 0.3),
                         width: 1.8,
                       ),
                     ),
@@ -390,15 +424,20 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
                               artist.imageUrl,
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Container(
-                                color: AdminUiKit.goldAccent.withValues(alpha: 0.15),
-                                child: const Icon(Icons.person_rounded, color: AdminUiKit.goldAccent),
+                                color: AdminUiKit.goldAccent
+                                    .withValues(alpha: 0.15),
+                                child: const Icon(Icons.person_rounded,
+                                    color: AdminUiKit.goldAccent),
                               ),
                             )
                           : Container(
-                              color: AdminUiKit.goldAccent.withValues(alpha: 0.15),
+                              color:
+                                  AdminUiKit.goldAccent.withValues(alpha: 0.15),
                               child: Center(
                                 child: Text(
-                                  artist.name.isNotEmpty ? artist.name[0].toUpperCase() : 'A',
+                                  artist.name.isNotEmpty
+                                      ? artist.name[0].toUpperCase()
+                                      : 'A',
                                   style: GoogleFonts.plusJakartaSans(
                                     fontWeight: FontWeight.w800,
                                     fontSize: 18,
@@ -421,16 +460,21 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white : AdminUiKit.primaryNavy,
+                            color:
+                                isDark ? Colors.white : AdminUiKit.primaryNavy,
                           ),
                         ),
                         const SizedBox(height: 3),
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: (artist.region == 'Ethiopian' ? AdminUiKit.emeraldGreen : AdminUiKit.royalBlue).withValues(alpha: 0.12),
+                                color: (artist.region == 'Ethiopian'
+                                        ? AdminUiKit.emeraldGreen
+                                        : AdminUiKit.royalBlue)
+                                    .withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -438,7 +482,9 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
-                                  color: artist.region == 'Ethiopian' ? AdminUiKit.emeraldGreen : AdminUiKit.royalBlue,
+                                  color: artist.region == 'Ethiopian'
+                                      ? AdminUiKit.emeraldGreen
+                                      : AdminUiKit.royalBlue,
                                 ),
                               ),
                             ),
@@ -453,20 +499,25 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
                       value: isSelected,
                       activeColor: AdminUiKit.goldAccent,
                       checkColor: AdminUiKit.primaryNavy,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(5)),
                       onChanged: (_) => _toggleSelection(artist.id),
                     )
                   else
                     Container(
                       padding: const EdgeInsets.all(7),
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04),
+                        color: isDark
+                            ? Colors.white10
+                            : Colors.black.withValues(alpha: 0.04),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
                         Icons.edit_note_rounded,
                         size: 20,
-                        color: isDark ? AdminUiKit.goldHighlight : AdminUiKit.primaryNavy,
+                        color: isDark
+                            ? AdminUiKit.goldHighlight
+                            : AdminUiKit.primaryNavy,
                       ),
                     ),
                 ],

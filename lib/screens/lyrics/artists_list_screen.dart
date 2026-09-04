@@ -295,8 +295,10 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                 borderRadius: BorderRadius.circular(context.w(16)),
                 boxShadow: [
                   BoxShadow(
-                    color:
-                        Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .shadow
+                        .withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -397,8 +399,10 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
               children: [
                 Icon(IconsaxPlusBold.user_search,
                     size: 80,
-                    color:
-                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.4)),
                 const SizedBox(height: 16),
                 Text(
                     AppLocalizations.of(context)?.selectArtistToSeeAlbums ??
@@ -508,8 +512,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                           style: theme.textTheme.headlineMedium
                                               ?.copyWith(
                                             fontWeight: FontWeight.bold,
-                                            color:
-                                                theme.colorScheme.onSurface,
+                                            color: theme.colorScheme.onSurface,
                                             fontSize: context.sp(28),
                                           ),
                                         ),
@@ -518,8 +521,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                           l10n.discoverAmazingMusic,
                                           style: theme.textTheme.bodyMedium
                                               ?.copyWith(
-                                            color: theme
-                                                .colorScheme.onSurface
+                                            color: theme.colorScheme.onSurface
                                                 .withValues(alpha: 0.7),
                                             fontSize: context.sp(14),
                                           ),
@@ -606,8 +608,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                         decoration: BoxDecoration(
                                           color: _isSearchFocused
                                               ? theme.colorScheme.primary
-                                              : theme
-                                                  .colorScheme.surfaceContainerHighest,
+                                              : theme.colorScheme
+                                                  .surfaceContainerHighest,
                                           borderRadius: BorderRadius.circular(
                                               context.w(12)),
                                         ),
@@ -664,7 +666,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                         BorderRadius.circular(context.w(16)),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.1),
+                                        color:
+                                            Colors.black.withValues(alpha: 0.1),
                                         blurRadius: 8,
                                         offset: const Offset(0, 2),
                                       ),
@@ -777,7 +780,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                     id: singlesAlbumId,
                                     title: "Singles",
                                     artistId: singlesArtistId,
-                                    artistName: "Various Artists",
+                                    artistName: "Various Singers",
                                     coverImageUrl: '');
                                 Navigator.push(
                                     context,
@@ -1014,7 +1017,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                     query: _searchQuery,
                     style: theme.textTheme.bodySmall?.copyWith(
                         fontStyle: FontStyle.italic,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         fontSize: context.sp(12)))
                 : _SongMetadataColumn(song: song, fontSize: context.sp(12)),
           );
@@ -1332,7 +1336,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                 end: Alignment.bottomRight,
                 colors: [
                   theme.colorScheme.surface,
-                  theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
+                  theme.colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.3)
                 ]),
             boxShadow: [
               BoxShadow(
@@ -1409,7 +1414,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                     SizedBox(height: context.w(8)),
                     Text(
                         AppLocalizations.of(context)?.noArtistsInCategory ??
-                            'No artists in this category.',
+                            'No singers in this category.',
                         style: TextStyle(
                             color: Theme.of(context)
                                 .colorScheme
@@ -1439,7 +1444,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                               id: singlesAlbumId,
                               title: "Singles",
                               artistId: singlesArtistId,
-                              artistName: "Various Artists",
+                              artistName: "Various Singers",
                               coverImageUrl: '');
                           Navigator.push(
                               context,
@@ -1498,7 +1503,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                         BorderRadius.circular(context.w(40)),
                                     boxShadow: [
                                       BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.1),
+                                          color: Colors.black
+                                              .withValues(alpha: 0.1),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2))
                                     ],

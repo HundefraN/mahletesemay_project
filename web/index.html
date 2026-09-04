@@ -1,9 +1,13 @@
-<!DOCTYPE html><html lang="en"><head>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Mahlete Semay - Ethiopian &amp; International Worship, Songs, Vocal Training and Spiritual Lessons">
+  <meta name="description"
+    content="Mahlete Semay - Ethiopian &amp; International Worship, Songs, Vocal Training and Spiritual Lessons">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0A1E3F">
 
@@ -86,9 +90,20 @@
     }
 
     @keyframes progress-slide {
-      0% { left: -40%; width: 30%; }
-      50% { left: 40%; width: 60%; }
-      100% { left: 100%; width: 40%; }
+      0% {
+        left: -40%;
+        width: 30%;
+      }
+
+      50% {
+        left: 40%;
+        width: 60%;
+      }
+
+      100% {
+        left: 100%;
+        width: 40%;
+      }
     }
 
     /* ── INSTANT APP SHELL SKELETON ── */
@@ -98,8 +113,8 @@
       display: flex;
       flex-direction: row;
       background: radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.08), transparent 45%),
-                  radial-gradient(circle at 20% 80%, rgba(26, 75, 153, 0.18), transparent 50%),
-                  var(--bg-main);
+        radial-gradient(circle at 20% 80%, rgba(26, 75, 153, 0.18), transparent 50%),
+        var(--bg-main);
       z-index: 99990;
       opacity: 1;
       transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -330,19 +345,24 @@
       0% {
         background-color: var(--shimmer-base);
       }
+
       50% {
         background-color: var(--shimmer-glow);
       }
+
       100% {
         background-color: var(--shimmer-base);
       }
     }
 
     @keyframes pulse-glow {
-      0%, 100% {
+
+      0%,
+      100% {
         transform: scale(1);
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4), 0 0 10px var(--accent-gold-glow);
       }
+
       50% {
         transform: scale(1.04);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.65);
@@ -354,21 +374,26 @@
       .shell-sidebar {
         display: none;
       }
+
       .shell-main {
         padding: 18px 16px;
         gap: 22px;
       }
+
       .shell-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 14px;
       }
+
       .shell-search {
         max-width: 100%;
       }
+
       .shell-grid {
         grid-template-columns: 1fr;
       }
+
       .shell-avatar {
         width: 72px;
         height: 72px;
@@ -384,7 +409,7 @@
       margin: 0;
       min-height: 100%;
       background-color: #0A1E3F;
-          background-size: 100% 100%;
+      background-size: 100% 100%;
     }
 
     .center {
@@ -397,19 +422,22 @@
     }
 
     .contain {
-      display:block;
-      width:100%; height:100%;
+      display: block;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
     }
 
     .stretch {
-      display:block;
-      width:100%; height:100%;
+      display: block;
+      width: 100%;
+      height: 100%;
     }
 
     .cover {
-      display:block;
-      width:100%; height:100%;
+      display: block;
+      width: 100%;
+      height: 100%;
       object-fit: cover;
     }
 
@@ -436,7 +464,7 @@
     @media (prefers-color-scheme: dark) {
       body {
         background-color: #0A1E3F;
-          }
+      }
     }
   </style>
   <script id="splash-screen-script">
@@ -447,11 +475,16 @@
     }
   </script>
 </head>
+
 <body>
   <picture id="splash">
-      <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
-      <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
-      <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
+    <source
+      srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x"
+      media="(prefers-color-scheme: light)">
+    <source
+      srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x"
+      media="(prefers-color-scheme: dark)">
+    <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
   </picture>
   <!-- Slim glowing top progress line -->
   <div id="top-progress-bar">
@@ -521,19 +554,37 @@
         </div>
       </div>
 
-      <!-- Section: Ethiopian Artists -->
+      <!-- Section: Ethiopian Singers -->
       <div>
         <div class="shell-section-head">
           <div class="shell-section-badge"></div>
           <div class="shell-section-title" style="width: 140px;"></div>
         </div>
         <div class="shell-carousel">
-          <div class="shell-artist-item"><div class="shell-avatar"></div><div class="shell-avatar-name"></div></div>
-          <div class="shell-artist-item"><div class="shell-avatar"></div><div class="shell-avatar-name"></div></div>
-          <div class="shell-artist-item"><div class="shell-avatar"></div><div class="shell-avatar-name"></div></div>
-          <div class="shell-artist-item"><div class="shell-avatar"></div><div class="shell-avatar-name"></div></div>
-          <div class="shell-artist-item"><div class="shell-avatar"></div><div class="shell-avatar-name"></div></div>
-          <div class="shell-artist-item"><div class="shell-avatar"></div><div class="shell-avatar-name"></div></div>
+          <div class="shell-artist-item">
+            <div class="shell-avatar"></div>
+            <div class="shell-avatar-name"></div>
+          </div>
+          <div class="shell-artist-item">
+            <div class="shell-avatar"></div>
+            <div class="shell-avatar-name"></div>
+          </div>
+          <div class="shell-artist-item">
+            <div class="shell-avatar"></div>
+            <div class="shell-avatar-name"></div>
+          </div>
+          <div class="shell-artist-item">
+            <div class="shell-avatar"></div>
+            <div class="shell-avatar-name"></div>
+          </div>
+          <div class="shell-artist-item">
+            <div class="shell-avatar"></div>
+            <div class="shell-avatar-name"></div>
+          </div>
+          <div class="shell-artist-item">
+            <div class="shell-avatar"></div>
+            <div class="shell-avatar-name"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -541,12 +592,12 @@
 
   <script>
     // Smooth transition hook when Flutter takes over the screen
-    window._removeAppShell = function() {
+    window._removeAppShell = function () {
       const shell = document.getElementById('app-shell');
       const progressBar = document.getElementById('top-progress-bar');
       if (shell) {
         shell.classList.add('fade-out');
-        setTimeout(function() {
+        setTimeout(function () {
           if (shell && shell.parentNode) {
             shell.parentNode.removeChild(shell);
           }
@@ -555,7 +606,7 @@
       if (progressBar) {
         progressBar.style.opacity = '0';
         progressBar.style.transition = 'opacity 0.3s ease';
-        setTimeout(function() {
+        setTimeout(function () {
           if (progressBar && progressBar.parentNode) {
             progressBar.parentNode.removeChild(progressBar);
           }
@@ -566,4 +617,6 @@
   <script src="flutter_bootstrap.js" async=""></script>
 
 
-</body></html>
+</body>
+
+</html>

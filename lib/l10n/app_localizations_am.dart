@@ -1608,7 +1608,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get searchSongsHint => 'በርዕስ፣ በአርቲስት ወይም በግጥም ፈልግ...';
 
   @override
-  String get discoverAmazingMusic => 'አስደናቂ ሙዚቃዎችን ያግኙ';
+  String get discoverAmazingMusic => 'የሚወዷቸውን ዝማሬዎች ያግኙ';
 
   @override
   String get filterSearch => 'ፍለጋን አጣራ';
