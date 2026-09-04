@@ -367,6 +367,18 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> _handleSync({bool forceOnMobile = false}) async {
+    if (kIsWeb) {
+      _isSyncing = true;
+      notifyListeners();
+      await _fetchFromNetwork();
+      _isSyncing = false;
+      if (_isLoading && _songs.isNotEmpty) {
+        _isLoading = false;
+      }
+      notifyListeners();
+      return;
+    }
+
     _isSyncing = true;
     notifyListeners();
 
@@ -403,9 +415,20 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> _loadFromLocalDb() async {
-    _artists = await _localDbService.getArtists();
-    _albums = await _localDbService.getAlbums();
-    _songs = await _localDbService.getSongs();
+    if (kIsWeb) return;
+    final dbArtists = await _localDbService.getArtists();
+    final dbAlbums = await _localDbService.getAlbums();
+    final dbSongs = await _localDbService.getSongs();
+
+    if (dbArtists.isNotEmpty || _artists.isEmpty) {
+      _artists = dbArtists;
+    }
+    if (dbAlbums.isNotEmpty || _albums.isEmpty) {
+      _albums = dbAlbums;
+    }
+    if (dbSongs.isNotEmpty || _songs.isEmpty) {
+      _songs = dbSongs;
+    }
     notifyListeners();
   }
 

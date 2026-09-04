@@ -68,6 +68,7 @@ dependencies:
   android_alarm_manager_plus: ^4.0.7
 
   path: any
+  font_awesome_flutter: ^11.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

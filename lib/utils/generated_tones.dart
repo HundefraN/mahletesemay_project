@@ -204,6 +204,77 @@ class GeneratedTones {
     return _lockNoteBeepCache!;
   }
 
+  static Uint8List? _countdownTickCache;
+  static Uint8List? _countdownGoCache;
+
+  /// Synthesizes a crisp, subtle 0.08s metronome tick WAV sound (440 Hz woodblock style).
+  static Uint8List getCountdownTickTone() {
+    if (_countdownTickCache != null) return _countdownTickCache!;
+
+    const int sampleRate = 44100;
+    const double duration = 0.07;
+    final int numSamples = (sampleRate * duration).toInt();
+    const int bitsPerSample = 16;
+    const int numChannels = 1;
+    final int dataSize = numSamples * numChannels * bitsPerSample ~/ 8;
+    final int fileSize = dataSize + 36;
+
+    final header = ByteData(44);
+    final pcmData = ByteData(dataSize);
+
+    _buildWavHeader(header, fileSize, sampleRate, numChannels, bitsPerSample, dataSize);
+
+    const freq = 587.33; // D5 crisp percussive click
+    for (int i = 0; i < numSamples; i++) {
+      final t = i / sampleRate;
+      // Very fast exponential decay
+      final env = exp(-t * 55.0);
+      final wave = sin(2 * pi * freq * t) + 0.4 * sin(4 * pi * freq * t);
+      final sample = (wave * env * 24000).round().clamp(-32768, 32767);
+      pcmData.setInt16(i * 2, sample, Endian.little);
+    }
+
+    final bytesBuilder = BytesBuilder();
+    bytesBuilder.add(header.buffer.asUint8List());
+    bytesBuilder.add(pcmData.buffer.asUint8List());
+    _countdownTickCache = bytesBuilder.toBytes();
+    return _countdownTickCache!;
+  }
+
+  /// Synthesizes an energizing 0.22s bright chime WAV sound for "SING!" cue (880 Hz A5 ping).
+  static Uint8List getCountdownGoTone() {
+    if (_countdownGoCache != null) return _countdownGoCache!;
+
+    const int sampleRate = 44100;
+    const double duration = 0.22;
+    final int numSamples = (sampleRate * duration).toInt();
+    const int bitsPerSample = 16;
+    const int numChannels = 1;
+    final int dataSize = numSamples * numChannels * bitsPerSample ~/ 8;
+    final int fileSize = dataSize + 36;
+
+    final header = ByteData(44);
+    final pcmData = ByteData(dataSize);
+
+    _buildWavHeader(header, fileSize, sampleRate, numChannels, bitsPerSample, dataSize);
+
+    const freq1 = 880.0; // A5
+    const freq2 = 1318.5; // E6 sparkle harmonic
+    for (int i = 0; i < numSamples; i++) {
+      final t = i / sampleRate;
+      final env = exp(-t * 14.0);
+      final wave = sin(2 * pi * freq1 * t) * 0.75 + sin(2 * pi * freq2 * t) * 0.25;
+      final sample = (wave * env * 26000).round().clamp(-32768, 32767);
+      pcmData.setInt16(i * 2, sample, Endian.little);
+    }
+
+    final bytesBuilder = BytesBuilder();
+    bytesBuilder.add(header.buffer.asUint8List());
+    bytesBuilder.add(pcmData.buffer.asUint8List());
+    _countdownGoCache = bytesBuilder.toBytes();
+    return _countdownGoCache!;
+  }
+
   static final Map<String, Uint8List> _pitchBeepCache = {};
 
   /// Synthesizes a clean, high-precision PCM WAV beep at the exact tuned frequency.

@@ -49,7 +49,8 @@ class PortalHomeScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF070E1B) : const Color(0xFFF5F7FB),
+      backgroundColor:
+          isDark ? const Color(0xFF070E1B) : const Color(0xFFF5F7FB),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -58,10 +59,12 @@ class PortalHomeScreen extends StatelessWidget {
             expandedHeight: 220,
             pinned: true,
             stretch: true,
-            backgroundColor: isDark ? const Color(0xFF0A1E3F) : AdminUiKit.primaryNavy,
+            backgroundColor:
+                isDark ? const Color(0xFF0A1E3F) : AdminUiKit.primaryNavy,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+              icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white, size: 20),
               onPressed: () {
                 if (Navigator.canPop(context)) {
                   Navigator.pop(context);
@@ -76,7 +79,8 @@ class PortalHomeScreen extends StatelessWidget {
             actions: [
               IconButton(
                 tooltip: 'App Analytics',
-                icon: const Icon(Icons.insights_rounded, color: AdminUiKit.goldHighlight, size: 22),
+                icon: const Icon(Icons.insights_rounded,
+                    color: AdminUiKit.goldHighlight, size: 22),
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
@@ -85,7 +89,10 @@ class PortalHomeScreen extends StatelessWidget {
               const SizedBox(width: 8),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              stretchModes: const [StretchMode.zoomBackground, StretchMode.blurBackground],
+              stretchModes: const [
+                StretchMode.zoomBackground,
+                StretchMode.blurBackground
+              ],
               background: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -143,11 +150,15 @@ class PortalHomeScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: const LinearGradient(
-                              colors: [AdminUiKit.goldAccent, AdminUiKit.goldHighlight],
+                              colors: [
+                                AdminUiKit.goldAccent,
+                                AdminUiKit.goldHighlight
+                              ],
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: AdminUiKit.goldAccent.withValues(alpha: 0.3),
+                                color: AdminUiKit.goldAccent
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -190,7 +201,9 @@ class PortalHomeScreen extends StatelessWidget {
                                   const SizedBox(width: 8),
                                   AdminStatusBadge(
                                     label: moderator.role.toUpperCase(),
-                                    color: authProvider.isAdmin ? AdminUiKit.goldHighlight : AdminUiKit.royalBlue,
+                                    color: authProvider.isAdmin
+                                        ? AdminUiKit.goldHighlight
+                                        : AdminUiKit.royalBlue,
                                     fontSize: 10,
                                   ),
                                 ],
@@ -219,238 +232,323 @@ class PortalHomeScreen extends StatelessWidget {
 
           // Main Content
           SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AdminSectionHeader(
-                      title: AppLocalizations.of(context)?.quickActions ?? 'Quick Actions',
-                      icon: Icons.bolt_rounded,
-                    ),
-                    const SizedBox(height: 12),
-                    GridView.count(
-                      crossAxisCount: context.isDesktop ? 4 : (context.isTablet ? 3 : 2),
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      childAspectRatio: 1.6,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AdminSectionHeader(
+                    title: AppLocalizations.of(context)?.quickActions ??
+                        'Quick Actions',
+                    icon: Icons.bolt_rounded,
+                  ),
+                  const SizedBox(height: 12),
+                  GridView.count(
+                    crossAxisCount:
+                        context.isDesktop ? 4 : (context.isTablet ? 3 : 2),
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 1.6,
                     children: [
                       _buildQuickActionCard(
                         context,
-                        title: AppLocalizations.of(context)?.addArtist ?? 'Add Artist',
-                        subtitle: AppLocalizations.of(context)?.createProfileSubtitle ?? 'Create profile',
+                        title: AppLocalizations.of(context)?.addArtist ??
+                            'Add Artist',
+                        subtitle: AppLocalizations.of(context)
+                                ?.createProfileSubtitle ??
+                            'Create profile',
                         icon: Icons.person_add_alt_1_rounded,
                         accentColor: AdminUiKit.royalBlue,
                         onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const AddArtistScreen()),
+                          MaterialPageRoute(
+                              builder: (_) => const AddArtistScreen()),
                         ),
                       ),
                       _buildQuickActionCard(
                         context,
-                        title: AppLocalizations.of(context)?.addAlbum ?? 'Add Album',
-                        subtitle: AppLocalizations.of(context)?.uploadReleaseSubtitle ?? 'Upload release',
+                        title: AppLocalizations.of(context)?.addAlbum ??
+                            'Add Album',
+                        subtitle: AppLocalizations.of(context)
+                                ?.uploadReleaseSubtitle ??
+                            'Upload release',
                         icon: Icons.album_rounded,
                         accentColor: AdminUiKit.amberOrange,
                         onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const AddAlbumScreen()),
+                          MaterialPageRoute(
+                              builder: (_) => const AddAlbumScreen()),
                         ),
                       ),
                       _buildQuickActionCard(
                         context,
-                        title: AppLocalizations.of(context)?.addSong ?? 'Add Song',
-                        subtitle: AppLocalizations.of(context)?.lyricsScalesSubtitle ?? 'Lyrics & scales',
-                        icon: Icons.music_note_rounded,
+                        title:
+                            AppLocalizations.of(context)?.addSong ?? 'Add Song',
+                        subtitle: AppLocalizations.of(context)
+                                ?.lyricsScalesSubtitle ??
+                            'Lyrics & scales',
+                        icon: Icons.queue_music_rounded,
                         accentColor: AdminUiKit.emeraldGreen,
                         onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const AddSongScreen()),
+                          MaterialPageRoute(
+                              builder: (_) => const AddSongScreen()),
                         ),
                       ),
                       _buildQuickActionCard(
                         context,
-                        title: AppLocalizations.of(context)?.reviewSuggestions ?? 'Suggestions',
-                        subtitle: AppLocalizations.of(context)?.reviewSubmissionsSubtitle ?? 'Review submissions',
+                        title:
+                            AppLocalizations.of(context)?.reviewSuggestions ??
+                                'Suggestions',
+                        subtitle: AppLocalizations.of(context)
+                                ?.reviewSubmissionsSubtitle ??
+                            'Review submissions',
                         icon: Icons.rate_review_rounded,
                         accentColor: AdminUiKit.violetPurple,
                         badgeStream: firebaseService.getSuggestionsStream().map(
-                              (list) => list.where((s) => s.status == SuggestionStatus.pending).length,
+                              (list) => list
+                                  .where((s) =>
+                                      s.status == SuggestionStatus.pending)
+                                  .length,
                             ),
                         onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const ReviewSuggestionsScreen()),
+                          MaterialPageRoute(
+                              builder: (_) => const ReviewSuggestionsScreen()),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
                   AdminSectionHeader(
-                    title: AppLocalizations.of(context)?.contentManagement ?? 'Content Management',
+                    title: AppLocalizations.of(context)?.contentManagement ??
+                        'Content Management',
                     icon: Icons.folder_copy_rounded,
                   ),
                   const SizedBox(height: 4),
                   _buildModernListTile(
                     context,
-                    title: AppLocalizations.of(context)?.manageSongs ?? 'Manage Songs',
-                    subtitle: AppLocalizations.of(context)?.batchEditSubtitle ?? 'Edit lyrics, scales, rhythms, and batch delete',
+                    title: AppLocalizations.of(context)?.manageSongs ??
+                        'Manage Songs',
+                    subtitle: AppLocalizations.of(context)?.batchEditSubtitle ??
+                        'Edit lyrics, scales, rhythms, and batch delete',
                     icon: Icons.queue_music_rounded,
                     accentColor: AdminUiKit.emeraldGreen,
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const ManageSongsScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const ManageSongsScreen()),
                     ),
                   ),
                   _buildModernListTile(
                     context,
-                    title: AppLocalizations.of(context)?.manageAlbums ?? 'Manage Albums',
-                    subtitle: AppLocalizations.of(context)?.organizeAlbumsSubtitle ?? 'Organize albums, covers, and track lists',
+                    title: AppLocalizations.of(context)?.manageAlbums ??
+                        'Manage Albums',
+                    subtitle:
+                        AppLocalizations.of(context)?.organizeAlbumsSubtitle ??
+                            'Organize albums, covers, and track lists',
                     icon: Icons.library_music_rounded,
                     accentColor: AdminUiKit.amberOrange,
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const ManageAlbumsScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const ManageAlbumsScreen()),
                     ),
                   ),
                   _buildModernListTile(
                     context,
-                    title: AppLocalizations.of(context)?.manageArtists ?? 'Manage Artists',
-                    subtitle: AppLocalizations.of(context)?.updateArtistBioSubtitle ?? 'Update artist photos, bio, and regions',
+                    title: AppLocalizations.of(context)?.manageArtists ??
+                        'Manage Artists',
+                    subtitle:
+                        AppLocalizations.of(context)?.updateArtistBioSubtitle ??
+                            'Update artist photos, bio, and regions',
                     icon: Icons.people_outline_rounded,
                     accentColor: AdminUiKit.royalBlue,
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const ManageArtistsScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const ManageArtistsScreen()),
                     ),
                   ),
                   _buildModernListTile(
                     context,
-                    title: AppLocalizations.of(context)?.manageVocalPlans ?? 'Manage Vocal Plans',
-                    subtitle: AppLocalizations.of(context)?.vocalRoutinesSubtitle ?? 'Daily, weekly, monthly & quarterly routines',
+                    title: AppLocalizations.of(context)?.manageVocalPlans ??
+                        'Manage Vocal Plans',
+                    subtitle:
+                        AppLocalizations.of(context)?.vocalRoutinesSubtitle ??
+                            'Daily, weekly, monthly & quarterly routines',
                     icon: Icons.fitness_center_rounded,
                     accentColor: AdminUiKit.goldAccent,
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const ManageVocalPlansScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const ManageVocalPlansScreen()),
                     ),
                   ),
                   _buildModernListTile(
                     context,
-                    title: AppLocalizations.of(context)?.generalVocalExercises ?? 'General Vocal Exercises',
-                    subtitle: AppLocalizations.of(context)?.independentDrillsSubtitle ?? 'Independent workout audio drills',
+                    title:
+                        AppLocalizations.of(context)?.generalVocalExercises ??
+                            'General Vocal Exercises',
+                    subtitle: AppLocalizations.of(context)
+                            ?.independentDrillsSubtitle ??
+                        'Independent workout audio drills',
                     icon: Icons.graphic_eq_rounded,
                     accentColor: AdminUiKit.violetPurple,
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const ManageGeneralExercisesScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const ManageGeneralExercisesScreen()),
                     ),
                   ),
                   if (authProvider.isAdmin) ...[
                     const SizedBox(height: 24),
                     AdminSectionHeader(
-                      title: AppLocalizations.of(context)?.adminControlsSecurity ?? 'Admin Controls & Security',
+                      title:
+                          AppLocalizations.of(context)?.adminControlsSecurity ??
+                              'Admin Controls & Security',
                       icon: Icons.security_rounded,
                     ),
                     const SizedBox(height: 4),
                     _buildModernListTile(
                       context,
-                      title: AppLocalizations.of(context)?.manageModerators ?? 'Manage Moderators',
-                      subtitle: AppLocalizations.of(context)?.deviceAuthSubtitle ?? 'Device authorizations, role elevation, blocks',
+                      title: AppLocalizations.of(context)?.manageModerators ??
+                          'Manage Moderators',
+                      subtitle:
+                          AppLocalizations.of(context)?.deviceAuthSubtitle ??
+                              'Device authorizations, role elevation, blocks',
                       icon: Icons.admin_panel_settings_rounded,
                       accentColor: AdminUiKit.goldAccent,
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const ModeratorsManagementScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const ModeratorsManagementScreen()),
                       ),
                     ),
                     _buildModernListTile(
                       context,
-                      title: AppLocalizations.of(context)?.createInvitationCode ?? 'Create Invitation Code',
-                      subtitle: AppLocalizations.of(context)?.generateCredentialsSubtitle ?? 'Generate secure single-use access credentials',
+                      title:
+                          AppLocalizations.of(context)?.createInvitationCode ??
+                              'Create Invitation Code',
+                      subtitle: AppLocalizations.of(context)
+                              ?.generateCredentialsSubtitle ??
+                          'Generate secure single-use access credentials',
                       icon: Icons.send_rounded,
                       accentColor: AdminUiKit.royalBlue,
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const CreateInvitationScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const CreateInvitationScreen()),
                       ),
                     ),
                     _buildModernListTile(
                       context,
-                      title: AppLocalizations.of(context)?.invitationCodesHistory ?? 'Invitation Codes History',
-                      subtitle: AppLocalizations.of(context)?.trackInvitationsSubtitle ?? 'Track claimed, active & pending invitations',
+                      title: AppLocalizations.of(context)
+                              ?.invitationCodesHistory ??
+                          'Invitation Codes History',
+                      subtitle: AppLocalizations.of(context)
+                              ?.trackInvitationsSubtitle ??
+                          'Track claimed, active & pending invitations',
                       icon: Icons.vpn_key_rounded,
                       accentColor: AdminUiKit.amberOrange,
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const ManageInviteCodesScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const ManageInviteCodesScreen()),
                       ),
                     ),
                     _buildModernListTile(
                       context,
-                      title: AppLocalizations.of(context)?.auditActivityLogs ?? 'Audit Activity Logs',
-                      subtitle: AppLocalizations.of(context)?.actionTimelineSubtitle ?? 'Real-time moderator action timeline',
+                      title: AppLocalizations.of(context)?.auditActivityLogs ??
+                          'Audit Activity Logs',
+                      subtitle: AppLocalizations.of(context)
+                              ?.actionTimelineSubtitle ??
+                          'Real-time moderator action timeline',
                       icon: Icons.history_rounded,
                       accentColor: AdminUiKit.violetPurple,
-                      badgeStream: firebaseService
-                          .getActivityLogsStream()
-                          .map((list) => list.where((log) => !log.isSeen).length),
+                      badgeStream: firebaseService.getActivityLogsStream().map(
+                          (list) => list.where((log) => !log.isSeen).length),
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const ActivityScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const ActivityScreen()),
                       ),
                     ),
                     _buildModernListTile(
                       context,
-                      title: AppLocalizations.of(context)?.appAnalyticsInsights ?? 'App Analytics & Insights',
-                      subtitle: AppLocalizations.of(context)?.liveMetricsSubtitle ?? 'Live traffic, view charts, and database metrics',
+                      title:
+                          AppLocalizations.of(context)?.appAnalyticsInsights ??
+                              'App Analytics & Insights',
+                      subtitle:
+                          AppLocalizations.of(context)?.liveMetricsSubtitle ??
+                              'Live traffic, view charts, and database metrics',
                       icon: Icons.analytics_rounded,
                       accentColor: AdminUiKit.emeraldGreen,
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const AnalyticsScreen()),
                       ),
                     ),
                     const SizedBox(height: 12),
                     StreamBuilder<bool>(
-                      stream: SupabaseService().getRepairModeStream(),
-                      initialData: SupabaseService().lastKnownRepairMode,
-                      builder: (context, snapshot) {
-                        final isRepairMode = snapshot.data ?? false;
-                        return _buildModernListTile(
-                          context,
-                          title: AppLocalizations.of(context)?.appRepairMode ?? 'App Repair Mode',
-                          subtitle: isRepairMode
-                              ? (AppLocalizations.of(context)?.repairModeActive ?? 'Active • App locked for maintenance')
-                              : (AppLocalizations.of(context)?.repairModeInactive ?? 'Inactive • App is live & accessible'),
-                          icon: isRepairMode ? Icons.build_circle_rounded : Icons.build_circle_outlined,
-                          accentColor: isRepairMode ? AdminUiKit.roseRed : AdminUiKit.emeraldGreen,
-                          onTap: () => _showBeautifulRepairDialog(context, isRepairMode, moderator, authProvider),
-                          trailingWidget: Switch.adaptive(
-                            value: isRepairMode,
-                            onChanged: (val) => _showBeautifulRepairDialog(context, isRepairMode, moderator, authProvider),
-                            activeTrackColor: AdminUiKit.roseRed,
-                          ),
-                        );
-                      }
-                    ),
+                        stream: SupabaseService().getRepairModeStream(),
+                        initialData: SupabaseService().lastKnownRepairMode,
+                        builder: (context, snapshot) {
+                          final isRepairMode = snapshot.data ?? false;
+                          return _buildModernListTile(
+                            context,
+                            title:
+                                AppLocalizations.of(context)?.appRepairMode ??
+                                    'App Repair Mode',
+                            subtitle: isRepairMode
+                                ? (AppLocalizations.of(context)
+                                        ?.repairModeActive ??
+                                    'Active • App locked for maintenance')
+                                : (AppLocalizations.of(context)
+                                        ?.repairModeInactive ??
+                                    'Inactive • App is live & accessible'),
+                            icon: isRepairMode
+                                ? Icons.build_circle_rounded
+                                : Icons.build_circle_outlined,
+                            accentColor: isRepairMode
+                                ? AdminUiKit.roseRed
+                                : AdminUiKit.emeraldGreen,
+                            onTap: () => _showBeautifulRepairDialog(
+                                context, isRepairMode, moderator, authProvider),
+                            trailingWidget: Switch.adaptive(
+                              value: isRepairMode,
+                              onChanged: (val) => _showBeautifulRepairDialog(
+                                  context,
+                                  isRepairMode,
+                                  moderator,
+                                  authProvider),
+                              activeTrackColor: AdminUiKit.roseRed,
+                            ),
+                          );
+                        }),
                     const SizedBox(height: 12),
                     _buildModernListTile(
                       context,
                       title: 'App Version & APK Release',
-                      subtitle: 'Upload APK, configure semver releases, force updates & release notes',
+                      subtitle:
+                          'Upload APK, configure semver releases, force updates & release notes',
                       icon: Icons.rocket_launch_rounded,
                       accentColor: AdminUiKit.royalBlue,
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AppReleaseManagementScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const AppReleaseManagementScreen()),
                       ),
                     ),
                   ],
-
                   const SizedBox(height: 60),
-                ].animate(interval: 50.ms).fadeIn(duration: 350.ms).slideY(begin: 0.05),
+                ]
+                    .animate(interval: 50.ms)
+                    .fadeIn(duration: 350.ms)
+                    .slideY(begin: 0.05),
               ),
             ),
           ),
@@ -459,7 +557,8 @@ class PortalHomeScreen extends StatelessWidget {
     );
   }
 
-  void _showBeautifulRepairDialog(BuildContext context, bool isRepairMode, dynamic moderator, AuthProvider authProvider) {
+  void _showBeautifulRepairDialog(BuildContext context, bool isRepairMode,
+      dynamic moderator, AuthProvider authProvider) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -477,12 +576,18 @@ class PortalHomeScreen extends StatelessWidget {
               color: isDark ? const Color(0xFF0F1D33) : Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: (isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed).withValues(alpha: 0.3),
+                color: (isRepairMode
+                        ? AdminUiKit.emeraldGreen
+                        : AdminUiKit.roseRed)
+                    .withValues(alpha: 0.3),
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: (isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed).withValues(alpha: 0.15),
+                  color: (isRepairMode
+                          ? AdminUiKit.emeraldGreen
+                          : AdminUiKit.roseRed)
+                      .withValues(alpha: 0.15),
                   blurRadius: 24,
                   spreadRadius: 4,
                 ),
@@ -494,20 +599,31 @@ class PortalHomeScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: (isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed).withValues(alpha: 0.1),
+                    color: (isRepairMode
+                            ? AdminUiKit.emeraldGreen
+                            : AdminUiKit.roseRed)
+                        .withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    isRepairMode ? Icons.lock_open_rounded : Icons.build_circle_rounded,
-                    color: isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed,
+                    isRepairMode
+                        ? Icons.lock_open_rounded
+                        : Icons.build_circle_rounded,
+                    color: isRepairMode
+                        ? AdminUiKit.emeraldGreen
+                        : AdminUiKit.roseRed,
                     size: 36,
                   ),
                 ),
                 const SizedBox(height: 14),
                 Text(
                   isRepairMode
-                      ? (AppLocalizations.of(context)?.repairModeDialogTitleActive ?? 'Deactivate Repair Mode?')
-                      : (AppLocalizations.of(context)?.repairModeDialogTitleInactive ?? 'Activate Repair Mode?'),
+                      ? (AppLocalizations.of(context)
+                              ?.repairModeDialogTitleActive ??
+                          'Deactivate Repair Mode?')
+                      : (AppLocalizations.of(context)
+                              ?.repairModeDialogTitleInactive ??
+                          'Activate Repair Mode?'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
@@ -518,9 +634,11 @@ class PortalHomeScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   isRepairMode
-                      ? (AppLocalizations.of(context)?.repairModeDialogDescActive ??
+                      ? (AppLocalizations.of(context)
+                              ?.repairModeDialogDescActive ??
                           'This will deactivate repair mode and unlock the app. All users will regain full access to all features immediately.')
-                      : (AppLocalizations.of(context)?.repairModeDialogDescInactive ??
+                      : (AppLocalizations.of(context)
+                              ?.repairModeDialogDescInactive ??
                           'This will activate repair mode and lock the app for everyone except Admins. Users will see a maintenance screen. Proceed with caution!'),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12.5,
@@ -537,8 +655,11 @@ class PortalHomeScreen extends StatelessWidget {
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          side: BorderSide(color: isDark ? Colors.white24 : Colors.black12, width: 1.5),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                          side: BorderSide(
+                              color: isDark ? Colors.white24 : Colors.black12,
+                              width: 1.5),
                         ),
                         onPressed: () => Navigator.pop(context),
                         child: Text(
@@ -555,15 +676,22 @@ class PortalHomeScreen extends StatelessWidget {
                     Expanded(
                       child: FilledButton(
                         style: FilledButton.styleFrom(
-                          backgroundColor: isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed,
+                          backgroundColor: isRepairMode
+                              ? AdminUiKit.emeraldGreen
+                              : AdminUiKit.roseRed,
                           padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
                           elevation: 0,
                         ),
                         onPressed: () async {
                           Navigator.pop(context);
-                          final adminId = moderator?.id ?? authProvider.currentUser?.id ?? 'admin';
-                          final adminName = moderator?.fullName ?? authProvider.currentUser?.email ?? 'Admin';
+                          final adminId = moderator?.id ??
+                              authProvider.currentUser?.id ??
+                              'admin';
+                          final adminName = moderator?.fullName ??
+                              authProvider.currentUser?.email ??
+                              'Admin';
                           try {
                             await SupabaseService().setRepairMode(
                               !isRepairMode,
@@ -573,13 +701,16 @@ class PortalHomeScreen extends StatelessWidget {
                             if (context.mounted) {
                               CustomSnackbar.show(
                                 context,
-                                !isRepairMode ? 'Repair Mode is now Active (App Locked)' : 'Repair Mode is now Inactive (App Unlocked)',
+                                !isRepairMode
+                                    ? 'Repair Mode is now Active (App Locked)'
+                                    : 'Repair Mode is now Inactive (App Unlocked)',
                                 isError: !isRepairMode,
                               );
                             }
                           } catch (e) {
                             if (context.mounted) {
-                              CustomSnackbar.show(context, 'Error: $e', isError: true);
+                              CustomSnackbar.show(context, 'Error: $e',
+                                  isError: true);
                             }
                           }
                         },
@@ -603,7 +734,8 @@ class PortalHomeScreen extends StatelessWidget {
     );
   }
 
-  void _showMinVersionDialog(BuildContext context, dynamic moderator, AuthProvider authProvider) async {
+  void _showMinVersionDialog(BuildContext context, dynamic moderator,
+      AuthProvider authProvider) async {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final currentMinVersion = await SupabaseService().getMinRequiredVersion();
@@ -680,8 +812,11 @@ class PortalHomeScreen extends StatelessWidget {
                     hintText: 'Leave empty to disable',
                     prefixIcon: const Icon(Icons.tag_rounded, size: 20),
                     filled: true,
-                    fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    fillColor: isDark
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.black.withValues(alpha: 0.03),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -691,8 +826,11 @@ class PortalHomeScreen extends StatelessWidget {
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          side: BorderSide(color: isDark ? Colors.white24 : Colors.black12, width: 1.5),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                          side: BorderSide(
+                              color: isDark ? Colors.white24 : Colors.black12,
+                              width: 1.5),
                         ),
                         onPressed: () => Navigator.pop(ctx),
                         child: Text(
@@ -711,13 +849,18 @@ class PortalHomeScreen extends StatelessWidget {
                         style: FilledButton.styleFrom(
                           backgroundColor: AdminUiKit.royalBlue,
                           padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
                           elevation: 0,
                         ),
                         onPressed: () async {
                           Navigator.pop(ctx);
-                          final adminId = moderator?.id ?? authProvider.currentUser?.id ?? 'admin';
-                          final adminName = moderator?.fullName ?? authProvider.currentUser?.email ?? 'Admin';
+                          final adminId = moderator?.id ??
+                              authProvider.currentUser?.id ??
+                              'admin';
+                          final adminName = moderator?.fullName ??
+                              authProvider.currentUser?.email ??
+                              'Admin';
                           try {
                             await SupabaseService().setMinRequiredVersion(
                               controller.text.trim(),
@@ -734,7 +877,8 @@ class PortalHomeScreen extends StatelessWidget {
                             }
                           } catch (e) {
                             if (context.mounted) {
-                              CustomSnackbar.show(context, 'Error: $e', isError: true);
+                              CustomSnackbar.show(context, 'Error: $e',
+                                  isError: true);
                             }
                           }
                         },
@@ -828,7 +972,8 @@ class PortalHomeScreen extends StatelessWidget {
                   final count = snapshot.data ?? 0;
                   if (count == 0) return const SizedBox.shrink();
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
                       color: AdminUiKit.roseRed,
                       borderRadius: BorderRadius.circular(12),
@@ -924,7 +1069,8 @@ class PortalHomeScreen extends StatelessWidget {
                   if (count == 0) return const SizedBox.shrink();
                   return Container(
                     margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: AdminUiKit.roseRed,
                       borderRadius: BorderRadius.circular(12),
@@ -940,11 +1086,12 @@ class PortalHomeScreen extends StatelessWidget {
                   );
                 },
               ),
-            trailingWidget ?? Icon(
-              Icons.chevron_right_rounded,
-              size: 22,
-              color: isDark ? Colors.white30 : Colors.black26,
-            ),
+            trailingWidget ??
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 22,
+                  color: isDark ? Colors.white30 : Colors.black26,
+                ),
           ],
         ),
       ),

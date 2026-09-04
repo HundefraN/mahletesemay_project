@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:animations/animations.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:mahlete_semay_project/managers/download_manager.dart';
@@ -280,12 +281,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
   static const List<Widget> _widgetOptions = <Widget>[
-    ArtistsListScreen(),
-    MashupHelperScreen(),
-    SetlistsScreen(),
-    VocalExerciseListScreen(),
-    VocalRangeFinderScreen(),
-    SettingsScreen(),
+    ArtistsListScreen(key: PageStorageKey('tab_lyrics')),
+    MashupHelperScreen(key: PageStorageKey('tab_mashup')),
+    SetlistsScreen(key: PageStorageKey('tab_setlists')),
+    VocalExerciseListScreen(key: PageStorageKey('tab_exercises')),
+    VocalRangeFinderScreen(key: PageStorageKey('tab_range')),
+    SettingsScreen(key: PageStorageKey('tab_settings')),
   ];
 
   void _onItemTapped(int index) {
@@ -681,21 +682,43 @@ class _UltraModernFab extends StatelessWidget {
               return Container(
                 width: context.w(64),
                 height: context.w(64),
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(colors: [theme.colorScheme.primary, theme.colorScheme.secondary], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                  gradient: LinearGradient(
+                    colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
                 child: Material(
                   color: Colors.transparent,
+                  shape: const CircleBorder(),
                   child: InkWell(
+                    customBorder: const CircleBorder(),
                     onTap: () {
                       HapticFeedback.mediumImpact();
                       onOpen();
                     },
                     borderRadius: BorderRadius.circular(context.w(32)),
                     child: Container(
-                      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1)),
-                      child: Icon(IconsaxPlusBold.music, color: Colors.white, size: context.w(28)),
+                      width: context.w(64),
+                      height: context.w(64),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Center(
+                        child: FaIcon(
+                          FontAwesomeIcons.guitar,
+                          color: Colors.white,
+                          size: context.w(28),
+                        ),
+                      ),
                     ),
                   ),
                 ),

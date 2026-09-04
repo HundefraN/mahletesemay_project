@@ -40,7 +40,6 @@ class SupabaseService {
         .map((maps) => maps.map((item) => Artist.fromMap(item)).toList())
         .handleError((e) {
           _logStreamErrorThrottled('artists', e);
-          return <Artist>[];
         });
   }
 
@@ -120,7 +119,6 @@ class SupabaseService {
         .map((maps) => maps.map((item) => Album.fromMap(item)).toList())
         .handleError((e) {
           _logStreamErrorThrottled('albums', e);
-          return <Album>[];
         });
   }
 
@@ -196,7 +194,6 @@ class SupabaseService {
         .map((maps) => maps.map((item) => Song.fromMap(item)).toList())
         .handleError((e) {
           _logStreamErrorThrottled('songs', e);
-          return <Song>[];
         });
   }
 

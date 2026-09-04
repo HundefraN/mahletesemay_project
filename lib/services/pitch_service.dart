@@ -10,6 +10,8 @@ import '../utils/generated_tones.dart';
 class PitchData {
   final double pitch;
   final String note;
+  final double cents;
+  final int midiNote;
   final double clarity;
   final double rms;
   final Float64List? waveform;
@@ -17,12 +19,36 @@ class PitchData {
   PitchData({
     this.pitch = 0.0,
     this.note = '',
+    this.cents = 0.0,
+    this.midiNote = -1,
     this.clarity = 0.0,
     this.rms = 0.0,
     this.waveform,
   });
 
   bool get hasPitch => pitch > 0.0 && note.isNotEmpty;
+
+  /// Returns note name without octave, e.g. "C", "F#"
+  String get noteName {
+    if (note.isEmpty) return '';
+    if (note.length >= 2 && (note[1] == '#' || note[1] == 'b')) {
+      return note.substring(0, 2);
+    }
+    return note.substring(0, 1);
+  }
+
+  /// Returns octave number (e.g. 2, 4) or -1 if unavailable
+  int get octave {
+    if (note.isEmpty) return -1;
+    try {
+      return int.parse(note.substring(note.length - 1));
+    } catch (_) {
+      return -1;
+    }
+  }
+
+  /// True when pitch is within ±10 cents of the exact note
+  bool get isInTune => cents.abs() <= 10.0;
 }
 
 class Note {
@@ -44,9 +70,9 @@ class PitchService with ChangeNotifier {
   StreamSubscription<Uint8List>? _recordStreamSubscription;
 
   final List<int> _audioByteBuffer = [];
-  // 4096 bytes = 2048 samples (PCM 16-bit mono at 44.1 kHz)
-  static const int _targetBytes = 4096;
-  // 2048 bytes hop = 1024 samples (~23.2ms refresh rate with 50% overlap for 43 FPS smooth updates)
+  // 6144 bytes = 3072 samples (PCM 16-bit mono at 44.1 kHz)
+  static const int _targetBytes = 6144;
+  // 2048 bytes hop = 1024 samples (~23.2ms refresh rate with 66% overlap for 43 FPS smooth updates)
   static const int _hopBytes = 2048;
   static const int _sampleRate = 44100;
   
@@ -104,6 +130,28 @@ class PitchService with ChangeNotifier {
     }
   }
 
+  /// Plays synthesized 440 Hz metronome countdown click
+  Future<void> playCountdownTick() async {
+    try {
+      final wavData = GeneratedTones.getCountdownTickTone();
+      await _soundPlayer.stop();
+      await _soundPlayer.play(BytesSource(wavData));
+    } catch (e) {
+      debugPrint("PitchService: Error playing countdown tick: $e");
+    }
+  }
+
+  /// Plays synthesized 880 Hz bright chime for countdown "SING!"
+  Future<void> playCountdownGo() async {
+    try {
+      final wavData = GeneratedTones.getCountdownGoTone();
+      await _soundPlayer.stop();
+      await _soundPlayer.play(BytesSource(wavData));
+    } catch (e) {
+      debugPrint("PitchService: Error playing countdown go sound: $e");
+    }
+  }
+
   /// Starts real-time microphone stream with zero-latency audio buffer processing.
   Future<bool> startListening() async {
     if (_isListening || await _audioRecorder.isRecording()) {
@@ -144,17 +192,19 @@ class PitchService with ChangeNotifier {
           final rms = _calculateRMS(chunkBytes);
           final waveform = _extractNormalizedWaveform(chunkBytes, pointCount: 96);
           
-          // Adaptive smooth noise floor tracking
-          if (rms < 45.0) {
+          // Adaptive smooth noise floor tracking with gentle lower bound
+          if (rms < 40.0) {
             _noiseFloor = _noiseFloor * 0.95 + rms * 0.05;
           }
-          final dynamicThreshold = max(20.0, _noiseFloor * 1.25);
+          final dynamicThreshold = max(14.0, _noiseFloor * 1.15);
 
           if (rms < dynamicThreshold) {
             if (_pitchData.pitch != 0.0 || _pitchData.rms != rms) {
               _pitchData = PitchData(
                 pitch: 0.0,
                 note: '',
+                cents: 0.0,
+                midiNote: -1,
                 clarity: 0.0,
                 rms: rms,
                 waveform: waveform,
@@ -180,17 +230,26 @@ class PitchService with ChangeNotifier {
               final sortedPitches = List<double>.from(_pitchFilterBuffer)..sort();
               final medianPitch = sortedPitches[sortedPitches.length ~/ 2];
 
-              // Exponential smoothing for liquid-smooth needle/ribbon tracking
-              if (_smoothedPitch == 0.0 || (_smoothedPitch - medianPitch).abs() > 35.0) {
+              // Exponential smoothing for liquid-smooth needle/ribbon tracking:
+              // If pitch shifts by more than 1 semitone (~6%), jump immediately to avoid
+              // note drag/smear between distinct notes. Within the same note, smooth for stability.
+              final bool isDifferentNote = _smoothedPitch == 0.0 ||
+                  (_smoothedPitch > 0.0 && (medianPitch / _smoothedPitch - 1.0).abs() > 0.06);
+
+              if (isDifferentNote) {
                 _smoothedPitch = medianPitch;
               } else {
-                _smoothedPitch = _smoothedPitch * 0.45 + medianPitch * 0.55;
+                _smoothedPitch = _smoothedPitch * 0.35 + medianPitch * 0.65;
               }
 
               final note = getNoteFromPitch(_smoothedPitch);
+              final midiNote = getMidiFromPitch(_smoothedPitch);
+              final cents = getCentsFromPitch(_smoothedPitch);
               _pitchData = PitchData(
                 pitch: _smoothedPitch,
                 note: note,
+                cents: cents,
+                midiNote: midiNote,
                 clarity: result.clarity,
                 rms: rms,
                 waveform: waveform,
@@ -201,6 +260,8 @@ class PitchService with ChangeNotifier {
                 _pitchData = PitchData(
                   pitch: 0.0,
                   note: '',
+                  cents: 0.0,
+                  midiNote: -1,
                   clarity: 0.0,
                   rms: rms,
                   waveform: waveform,
@@ -213,6 +274,8 @@ class PitchService with ChangeNotifier {
                 _pitchData = PitchData(
                   pitch: 0.0,
                   note: '',
+                  cents: 0.0,
+                  midiNote: -1,
                   clarity: 0.0,
                   rms: rms,
                   waveform: waveform,
@@ -250,13 +313,18 @@ class PitchService with ChangeNotifier {
     return waveform;
   }
 
-  /// High-Precision McLeod Pitch Method (MPM) / NSDF Pitch Detector
+  /// High-Precision YIN Pitch Detection Engine
   ///
-  /// Combines:
-  /// 1. 2nd-order Butterworth low-pass digital filter ($f_c \approx 1400\text{ Hz}$) to eliminate high-frequency harmonics & pick scrape noise.
-  /// 2. Normalized Square Difference Function (NSDF) $r_t(\tau) = \frac{2 \sum x_j x_{j+\tau}}{\sum x_j^2 + \sum x_{j+\tau}^2}$.
-  /// 3. Subharmonic octave disambiguation for low guitar strings (E2, D2, B1) and bass voices.
-  /// 4. 3-Point Parabolic sub-sample interpolation for sub-cent frequency accuracy.
+  /// Features:
+  /// 1. 2nd-order Butterworth low-pass digital filter (fc ~ 1400 Hz) to eliminate high pick scrape and ultrasound noise.
+  /// 2. Squared Difference Function d_t(tau) = sum (x[j] - x[j+tau])^2.
+  /// 3. Cumulative Mean Normalized Difference Function (CMNDF): d'_t(tau) = d_t(tau) / ((1/tau) * sum_{j=1}^tau d_t(j)).
+  ///    Forces d'(0) = 1.0, normalizing all dips regardless of signal amplitude.
+  /// 4. Absolute Threshold dip search (theta = 0.12) to detect the true fundamental period.
+  /// 5. Subharmonic / Octave Disambiguation:
+  ///    If candidate period tau is found, tests 2*tau and 3*tau to prevent octave doubling on guitar low strings (E2, A2, D3)
+  ///    and low vocal registers where overtone harmonics can be stronger than the fundamental.
+  /// 6. 3-Point Parabolic Sub-sample Interpolation for sub-cent frequency accuracy.
   static PitchData detectPitchFromPcm16(Uint8List buffer, {int sampleRate = 44100}) {
     final samplesCount = buffer.length ~/ 2;
     if (samplesCount < 512) return PitchData();
@@ -278,86 +346,96 @@ class PitchService with ChangeNotifier {
     }
 
     // Step 1: 2nd-Order Low-Pass Butterworth Filter (Cutoff ~ 1400 Hz at 44.1 kHz)
-    // Preserves fundamental frequencies while damping upper noise/harmonics
     final filtered = _applyLowPassFilter(rawFloats, sampleRate, 1400.0);
 
-    // Step 2: Compute Normalized Square Difference Function (NSDF)
-    // Window size = samplesCount / 2 = 1024
-    final int windowSize = samplesCount ~/ 2;
-    final nsdf = Float64List(windowSize);
+    // Step 2: Difference Function & CMNDF
+    // Window size: half of available samples, capped at 1024
+    final int windowSize = min(1024, samplesCount ~/ 2);
+    // Range: 35 Hz (tau ~ 1260 at 44.1kHz) to 1400 Hz (tau ~ 31)
+    final int minTau = (sampleRate / 1400.0).floor().clamp(10, windowSize - 1);
+    final int maxTau = min((sampleRate / 35.0).ceil(), samplesCount - windowSize - 1);
 
-    // Limits for 50 Hz (tau ~ 882) to 1500 Hz (tau ~ 29)
-    final int minTau = (sampleRate / 1500.0).floor().clamp(2, windowSize - 1);
-    final int maxTau = (sampleRate / 50.0).ceil().clamp(minTau + 1, windowSize - 1);
+    if (maxTau <= minTau) return PitchData();
 
-    final int startTau = (minTau > 1) ? minTau - 1 : 1;
-    for (int tau = startTau; tau <= maxTau; tau++) {
-      double acf = 0.0;
-      double divisor = 0.0;
+    // Difference function: d(tau) = sum_j (x[j] - x[j+tau])^2
+    final diff = Float64List(maxTau + 1);
+    for (int tau = 1; tau <= maxTau; tau++) {
+      double d = 0.0;
       for (int i = 0; i < windowSize; i++) {
-        final x1 = filtered[i];
-        final x2 = filtered[i + tau];
-        acf += x1 * x2;
-        divisor += x1 * x1 + x2 * x2;
+        final delta = filtered[i] - filtered[i + tau];
+        d += delta * delta;
       }
-      nsdf[tau] = (divisor > 1e-9) ? (2.0 * acf / divisor) : 0.0;
+      diff[tau] = d;
     }
 
-    // Step 3: Peak Picking on NSDF
-    // Find all positive local maxima
-    final List<int> peakPositions = [];
-    bool isPositive = false;
-
-    for (int tau = minTau; tau < maxTau; tau++) {
-      if (nsdf[tau] > 0.0) {
-        isPositive = true;
-      } else {
-        isPositive = false;
-      }
-
-      if (isPositive && tau > 0 && tau < maxTau) {
-        if (nsdf[tau] > nsdf[tau - 1] && nsdf[tau] >= nsdf[tau + 1]) {
-          peakPositions.add(tau);
-        }
-      }
+    // CMNDF normalization: d'(0) = 1, d'(tau) = d(tau) * tau / sum_{1..tau} d(j)
+    final cmndf = Float64List(maxTau + 1);
+    cmndf[0] = 1.0;
+    double runningSum = 0.0;
+    for (int tau = 1; tau <= maxTau; tau++) {
+      runningSum += diff[tau];
+      cmndf[tau] = (runningSum > 1e-9) ? (diff[tau] * tau / runningSum) : 1.0;
     }
 
-    if (peakPositions.isEmpty) return PitchData();
-
-    // Find highest peak value
-    double maxPeakValue = 0.0;
-    for (final pos in peakPositions) {
-      if (nsdf[pos] > maxPeakValue) {
-        maxPeakValue = nsdf[pos];
-      }
-    }
-
-    if (maxPeakValue < 0.35) return PitchData();
-
-    // Dynamic threshold k = 0.85 * maxPeakValue (standard MPM threshold)
-    final double threshold = 0.85 * maxPeakValue;
+    // Step 3: Absolute Threshold Search (theta = 0.12)
+    const double threshold = 0.12;
     int chosenTau = -1;
 
-    for (final pos in peakPositions) {
-      if (nsdf[pos] >= threshold) {
-        chosenTau = pos;
+    for (int tau = minTau; tau < maxTau; tau++) {
+      if (cmndf[tau] < threshold) {
+        // Find the local minimum in this dip
+        while (tau + 1 < maxTau && cmndf[tau + 1] < cmndf[tau]) {
+          tau++;
+        }
+        chosenTau = tau;
         break;
       }
     }
 
+    // If no dip was below threshold, find global minimum across valid range
     if (chosenTau <= 0) {
-      chosenTau = peakPositions.first;
+      double minVal = 1000.0;
+      int minIdx = -1;
+      for (int tau = minTau; tau < maxTau; tau++) {
+        if (cmndf[tau] < minVal) {
+          minVal = cmndf[tau];
+          minIdx = tau;
+        }
+      }
+      if (minIdx > 0 && minVal < 0.42) {
+        chosenTau = minIdx;
+      }
     }
 
-    // Step 4: Sub-sample Parabolic Interpolation on chosen peak
+    if (chosenTau <= 0) return PitchData();
+
+    // Step 4: Subharmonic / Octave Disambiguation
+    // Only if the dip at 2*chosenTau is significantly deeper than chosenTau,
+    // indicating chosenTau was an overtone harmonic rather than the true fundamental.
+    final int doubleTau = chosenTau * 2;
+    if (doubleTau + 4 < maxTau) {
+      int bestSubTau = doubleTau;
+      double minSubVal = cmndf[doubleTau];
+      for (int t = max(minTau, doubleTau - 4); t <= min(maxTau - 1, doubleTau + 4); t++) {
+        if (cmndf[t] < minSubVal) {
+          minSubVal = cmndf[t];
+          bestSubTau = t;
+        }
+      }
+      if (minSubVal < cmndf[chosenTau] - 0.04 && minSubVal < 0.20) {
+        chosenTau = bestSubTau;
+      }
+    }
+
+    // Step 5: Parabolic Sub-sample Interpolation
     final int x0 = (chosenTau > 0) ? chosenTau - 1 : chosenTau;
-    final int x2 = (chosenTau + 1 < windowSize) ? chosenTau + 1 : chosenTau;
+    final int x2 = (chosenTau + 1 <= maxTau) ? chosenTau + 1 : chosenTau;
 
     double refinedTau = chosenTau.toDouble();
     if (x0 != chosenTau && x2 != chosenTau) {
-      final s0 = nsdf[x0];
-      final s1 = nsdf[chosenTau];
-      final s2 = nsdf[x2];
+      final s0 = cmndf[x0];
+      final s1 = cmndf[chosenTau];
+      final s2 = cmndf[x2];
       final denominator = 2.0 * (2.0 * s1 - s2 - s0);
       if (denominator.abs() > 1e-6) {
         refinedTau = chosenTau + (s2 - s0) / denominator;
@@ -367,14 +445,64 @@ class PitchService with ChangeNotifier {
     if (refinedTau <= 0) return PitchData();
 
     final pitch = sampleRate / refinedTau;
-    if (pitch < 40.0 || pitch > 1500.0) return PitchData();
+    if (pitch < 35.0 || pitch > 1500.0) return PitchData();
 
-    final clarity = nsdf[chosenTau].clamp(0.0, 1.0);
+    final clarity = (1.0 - cmndf[chosenTau]).clamp(0.0, 1.0);
+    final note = noteFromPitch(pitch);
+    final midiNote = midiFromPitch(pitch);
+    final cents = centsFromPitch(pitch);
 
     return PitchData(
       pitch: pitch,
+      note: note,
+      cents: cents,
+      midiNote: midiNote,
       clarity: clarity,
     );
+  }
+
+  /// Intelligently matches detected pitch to a guitar string preset considering
+  /// fundamental frequency, octave harmonics, and current selection hysteresis.
+  static int matchGuitarString({
+    required double detectedPitch,
+    required List<double> stringFrequencies,
+    required int selectedIndex,
+  }) {
+    if (detectedPitch <= 0 || stringFrequencies.isEmpty) return selectedIndex;
+
+    double bestScore = double.infinity;
+    int bestIndex = selectedIndex;
+
+    for (int i = 0; i < stringFrequencies.length; i++) {
+      final targetFreq = stringFrequencies[i];
+
+      // 1. Direct cents difference
+      final directCents = (1200.0 * (log(detectedPitch / targetFreq) / ln2)).abs();
+
+      // 2. 2nd Harmonic cents difference (guitar pluck overtone)
+      final harmonic2Cents = (1200.0 * (log((detectedPitch / 2.0) / targetFreq) / ln2)).abs();
+
+      // 3. Subharmonic cents difference (octave below)
+      final subharmonicCents = (1200.0 * (log((detectedPitch * 2.0) / targetFreq) / ln2)).abs();
+
+      double candidateDistance = directCents;
+      if (harmonic2Cents + 25 < candidateDistance) {
+        candidateDistance = harmonic2Cents + 25;
+      }
+      if (subharmonicCents + 35 < candidateDistance) {
+        candidateDistance = subharmonicCents + 35;
+      }
+
+      // Hysteresis boost: prioritize currently active string so tuner stays steady
+      final score = (i == selectedIndex) ? candidateDistance * 0.70 : candidateDistance;
+
+      if (score < bestScore) {
+        bestScore = score;
+        bestIndex = i;
+      }
+    }
+
+    return bestIndex;
   }
 
   /// Fast 2nd-order Butterworth low-pass digital filter
@@ -451,7 +579,7 @@ class PitchService with ChangeNotifier {
 
   /// Calculates musical note from pitch frequency using standard MIDI reference
   /// (A4 = 440Hz -> MIDI 69, C4 = Middle C = MIDI 60).
-  String getNoteFromPitch(double pitch) {
+  static String noteFromPitch(double pitch) {
     const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
     if (pitch <= 0 || pitch.isNaN || pitch.isInfinite) return '';
 
@@ -463,6 +591,28 @@ class PitchService with ChangeNotifier {
     final octave = (midiNote ~/ 12) - 1;
     return '${notes[noteIndex]}$octave';
   }
+
+  /// Instance forwarding method for backward compatibility
+  String getNoteFromPitch(double pitch) => noteFromPitch(pitch);
+
+  /// Calculates MIDI note integer number (e.g. 60 for C4, 69 for A4).
+  static int midiFromPitch(double pitch) {
+    if (pitch <= 0 || pitch.isNaN || pitch.isInfinite) return -1;
+    final midiDouble = 69 + 12 * (log(pitch / 440.0) / log(2.0));
+    return midiDouble.round();
+  }
+
+  int getMidiFromPitch(double pitch) => midiFromPitch(pitch);
+
+  /// Calculates cents deviation from the exact pitch of the nearest musical note [-50.0, +50.0].
+  static double centsFromPitch(double pitch) {
+    if (pitch <= 0 || pitch.isNaN || pitch.isInfinite) return 0.0;
+    final midiDouble = 69 + 12 * (log(pitch / 440.0) / log(2.0));
+    final midiNote = midiDouble.round();
+    return ((midiDouble - midiNote) * 100.0).clamp(-50.0, 50.0);
+  }
+
+  double getCentsFromPitch(double pitch) => centsFromPitch(pitch);
 
   double getPitchFromNote(String note) {
     const notes = {

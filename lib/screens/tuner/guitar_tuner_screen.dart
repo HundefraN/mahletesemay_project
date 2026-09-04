@@ -575,7 +575,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
   final AudioPlayer _soundPlayer = AudioPlayer();
   StreamSubscription<Uint8List>? _streamSub;
   final List<int> _audioBuffer = [];
-  static const int _targetBufferBytes = 4096;
+  static const int _targetBufferBytes = 6144;
   static const int _hopBufferBytes = 2048;
 
   final List<double> _pitchHistory = [];
@@ -752,21 +752,12 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
     }
 
     if (_isAutoMode) {
-      double minScore = double.infinity;
-      int bestIdx = _selectedStringIndex;
-
-      for (int i = 0; i < _currentPreset.strings.length; i++) {
-        final string = _currentPreset.strings[i];
-        final semitoneDist = (12.0 * (math.log(_filteredPitch / string.frequency) / math.ln2)).abs();
-        
-        // Hysteresis boost: prioritize current string to avoid flitting between strings during tuning
-        final score = (i == _selectedStringIndex) ? semitoneDist * 0.65 : semitoneDist;
-        
-        if (score < minScore) {
-          minScore = score;
-          bestIdx = i;
-        }
-      }
+      final freqs = _currentPreset.strings.map((s) => s.frequency).toList();
+      final bestIdx = PitchService.matchGuitarString(
+        detectedPitch: _filteredPitch,
+        stringFrequencies: freqs,
+        selectedIndex: _selectedStringIndex,
+      );
 
       if (bestIdx != _selectedStringIndex) {
         if (_autoStringCandidate == bestIdx) {
@@ -786,8 +777,17 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
 
     final targetString = _currentPreset.strings[_selectedStringIndex];
 
+    // Harmonic folding: If acoustic body resonance emphasizes 2nd harmonic (e.g. 164.8 Hz for E2)
+    // or subharmonic, fold it so the deviation reflects true tuning cents
+    double effectivePitch = _filteredPitch;
+    if ((effectivePitch / (targetString.frequency * 2.0) - 1.0).abs() < 0.12) {
+      effectivePitch = effectivePitch / 2.0;
+    } else if ((effectivePitch / (targetString.frequency * 0.5) - 1.0).abs() < 0.12) {
+      effectivePitch = effectivePitch * 2.0;
+    }
+
     double cents =
-        1200.0 * (math.log(_filteredPitch / targetString.frequency) / math.ln2);
+        1200.0 * (math.log(effectivePitch / targetString.frequency) / math.ln2);
     cents = cents.clamp(-50.0, 50.0);
 
     if (cents.abs() < 0.3) cents = 0.0;
@@ -1279,20 +1279,8 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                           width: headstockWidth,
                           height: headstockHeight,
                           child: Stack(
-                            children: [
-                              _buildInteractivePegKey(0, headstockWidth * 0.02,
-                                  headstockHeight * 0.16, context),
-                              _buildInteractivePegKey(1, headstockWidth * 0.02,
-                                  headstockHeight * 0.38, context),
-                              _buildInteractivePegKey(2, headstockWidth * 0.02,
-                                  headstockHeight * 0.60, context),
-                              _buildInteractivePegKey(3, headstockWidth * 0.78,
-                                  headstockHeight * 0.60, context),
-                              _buildInteractivePegKey(4, headstockWidth * 0.78,
-                                  headstockHeight * 0.38, context),
-                              _buildInteractivePegKey(5, headstockWidth * 0.78,
-                                  headstockHeight * 0.16, context),
-                            ],
+                            children: _buildInteractivePegKeys(
+                                headstockWidth, headstockHeight, context),
                           ),
                         ),
                       ],
@@ -1305,6 +1293,36 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
         ),
       ),
     );
+  }
+
+  List<Widget> _buildInteractivePegKeys(
+      double headstockWidth, double headstockHeight, BuildContext context) {
+    if (_currentPreset.strings.length == 4) {
+      return [
+        _buildInteractivePegKey(0, headstockWidth * 0.02,
+            headstockHeight * 0.54, context),
+        _buildInteractivePegKey(1, headstockWidth * 0.02,
+            headstockHeight * 0.22, context),
+        _buildInteractivePegKey(2, headstockWidth * 0.78,
+            headstockHeight * 0.22, context),
+        _buildInteractivePegKey(3, headstockWidth * 0.78,
+            headstockHeight * 0.54, context),
+      ];
+    }
+    return [
+      _buildInteractivePegKey(0, headstockWidth * 0.02,
+          headstockHeight * 0.60, context),
+      _buildInteractivePegKey(1, headstockWidth * 0.02,
+          headstockHeight * 0.38, context),
+      _buildInteractivePegKey(2, headstockWidth * 0.02,
+          headstockHeight * 0.16, context),
+      _buildInteractivePegKey(3, headstockWidth * 0.78,
+          headstockHeight * 0.16, context),
+      _buildInteractivePegKey(4, headstockWidth * 0.78,
+          headstockHeight * 0.38, context),
+      _buildInteractivePegKey(5, headstockWidth * 0.78,
+          headstockHeight * 0.60, context),
+    ];
   }
 
   Widget _buildInteractivePegKey(
@@ -1341,7 +1359,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
               Text(
                 string.fullNote,
                 style: GoogleFonts.syne(
-                  fontSize: context.sp(12.5),
+                  fontSize: context.sp(13.0),
                   fontWeight: FontWeight.w800,
                   color: isSelected
                       ? Theme.of(context).colorScheme.primary
@@ -1349,11 +1367,13 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                 ),
               ),
               Text(
-                AppLocalizations.of(context)?.strNumber(string.index + 1) ?? 'Str ${string.index + 1}',
+                string.label.split(' ').first,
                 style: TextStyle(
-                  fontSize: context.sp(9),
+                  fontSize: context.sp(9.5),
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.8)
+                      : Colors.grey,
                 ),
               ),
             ],
@@ -1686,14 +1706,32 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
     );
 
     // 11. 3D Tuning Machines (Peg Posts, Hex Bushings, and Keystone Buttons)
-    final List<Offset> pegPositions = [
-      Offset(w * 0.20, h * 0.22),
-      Offset(w * 0.20, h * 0.42),
-      Offset(w * 0.20, h * 0.62),
-      Offset(w * 0.80, h * 0.62),
-      Offset(w * 0.80, h * 0.42),
-      Offset(w * 0.80, h * 0.22),
-    ];
+    final List<Offset> pegPositions;
+    final List<bool> pegIsLeft;
+
+    if (strings.length == 4) {
+      // 4-string bass / ukulele (2+2 layout)
+      pegPositions = [
+        Offset(w * 0.20, h * 0.54), // string 0 (lowest): bottom left
+        Offset(w * 0.20, h * 0.22), // string 1: top left
+        Offset(w * 0.80, h * 0.22), // string 2: top right
+        Offset(w * 0.80, h * 0.54), // string 3 (highest): bottom right
+      ];
+      pegIsLeft = [true, true, false, false];
+    } else {
+      // 6-string standard 3+3 headstock (authentic Gibson / Martin acoustic layout)
+      // Left side: String 0 (Low E) closest to nut, String 1 (A) mid, String 2 (D) top
+      // Right side: String 3 (G) top, String 4 (B) mid, String 5 (High E) closest to nut
+      pegPositions = [
+        Offset(w * 0.20, h * 0.62), // string 0 (6th, Low E): bottom left
+        Offset(w * 0.20, h * 0.42), // string 1 (5th, A): mid left
+        Offset(w * 0.20, h * 0.22), // string 2 (4th, D): top left
+        Offset(w * 0.80, h * 0.22), // string 3 (3rd, G): top right
+        Offset(w * 0.80, h * 0.42), // string 4 (2nd, B): mid right
+        Offset(w * 0.80, h * 0.62), // string 5 (1st, High E): bottom right
+      ];
+      pegIsLeft = [true, true, true, false, false, false];
+    }
 
     final Paint chromeGradient = Paint()
       ..shader = const LinearGradient(
@@ -1709,7 +1747,7 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
 
     for (int i = 0; i < pegPositions.length; i++) {
       final pos = pegPositions[i];
-      final bool isLeft = i < 3;
+      final bool isLeft = pegIsLeft[i];
       final bool isSelected = i == selectedIndex;
 
       final double keyX = isLeft ? pos.dx - 32 : pos.dx + 32;
@@ -1786,10 +1824,14 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
     }
 
     // 12. Highly Textured Strings with Winding Coils, Standing Waves & Shadows
-    final double stringNutStartX = w * 0.29;
-    final double stringNutSpacing = (w * 0.42) / 5;
+    final double stringNutStartX = w * 0.30;
+    final double stringNutEndX = w * 0.70;
+    final double stringNutSpacing = (strings.length > 1)
+        ? (stringNutEndX - stringNutStartX) / (strings.length - 1)
+        : 0.0;
 
     for (int i = 0; i < strings.length; i++) {
+      if (i >= pegPositions.length) break;
       final bool isSelected = i == selectedIndex;
       final string = strings[i];
       final double nutX = stringNutStartX + (i * stringNutSpacing);

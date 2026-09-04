@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mahlete_semay_project/services/pitch_service.dart';
+import 'package:mahlete_semay_project/utils/generated_tones.dart';
 
 Uint8List generateTestPcm(double frequency, {int sampleRate = 44100, int numSamples = 2048, double harmonic2Strength = 0.3}) {
   final byteData = ByteData(numSamples * 2);
@@ -85,6 +86,48 @@ void main() {
 
       final span = pitchService.getVocalRangeSpan('C3', 'C5');
       expect(span, contains('2 Octaves'));
+    });
+
+    test('matchGuitarString matches correct string even with harmonic overtones', () {
+      const standardGuitarFreqs = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];
+
+      // Exact fundamental matches
+      expect(PitchService.matchGuitarString(detectedPitch: 82.41, stringFrequencies: standardGuitarFreqs, selectedIndex: 0), equals(0));
+      expect(PitchService.matchGuitarString(detectedPitch: 110.00, stringFrequencies: standardGuitarFreqs, selectedIndex: 0), equals(1));
+      expect(PitchService.matchGuitarString(detectedPitch: 146.83, stringFrequencies: standardGuitarFreqs, selectedIndex: 0), equals(2));
+      expect(PitchService.matchGuitarString(detectedPitch: 196.00, stringFrequencies: standardGuitarFreqs, selectedIndex: 0), equals(3));
+      expect(PitchService.matchGuitarString(detectedPitch: 246.94, stringFrequencies: standardGuitarFreqs, selectedIndex: 0), equals(4));
+      expect(PitchService.matchGuitarString(detectedPitch: 329.63, stringFrequencies: standardGuitarFreqs, selectedIndex: 0), equals(5));
+
+      // Harmonic overtone match: Low E 2nd harmonic (164.82 Hz) correctly recognizes String 0 (E2)
+      expect(PitchService.matchGuitarString(detectedPitch: 164.82, stringFrequencies: standardGuitarFreqs, selectedIndex: 0), equals(0));
+    });
+
+    test('PitchData cents and note breakdown accuracy', () {
+      final pcmC4 = generateTestPcm(261.63, harmonic2Strength: 0.1);
+      final result = PitchService.detectPitchFromPcm16(pcmC4, sampleRate: 44100);
+      expect(result.note, equals('C4'));
+      expect(result.noteName, equals('C'));
+      expect(result.octave, equals(4));
+      expect(result.midiNote, equals(60));
+      expect(result.cents.abs(), lessThan(15.0));
+      expect(result.isInTune, isTrue);
+    });
+
+    test('Generated countdown tick and go tones produce valid WAV audio bytes', () {
+      final tick = GeneratedTones.getCountdownTickTone();
+      expect(tick, isNotEmpty);
+      expect(tick.length, greaterThan(44)); // Has valid WAV header
+      // Check 'RIFF'
+      expect(tick[0], equals(0x52));
+      expect(tick[1], equals(0x49));
+      expect(tick[2], equals(0x46));
+      expect(tick[3], equals(0x46));
+
+      final go = GeneratedTones.getCountdownGoTone();
+      expect(go, isNotEmpty);
+      expect(go.length, greaterThan(44));
+      expect(go[0], equals(0x52));
     });
   });
 }

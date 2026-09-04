@@ -135,39 +135,45 @@ class LocalDbService {
   }
 
   Future<void> syncArtists(List<Artist> artists) async {
-    if (kIsWeb) return;
+    if (kIsWeb || artists.isEmpty) return;
     final db = await database;
-    Batch batch = db.batch();
-    batch.delete('artists');
-    for (var artist in artists) {
-      batch.insert('artists', artist.toLocalDbMap(),
-          conflictAlgorithm: ConflictAlgorithm.replace);
-    }
-    await batch.commit(noResult: true);
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      batch.delete('artists');
+      for (var artist in artists) {
+        batch.insert('artists', artist.toLocalDbMap(),
+            conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      await batch.commit(noResult: true);
+    });
   }
 
   Future<void> syncAlbums(List<Album> albums) async {
-    if (kIsWeb) return;
+    if (kIsWeb || albums.isEmpty) return;
     final db = await database;
-    Batch batch = db.batch();
-    batch.delete('albums');
-    for (var album in albums) {
-      batch.insert('albums', album.toLocalDbMap(),
-          conflictAlgorithm: ConflictAlgorithm.replace);
-    }
-    await batch.commit(noResult: true);
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      batch.delete('albums');
+      for (var album in albums) {
+        batch.insert('albums', album.toLocalDbMap(),
+            conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      await batch.commit(noResult: true);
+    });
   }
 
   Future<void> syncSongs(List<Song> songs) async {
-    if (kIsWeb) return;
+    if (kIsWeb || songs.isEmpty) return;
     final db = await database;
-    Batch batch = db.batch();
-    batch.delete('songs');
-    for (var song in songs) {
-      batch.insert('songs', song.toLocalDbMap(),
-          conflictAlgorithm: ConflictAlgorithm.replace);
-    }
-    await batch.commit(noResult: true);
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      batch.delete('songs');
+      for (var song in songs) {
+        batch.insert('songs', song.toLocalDbMap(),
+            conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      await batch.commit(noResult: true);
+    });
   }
 
   Future<List<Artist>> getArtists() async {
