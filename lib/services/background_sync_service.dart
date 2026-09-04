@@ -59,10 +59,7 @@ class BackgroundSyncService {
     if (_isInitialized) return;
 
     try {
-      await Workmanager().initialize(
-        callbackDispatcher,
-        isInDebugMode: kDebugMode,
-      );
+      await Workmanager().initialize(callbackDispatcher);
 
       // Register periodic background sync (runs every 15 minutes or when network allows)
       await Workmanager().registerPeriodicTask(
@@ -72,7 +69,7 @@ class BackgroundSyncService {
         constraints: Constraints(
           networkType: NetworkType.connected,
         ),
-        existingWorkPolicy: ExistingWorkPolicy.keep,
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
         backoffPolicy: BackoffPolicy.linear,
         backoffPolicyDelay: const Duration(minutes: 5),
       );

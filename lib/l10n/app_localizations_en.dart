@@ -42,7 +42,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goodEvening => 'Good Evening';
 
   @override
-  String get searchHint => 'Search songs, artists, lyrics...';
+  String get searchHint => 'Search songs, singers, lyrics...';
 
   @override
   String get favorites => 'Favorites';
@@ -783,7 +783,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminControlsSecurity => 'Admin Controls & Security';
 
   @override
-  String get addArtist => 'Add Artist';
+  String get addArtist => 'Add Singer';
 
   @override
   String get addAlbum => 'Add Album';
@@ -1631,7 +1631,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchSongsHint => 'Search by title, artist, or lyrics...';
 
   @override
-  String get discoverAmazingMusic => 'Discover amazing music';
+  String get discoverAmazingMusic => 'Discover your favorite music';
 
   @override
   String get filterSearch => 'Filter Search';

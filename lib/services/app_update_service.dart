@@ -1,7 +1,7 @@
 import 'dart:io' show File, Platform;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:open_file_plus/open_file_plus.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -246,7 +246,7 @@ class AppUpdateService extends ChangeNotifier {
       notifyListeners();
 
       debugPrint('[AppUpdateService] Launching native package installer for: $_downloadedApkPath');
-      final result = await OpenFile.open(
+      final result = await OpenFilex.open(
         _downloadedApkPath!,
         type: 'application/vnd.android.package-archive',
       );

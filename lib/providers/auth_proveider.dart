@@ -107,7 +107,6 @@ class AuthProvider with ChangeNotifier {
 
     final normalizedEmail = email.trim().toLowerCase();
     final trimmedPassword = password.trim();
-    final isSeedAdmin = normalizedEmail == 'admin@gmail.com' && trimmedPassword == '123456';
 
     try {
       User? user;
@@ -138,21 +137,6 @@ class AuthProvider with ChangeNotifier {
           } catch (_) {}
         }
 
-        // If seed admin doesn't exist yet in Supabase Auth, bootstrap account
-        if (user == null && isSeedAdmin) {
-          try {
-            final signUpRes = await _supabase.auth.signUp(
-              email: normalizedEmail,
-              password: trimmedPassword,
-            );
-            user = signUpRes.user;
-            if (user != null) {
-              await _supabaseService.confirmUserEmail(user.id);
-            }
-          } catch (signUpErr) {
-            debugPrint("Admin bootstrap signUp error: $signUpErr");
-          }
-        }
         if (user == null) {
           if (e.message.toLowerCase().contains('database error querying schema')) {
             _authError = "Account synchronization in progress. Please try logging in again.";
@@ -162,15 +146,6 @@ class AuthProvider with ChangeNotifier {
           return SignInResult.failed;
         }
       } catch (e) {
-        if (isSeedAdmin) {
-          try {
-            final signUpRes = await _supabase.auth.signUp(
-              email: normalizedEmail,
-              password: trimmedPassword,
-            );
-            user = signUpRes.user;
-          } catch (_) {}
-        }
         if (user == null) {
           _authError = "Authentication failed: ${e.toString()}";
           return SignInResult.failed;
@@ -190,37 +165,9 @@ class AuthProvider with ChangeNotifier {
 
       // Handle missing moderator document
       if (!moderatorDoc.exists) {
-        if (isSeedAdmin || normalizedEmail == 'admin@gmail.com') {
-          final adminProfile = {
-            'id': user.id,
-            'email': normalizedEmail,
-            'first_name': 'Admin',
-            'last_name': 'User',
-            'username': 'admin',
-            'role': 'admin',
-            'status': 'active',
-            'is_active': true,
-            'approved_devices': currentDeviceInfo != null ? [currentDeviceInfo] : [],
-            'pending_device': null,
-            'created_at': DateTime.now().toIso8601String(),
-            'last_login': DateTime.now().toIso8601String(),
-          };
-          await _supabaseService.setModeratorData(user.id, adminProfile);
-          _moderator = Moderator.fromMap(adminProfile, user.id);
-          _user = user;
-          _setupSecurityListener(user.id);
-          await _supabaseService.logActivity(
-            moderatorId: user.id,
-            moderatorName: 'Admin User',
-            action: 'ADMIN_BOOTSTRAP',
-            details: 'Master Admin account initialized and logged in',
-          );
-          return SignInResult.success;
-        } else {
-          _authError = "Your moderator profile was not found. Please claim your account first using your invitation code.";
-          await _supabase.auth.signOut();
-          return SignInResult.failed;
-        }
+        _authError = "Your moderator profile was not found. Please claim your account first using your invitation code.";
+        await _supabase.auth.signOut();
+        return SignInResult.failed;
       }
 
       _moderator = Moderator.fromMap(moderatorDoc.data(), user.id);
@@ -232,7 +179,7 @@ class AuthProvider with ChangeNotifier {
       }
 
       // If user is Admin, auto-approve device to prevent administrative lockouts
-      if (_moderator!.role == 'admin' || isSeedAdmin) {
+      if (_moderator!.role == 'admin') {
         final isDeviceApproved = _moderator!.approvedDevices.any((d) => d['id'] == currentDeviceId);
         if (!isDeviceApproved && currentDeviceInfo != null) {
           final updatedDevices = List<Map<String, dynamic>>.from(_moderator!.approvedDevices)..add(currentDeviceInfo);

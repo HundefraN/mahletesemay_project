@@ -1,0 +1,68 @@
+name: Deploy Flutter Web to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Setup Environment Files
+        run: |
+          if [ ! -f .env ]; then
+            echo "SUPABASE_URL=${{ secrets.SUPABASE_URL || 'https://onsvnudakxkrqazrufar.supabase.co' }}" >> .env
+            echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uc3ZudWRha3hrcnFhenJ1ZmFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNzYzNzQsImV4cCI6MjEwMjY1MjM3NH0.1U-gR05Ojn0FiHcmK8J4TOyloFw7dbHrQ0Y31bA8os4' }}" >> .env
+          fi
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Web
+        run: flutter build web --release --base-href "/"
+
+      - name: Prepare GitHub Pages Assets
+        run: |
+          # Ensure custom domain is preserved in the build directory
+          echo "www.mahletesemay.com" > build/web/CNAME
+
+          # Provide 404.html copy for Flutter Single Page Application (SPA) routing
+          cp build/web/index.html build/web/404.html
+
+          # Disable Jekyll processing on GitHub Pages
+          touch build/web/.nojekyll
+
+      - name: Upload GitHub Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'build/web'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -173,7 +173,7 @@ abstract class AppLocalizations {
   /// No description provided for @searchHint.
   ///
   /// In en, this message translates to:
-  /// **'Search songs, artists, lyrics...'**
+  /// **'Search songs, singers, lyrics...'**
   String get searchHint;
 
   /// No description provided for @favorites.

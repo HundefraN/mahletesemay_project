@@ -1,7 +1,7 @@
 name: mahlete_semay_project
 description: "Mahlete Semay Project"
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: '>=3.4.3 <4.0.0'
@@ -63,8 +63,8 @@ dependencies:
   flutter_timezone: ^3.0.1
   package_info_plus: ^8.0.0
   pub_semver: ^2.1.4
-  open_file_plus: ^3.4.1
-  workmanager: ^0.5.2
+  open_filex: ^4.7.0
+  workmanager: ^0.10.9
   android_alarm_manager_plus: ^4.0.7
 
   path: any

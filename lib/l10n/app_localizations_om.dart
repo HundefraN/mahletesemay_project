@@ -1652,7 +1652,7 @@ class AppLocalizationsOm extends AppLocalizations {
       'Mata duree, weelisaa ykn yeedaloon barbaadi...';
 
   @override
-  String get discoverAmazingMusic => 'Discover amazing music';
+  String get discoverAmazingMusic => 'Discover your favorite music';
 
   @override
   String get filterSearch => 'Filter Search';
