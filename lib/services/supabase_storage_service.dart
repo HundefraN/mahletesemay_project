@@ -75,6 +75,37 @@ class SupabaseStorageService {
     }
   }
 
+  /// Uploads raw APK file bytes to Supabase storage bucket (`app-releases` by default)
+  /// and returns its full public URL. Works seamlessly on Web and Mobile.
+  static Future<String?> uploadApkBytes(
+    Uint8List bytes, {
+    required String fileName,
+    String bucket = 'app-releases',
+    void Function(int count, int total)? onProgress,
+  }) async {
+    try {
+      final sanitizedName = fileName.replaceAll(RegExp(r'[^a-zA-Z0-9_\-\.]'), '_');
+      final path = 'apks/$sanitizedName';
+
+      await _client.storage.from(bucket).uploadBinary(
+            path,
+            bytes,
+            fileOptions: const FileOptions(
+              contentType: 'application/vnd.android.package-archive',
+              cacheControl: '3600',
+              upsert: true,
+            ),
+          );
+
+      final publicUrl = _client.storage.from(bucket).getPublicUrl(path);
+      debugPrint('Uploaded APK to Supabase ($bucket): $publicUrl');
+      return publicUrl;
+    } catch (e) {
+      debugPrint('Error uploading APK to Supabase Storage: $e');
+      rethrow;
+    }
+  }
+
   /// Uploads an image file to the specified Supabase storage bucket (`covers` by default)
   /// and returns its full public URL.
   static Future<String?> uploadImage(

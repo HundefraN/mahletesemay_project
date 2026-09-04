@@ -36,6 +36,8 @@ import 'services/background_sync_service.dart';
 import 'utils/timeago_utils.dart';
 import 'services/web_init_service.dart';
 import 'utils/web_scroll_behavior.dart';
+import 'screens/update/app_update_wrapper.dart';
+import 'services/app_update_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
@@ -141,7 +143,9 @@ class MyApp extends StatelessWidget {
                 return GestureDetector(
                   onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
                   behavior: HitTestBehavior.translucent,
-                  child: RepairModeWrapper(child: child!),
+                  child: RepairModeWrapper(
+                    child: AppUpdateWrapper(child: child!),
+                  ),
                 );
               },
               ),
@@ -206,9 +210,10 @@ class _NotificationCoordinatorState extends State<NotificationCoordinator>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     // Notification access may have been changed in system settings while the
-    // app was in the background.
+    // app was in the background. Also check for remote app updates.
     if (state == AppLifecycleState.resumed && mounted) {
       context.read<NotificationSettingsProvider>().refreshPermission();
+      AppUpdateService.instance.checkForUpdate();
     }
   }
 

@@ -78,21 +78,17 @@ class ForceUpdateService {
       return const ForceUpdateResult(updateRequired: false);
     }
     try {
-      // 1. Fetch the minimum required version from the backend.
-      final minVersionString = await SupabaseService().getMinRequiredVersion();
+      // 1. Fetch release config from the backend.
+      final config = await SupabaseService().getAppConfig();
+      final minVersionString = config?.minRequiredVersion ?? await SupabaseService().getMinRequiredVersion();
+      final latestVersionString = config?.latestVersion;
 
-      if (minVersionString == null || minVersionString.trim().isEmpty) {
-        // No remote config set or explicitly empty — allow the app to run.
+      if (config == null && (minVersionString == null || minVersionString.trim().isEmpty)) {
         return const ForceUpdateResult(updateRequired: false);
       }
 
       final minRequiredVersion = parseVersion(minVersionString);
-      if (minRequiredVersion == null) {
-        debugPrint(
-          '[ForceUpdate] Min required version is disabled or invalid: $minVersionString',
-        );
-        return const ForceUpdateResult(updateRequired: false);
-      }
+      final latestVersion = parseVersion(latestVersionString);
 
       // 2. Read the installed app version from the native platform.
       final packageInfo = await PackageInfo.fromPlatform();
@@ -106,8 +102,20 @@ class ForceUpdateService {
         return const ForceUpdateResult(updateRequired: false);
       }
 
-      // 3. If installed < minimum → force update.
-      final needsUpdate = installedVersion < minRequiredVersion;
+      // 3. Evaluate update requirement
+      bool needsUpdate = false;
+      if (minRequiredVersion != null && installedVersion < minRequiredVersion) {
+        needsUpdate = true;
+      }
+      if (config?.forceUpdate == true) {
+        if (latestVersion != null && installedVersion < latestVersion) {
+          needsUpdate = true;
+        } else if (minRequiredVersion != null && installedVersion < minRequiredVersion) {
+          needsUpdate = true;
+        } else {
+          needsUpdate = true;
+        }
+      }
 
       debugPrint(
         '[ForceUpdate] Version check: installed=$installedVersion (raw: $installedVersionString), '

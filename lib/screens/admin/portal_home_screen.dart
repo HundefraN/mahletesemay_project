@@ -23,6 +23,7 @@ import '../../services/firebase_service.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/responsive_sizer.dart';
 import '../home_screen.dart';
+import 'app_release_management_screen.dart';
 import 'manage_vocal_plans_screen.dart';
 import '../../widgets/custom_snackbar.dart';
 import '../../l10n/app_localizations.dart';
@@ -437,11 +438,14 @@ class PortalHomeScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                     _buildModernListTile(
                       context,
-                      title: 'Force Update Version',
-                      subtitle: 'Configure minimum required app version for all users',
-                      icon: Icons.system_update_rounded,
+                      title: 'App Version & APK Release',
+                      subtitle: 'Upload APK, configure semver releases, force updates & release notes',
+                      icon: Icons.rocket_launch_rounded,
                       accentColor: AdminUiKit.royalBlue,
-                      onTap: () => _showMinVersionDialog(context, moderator, authProvider),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AppReleaseManagementScreen()),
+                      ),
                     ),
                   ],
 

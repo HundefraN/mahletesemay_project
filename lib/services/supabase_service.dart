@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/activity_log_model.dart';
 import '../models/album_model.dart';
+import '../models/app_config_model.dart';
 import '../models/artist_model.dart';
 import '../models/invitation_model.dart';
 import '../models/moderator_model.dart';
@@ -1057,14 +1058,132 @@ class SupabaseService {
   // ---------------------------------------------------------------------------
   // FORCE UPDATE — minimum app version
   // ---------------------------------------------------------------------------
+  // APP CONFIG & FORCE UPDATE RELEASES
+  // ---------------------------------------------------------------------------
 
-  /// Fetches the `min_required_version` value from the `app_settings` table.
-  ///
-  /// This column stores a semver string (e.g. "1.2.0") representing the lowest
-  /// app version that is still allowed to run. Returns `null` when the column
-  /// doesn't exist yet or when the query fails, so that the app degrades
-  /// gracefully (no force-update dialog is shown).
+  /// Fetches the latest [AppConfigModel] from Supabase `app_config` table.
+  /// Falls back to `app_settings` for `min_required_version` if `app_config` is empty or unreachable.
+  Future<AppConfigModel?> getAppConfig() async {
+    try {
+      final res = await _client
+          .from('app_config')
+          .select()
+          .order('updated_at', ascending: false)
+          .limit(1);
+
+      if (res.isNotEmpty) {
+        return AppConfigModel.fromJson(res.first);
+      }
+
+      // Fallback to legacy app_settings if app_config not yet populated
+      final legacyMinVersion = await getMinRequiredVersion();
+      if (legacyMinVersion != null) {
+        return AppConfigModel(
+          id: 'default',
+          latestVersion: legacyMinVersion,
+          minRequiredVersion: legacyMinVersion,
+          forceUpdate: false,
+        );
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching app_config: $e');
+      final legacyMinVersion = await getMinRequiredVersion();
+      if (legacyMinVersion != null) {
+        return AppConfigModel(
+          id: 'default',
+          latestVersion: legacyMinVersion,
+          minRequiredVersion: legacyMinVersion,
+          forceUpdate: false,
+        );
+      }
+      return null;
+    }
+  }
+
+  /// Realtime stream of the latest [AppConfigModel] from `app_config` table.
+  Stream<AppConfigModel?> getAppConfigStream() {
+    return _client
+        .from('app_config')
+        .stream(primaryKey: ['id'])
+        .order('updated_at', ascending: false)
+        .limit(1)
+        .map((rows) {
+          if (rows.isNotEmpty) {
+            return AppConfigModel.fromJson(rows.first);
+          }
+          return null;
+        })
+        .handleError((error) {
+          _logStreamErrorThrottled('app_config', error);
+        });
+  }
+
+  /// Saves or updates the release configuration in `app_config` table.
+  /// Also mirrors `min_required_version` to `app_settings` for legacy consistency.
+  Future<void> saveAppConfig(AppConfigModel config, String adminId, String adminName) async {
+    try {
+      final data = {
+        'id': config.id.isEmpty ? 'default' : config.id,
+        'latest_version': config.latestVersion?.trim().isEmpty == true ? null : config.latestVersion?.trim(),
+        'min_required_version': config.minRequiredVersion?.trim().isEmpty == true ? null : config.minRequiredVersion?.trim(),
+        'apk_url': config.apkUrl?.trim().isEmpty == true ? null : config.apkUrl?.trim(),
+        'release_notes': config.releaseNotes?.trim().isEmpty == true ? null : config.releaseNotes?.trim(),
+        'force_update': config.forceUpdate,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      };
+
+      await _client.from('app_config').upsert(data);
+
+      // Mirror to legacy app_settings table as well
+      try {
+        final res = await _client.from('app_settings').select('id');
+        if (res.isNotEmpty) {
+          for (final row in res) {
+            await _client.from('app_settings').update({
+              'min_required_version': config.minRequiredVersion,
+              'updated_at': DateTime.now().toUtc().toIso8601String(),
+            }).eq('id', row['id']);
+          }
+        } else {
+          await _client.from('app_settings').insert({
+            'min_required_version': config.minRequiredVersion,
+            'is_repair_mode': false,
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          });
+        }
+      } catch (e) {
+        debugPrint('Notice: could not mirror to app_settings: $e');
+      }
+
+      await logActivity(
+        moderatorId: adminId,
+        moderatorName: adminName,
+        action: 'APP_RELEASE_UPDATED',
+        details: 'Release updated: latest=${config.latestVersion}, min_required=${config.minRequiredVersion}, force=${config.forceUpdate}',
+      );
+    } catch (e) {
+      debugPrint('Error saving app_config: $e');
+      rethrow;
+    }
+  }
+
+  /// Fetches the `min_required_version` value from the `app_config` table (falling back to `app_settings`).
   Future<String?> getMinRequiredVersion() async {
+    try {
+      final res = await _client
+          .from('app_config')
+          .select('min_required_version, updated_at')
+          .order('updated_at', ascending: false)
+          .limit(1);
+      if (res.isNotEmpty && res.first['min_required_version'] != null) {
+        final version = res.first['min_required_version'].toString().trim();
+        if (version.isNotEmpty) return version;
+      }
+    } catch (_) {
+      // Fall through to app_settings
+    }
+
     try {
       final res = await _client
           .from('app_settings')
@@ -1082,11 +1201,23 @@ class SupabaseService {
     }
   }
 
-  /// Sets or clears the `min_required_version` in the `app_settings` table.
+  /// Sets or clears the `min_required_version` in the `app_settings` and `app_config` tables.
   /// Pass `null` or empty string to disable the force-update requirement.
   Future<void> setMinRequiredVersion(String? version, String adminId, String adminName) async {
     try {
       final sanitized = (version == null || version.trim().isEmpty) ? null : version.trim();
+      
+      // Update app_config
+      try {
+        final current = await getAppConfig();
+        final updated = (current ?? const AppConfigModel(id: 'default')).copyWith(
+          minRequiredVersion: sanitized,
+        );
+        await saveAppConfig(updated, adminId, adminName);
+      } catch (e) {
+        debugPrint('Notice updating app_config in setMinRequiredVersion: $e');
+      }
+
       final res = await _client.from('app_settings').select('id');
       if (res.isNotEmpty) {
         for (final row in res) {

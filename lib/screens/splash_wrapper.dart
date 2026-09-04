@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../admin/permissions/permission_screen.dart';
-import '../services/force_update_service.dart';
+import '../services/app_update_service.dart';
 import '../utils/constants.dart';
-import '../widgets/force_update_dialog.dart';
 import 'home_screen.dart';
 import 'onboarding/language_selection_screen.dart';
 import 'onboarding/onboarding_screen.dart';
+import 'update/app_update_lock_screen.dart';
 
 /// ──────────────────────────────────────────────────────────────────────────────
 /// SplashWrapper — app initialization gate
@@ -75,8 +75,8 @@ class _SplashWrapperState extends State<SplashWrapper> {
     // This runs before anything else: if an update is required the user is
     // blocked immediately. The check is intentionally fail-open — if the
     // backend is unreachable or the column doesn't exist, the app proceeds.
-    final updateResult = await ForceUpdateService.instance.checkForUpdate();
-    if (updateResult.updateRequired) {
+    final isUpdateRequired = await AppUpdateService.instance.checkForUpdate();
+    if (isUpdateRequired) {
       return AppStatus.needsUpdate;
     }
 
@@ -109,14 +109,10 @@ class _SplashWrapperState extends State<SplashWrapper> {
         if (snapshot.connectionState == ConnectionState.done) {
           final status = snapshot.data;
           switch (status) {
-            // Force update: show an empty scaffold and immediately present the blocking dialog.
+            // Force update: show production non-dismissible AppUpdateLockScreen
             case AppStatus.needsUpdate:
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) ForceUpdateDialog.show(context);
-              });
-              return Scaffold(
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                body: const SizedBox.shrink(),
+              return AppUpdateLockScreen(
+                config: AppUpdateService.instance.currentConfig,
               );
             case AppStatus.needsLanguage:
               return const LanguageSelectionScreen();
