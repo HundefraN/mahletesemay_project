@@ -11,6 +11,7 @@ import 'package:mahlete_semay_project/screens/lyrics/song_detail_screen.dart';
 import 'package:provider/provider.dart';
 
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
+import 'package:mahlete_semay_project/widgets/web_content_wrapper.dart';
 
 class SetlistDetailScreen extends StatelessWidget {
   final Setlist setlist;
@@ -37,7 +38,7 @@ class SetlistDetailScreen extends StatelessWidget {
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [theme.colorScheme.primary, theme.colorScheme.secondary.withOpacity(0.8)],
+                    colors: [theme.colorScheme.primary, theme.colorScheme.secondary.withValues(alpha: 0.8)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -56,7 +57,7 @@ class SetlistDetailScreen extends StatelessWidget {
                       content: Text(l10n.deleteSetlistConfirm),
                       actions: [
                         TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
-                        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.delete), style: FilledButton.styleFrom(backgroundColor: Colors.red)),
+                        FilledButton(onPressed: () => Navigator.pop(ctx, true), style: FilledButton.styleFrom(backgroundColor: Colors.red), child: Text(l10n.delete)),
                       ],
                     ),
                   );
@@ -76,20 +77,23 @@ class SetlistDetailScreen extends StatelessWidget {
               ),
             )
           else
-            SliverReorderableList(
-              itemCount: songsInSetlist.length,
-              itemBuilder: (context, index) {
-                final setlistSong = songsInSetlist[index];
-                return _SetlistSongCard(
-                  key: ValueKey(setlistSong.id),
-                  setlistSong: setlistSong,
-                  index: index,
-                  setlistCreationDate: setlist.createdAt,
-                );
-              },
-              onReorder: (oldIndex, newIndex) {
-                setlistProvider.updateSongOrder(setlist.id!, oldIndex, newIndex);
-              },
+            SliverWebContentWrapper(
+              maxWidth: 850,
+              sliver: SliverReorderableList(
+                itemCount: songsInSetlist.length,
+                itemBuilder: (context, index) {
+                  final setlistSong = songsInSetlist[index];
+                  return _SetlistSongCard(
+                    key: ValueKey(setlistSong.id),
+                    setlistSong: setlistSong,
+                    index: index,
+                    setlistCreationDate: setlist.createdAt,
+                  );
+                },
+                onReorder: (oldIndex, newIndex) {
+                  setlistProvider.updateSongOrder(setlist.id!, oldIndex, newIndex);
+                },
+              ),
             ),
         ],
       ),
@@ -230,7 +234,7 @@ class _EditSetlistSongDialogState extends State<_EditSetlistSongDialog> {
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: theme.cardColor.withOpacity(0.9),
+            color: theme.cardColor.withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(24),
           ),
           child: Column(

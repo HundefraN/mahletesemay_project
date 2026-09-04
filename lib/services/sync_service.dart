@@ -1,4 +1,5 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mahlete_semay_project/services/firebase_service.dart';
 import 'package:mahlete_semay_project/services/local_db_service.dart';
 import 'package:mahlete_semay_project/services/notification_service.dart';
@@ -42,22 +43,27 @@ class SyncService {
       return SyncResult.syncAlreadyInProgress;
     }
 
-    final connectivityResult = await _connectivity.checkConnectivity();
-    final isConnected =
-        connectivityResult.any((r) => r != ConnectivityResult.none);
+    // On web, the connectivity_plus plugin often reports none incorrectly.
+    // Since the web app itself loaded in the browser, we know we have network.
+    if (!kIsWeb) {
+      final connectivityResult = await _connectivity.checkConnectivity();
+      final isConnected =
+          connectivityResult.any((r) => r != ConnectivityResult.none);
 
-    if (!isConnected) {
-      return SyncResult.offline;
+      if (!isConnected) {
+        return SyncResult.offline;
+      }
     }
 
     final existingSongs = await _localDbService.getSongs();
     final bool isEmptyDb = existingSongs.isEmpty;
 
-    if (!isInitialSync && !isEmptyDb) {
+    if (!isInitialSync && !isEmptyDb && !kIsWeb) {
+      final connectivityCheck = await _connectivity.checkConnectivity();
       final isWifiOrUnmetered =
-          connectivityResult.contains(ConnectivityResult.wifi) ||
-              connectivityResult.contains(ConnectivityResult.ethernet) ||
-              connectivityResult.contains(ConnectivityResult.vpn);
+          connectivityCheck.contains(ConnectivityResult.wifi) ||
+              connectivityCheck.contains(ConnectivityResult.ethernet) ||
+              connectivityCheck.contains(ConnectivityResult.vpn);
       if (!isWifiOrUnmetered && !forceOnMobile) {
         bool hasNewData = await _checkForNewData();
         return hasNewData ? SyncResult.mobileData : SyncResult.noNewData;

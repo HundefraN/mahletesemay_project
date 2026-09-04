@@ -11,6 +11,7 @@ import 'package:mahlete_semay_project/services/search_service.dart';
 import 'package:mahlete_semay_project/widgets/cached_image.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../widgets/loading_placeholders.dart';
+import '../../widgets/web_content_wrapper.dart';
 
 enum SortOption { newest, oldest, popular }
 
@@ -195,7 +196,7 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
     _youtubePlayerController = YoutubePlayerController(initialVideoId: videoId, flags: const YoutubePlayerFlags(autoPlay: true, useHybridComposition: true))..addListener(_youtubePlayerListener);
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.85),
+      barrierColor: Colors.black.withValues(alpha: 0.85),
       builder: (dialogContext) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: EdgeInsets.zero,
@@ -270,46 +271,49 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
           ? _buildLoadingShimmer()
           : _apiFailed
           ? _buildErrorState()
-          : Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: ValueListenableBuilder<TextEditingValue>(
-              valueListenable: _searchFieldController,
-              builder: (context, value, _) {
-                return TextField(
-                  controller: _searchFieldController,
-                  onChanged: _onSearchChanged,
-                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
-                  decoration: InputDecoration(
-                    hintText: l10n.searchHint,
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: value.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.close_rounded, size: 20),
-                            onPressed: () {
-                              _searchFieldController.clear();
-                              _onSearchChanged('');
-                              FocusScope.of(context).unfocus();
-                            },
-                          )
-                        : null,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          : WebContentWrapper(
+              maxWidth: 950,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: _searchFieldController,
+                      builder: (context, value, _) {
+                        return TextField(
+                          controller: _searchFieldController,
+                          onChanged: _onSearchChanged,
+                          onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                          decoration: InputDecoration(
+                            hintText: l10n.searchHint,
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: value.text.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.close_rounded, size: 20),
+                                    onPressed: () {
+                                      _searchFieldController.clear();
+                                      _onSearchChanged('');
+                                      FocusScope.of(context).unfocus();
+                                    },
+                                  )
+                                : null,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                );
-              },
+                  _buildCategoryTabs(theme),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: _categories.map((cat) => _buildLessonsList(cat.id)).toList(),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          _buildCategoryTabs(theme),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: _categories.map((cat) => _buildLessonsList(cat.id)).toList(),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -319,7 +323,7 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
       child: TabBar(
         controller: _tabController,
         isScrollable: true,
-        indicator: BoxDecoration(borderRadius: BorderRadius.circular(20), color: theme.colorScheme.primary.withOpacity(0.1)),
+        indicator: BoxDecoration(borderRadius: BorderRadius.circular(20), color: theme.colorScheme.primary.withValues(alpha: 0.1)),
         labelColor: theme.colorScheme.primary,
         unselectedLabelColor: Colors.grey,
         onTap: (index) => setState(() {}),
@@ -401,7 +405,7 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
                 Container(
                   width: 50,
                   height: 50,
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.black.withOpacity(0.5)),
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.black.withValues(alpha: 0.5)),
                   child: const Icon(IconsaxPlusBroken.play, color: Colors.white, size: 28),
                 ),
                 Positioned(
@@ -409,7 +413,7 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
                   right: 8,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: Colors.black.withOpacity(0.7), borderRadius: BorderRadius.circular(8)),
+                    decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(8)),
                     child: Text(lesson.duration, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
                 ),
@@ -453,7 +457,7 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
             Icon(
               IconsaxPlusBroken.cloud_connection,
               size: 80,
-              color: theme.colorScheme.primary.withOpacity(0.5),
+              color: theme.colorScheme.primary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 24),
             Text(
@@ -505,7 +509,7 @@ class _LevelBadge extends StatelessWidget {
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: badgeColor.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: badgeColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
       child: Text(level, style: TextStyle(color: badgeColor, fontSize: 12, fontWeight: FontWeight.bold)),
     );
   }

@@ -2,11 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../../models/moderator_model.dart';
-import '../../providers/auth_proveider.dart';
 import '../../services/firebase_service.dart';
 import '../../services/search_service.dart';
 import '../../widgets/custom_snackbar.dart';
@@ -216,7 +214,7 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundColor: AdminUiKit.goldAccent.withOpacity(0.18),
+                  backgroundColor: AdminUiKit.goldAccent.withValues(alpha: 0.18),
                   child: Text(
                     mod.fullName.isNotEmpty ? mod.fullName[0].toUpperCase() : 'M',
                     style: GoogleFonts.plusJakartaSans(
@@ -363,7 +361,7 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AdminUiKit.goldAccent))
           : Column(
-              children: [
+                children: [
                 // Search Bar
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -386,7 +384,7 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
                       const SizedBox(width: 8),
                       _buildFilterChip('Moderators', _roleFilter == 'moderator', () => setState(() => _roleFilter = 'moderator')),
                       const SizedBox(width: 14),
-                      Container(height: 20, width: 1, color: Colors.grey.withOpacity(0.3)),
+                      Container(height: 20, width: 1, color: Colors.grey.withValues(alpha: 0.3)),
                       const SizedBox(width: 14),
                       _buildFilterChip('Active', _statusFilter == 'active', () => setState(() => _statusFilter = _statusFilter == 'active' ? 'All' : 'active')),
                       const SizedBox(width: 8),
@@ -439,7 +437,7 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
         decoration: BoxDecoration(
           color: isSelected
               ? (isDark ? AdminUiKit.goldAccent : AdminUiKit.primaryNavy)
-              : (isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04)),
+              : (isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? Colors.transparent : (isDark ? Colors.white12 : Colors.black12),
@@ -476,7 +474,7 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
               children: [
                 CircleAvatar(
                   radius: 22,
-                  backgroundColor: AdminUiKit.goldAccent.withOpacity(0.15),
+                  backgroundColor: AdminUiKit.goldAccent.withValues(alpha: 0.15),
                   child: Text(
                     mod.fullName.isNotEmpty ? mod.fullName[0].toUpperCase() : 'M',
                     style: GoogleFonts.plusJakartaSans(
@@ -536,9 +534,9 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AdminUiKit.amberOrange.withOpacity(0.12),
+                  color: AdminUiKit.amberOrange.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AdminUiKit.amberOrange.withOpacity(0.3)),
+                  border: Border.all(color: AdminUiKit.amberOrange.withValues(alpha: 0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -582,7 +580,7 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
                           child: OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AdminUiKit.roseRed,
-                              side: BorderSide(color: AdminUiKit.roseRed.withOpacity(0.5)),
+                              side: BorderSide(color: AdminUiKit.roseRed.withValues(alpha: 0.5)),
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),

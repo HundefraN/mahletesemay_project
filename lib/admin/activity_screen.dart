@@ -134,7 +134,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                       ),
                       selected: selected,
                       selectedColor: AdminUiKit.goldAccent,
-                      backgroundColor: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+                      backgroundColor: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
                       onSelected: (val) {
                         if (val) setModalState(() => _filterByAction = act);
                       },
@@ -149,7 +149,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String?>(
                   isExpanded: true,
-                  value: _filterByModerator,
+                  initialValue: _filterByModerator,
                   decoration: InputDecoration(
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -303,7 +303,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
           }).toList();
 
           return Column(
-            children: [
+              children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: AdminSearchBar(
@@ -343,7 +343,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: actionColor.withOpacity(0.12),
+                                      color: actionColor.withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(

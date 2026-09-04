@@ -73,11 +73,11 @@ class VocalPianoRoll extends StatelessWidget {
 
     return Card(
       elevation: 3,
-      shadowColor: theme.colorScheme.primary.withOpacity(0.12),
+      shadowColor: theme.colorScheme.primary.withValues(alpha: 0.12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.1),
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
         ),
       ),
       child: Padding(
@@ -107,10 +107,10 @@ class VocalPianoRoll extends StatelessWidget {
                           horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color:
-                            theme.colorScheme.primaryContainer.withOpacity(0.7),
+                            theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: theme.colorScheme.primary.withOpacity(0.2),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Text(
@@ -136,7 +136,7 @@ class VocalPianoRoll extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 6,
                     offset: const Offset(0, 3),
                   ),
@@ -166,11 +166,11 @@ class VocalPianoRoll extends StatelessWidget {
                                 isDark ? Colors.grey.shade800 : Colors.white;
                             if (isInUserRange) {
                               baseColor =
-                                  theme.colorScheme.primary.withOpacity(0.28);
+                                  theme.colorScheme.primary.withValues(alpha: 0.28);
                             }
                             if (isLowest || isHighest) {
                               baseColor =
-                                  theme.colorScheme.secondary.withOpacity(0.45);
+                                  theme.colorScheme.secondary.withValues(alpha: 0.45);
                             }
                             if (isCurrent) {
                               baseColor = theme.colorScheme.primary;
@@ -188,7 +188,7 @@ class VocalPianoRoll extends StatelessWidget {
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                   colors: [
-                                    baseColor.withOpacity(0.85),
+                                    baseColor.withValues(alpha: 0.85),
                                     baseColor,
                                   ],
                                 ),
@@ -289,7 +289,7 @@ class VocalPianoRoll extends StatelessWidget {
                               isDark ? Colors.black : Colors.grey.shade900;
                           if (isInUserRange) {
                             keyColor =
-                                theme.colorScheme.primary.withOpacity(0.9);
+                                theme.colorScheme.primary.withValues(alpha: 0.9);
                           }
                           if (isCurrent) {
                             keyColor = theme.colorScheme.secondary;
@@ -312,7 +312,7 @@ class VocalPianoRoll extends StatelessWidget {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.35),
+                                    color: Colors.black.withValues(alpha: 0.35),
                                     blurRadius: 3,
                                     offset: const Offset(1, 3),
                                   )
@@ -320,7 +320,7 @@ class VocalPianoRoll extends StatelessWidget {
                               ),
                             ),
                           );
-                        }).toList(),
+                        }),
                       ],
                     );
                   },
@@ -335,7 +335,7 @@ class VocalPianoRoll extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _LegendPill(
-                  color: theme.colorScheme.primary.withOpacity(0.4),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.4),
                   label: AppLocalizations.of(context)?.analyzedRange ?? 'Analyzed Range',
                 ),
                 const SizedBox(width: 12),
@@ -375,7 +375,7 @@ class _LegendPill extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.4),
+                color: color.withValues(alpha: 0.4),
                 blurRadius: 4,
               )
             ],
@@ -387,7 +387,7 @@ class _LegendPill extends StatelessWidget {
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
       ],

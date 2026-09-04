@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,9 +23,9 @@ import 'onboarding/onboarding_screen.dart';
 ///
 /// 2. **Language Selection** — first-run language picker (EN / AM / OM).
 ///
-/// 3. **Permissions** — first-run professional permission request screen.
+/// 3. **Permissions** — first-run professional permission request screen (Mobile only).
 ///
-/// 4. **Onboarding** — modern 2026 onboarding carousel.
+/// 4. **Onboarding** — modern 2026 onboarding carousel (Mobile only).
 ///
 /// 5. **HomeScreen** — the main app.
 /// ──────────────────────────────────────────────────────────────────────────────
@@ -52,12 +53,24 @@ class _SplashWrapperState extends State<SplashWrapper> {
     super.initState();
     _statusFuture = _checkAppStatus();
     // The splash screen is removed only when the future is complete.
-    _statusFuture.whenComplete(() {
-      FlutterNativeSplash.remove();
-    });
+    // On web we never called FlutterNativeSplash.preserve(), so skip remove().
+    if (!kIsWeb) {
+      _statusFuture.whenComplete(() {
+        FlutterNativeSplash.remove();
+      });
+    }
   }
 
   Future<AppStatus> _checkAppStatus() async {
+    if (kIsWeb) {
+      // ── Web path ───────────────────────────────────────────────────────────
+      // Services are already initialized in main(). No force-update check,
+      // no permission/onboarding/language selection gates on web initial load.
+      return AppStatus.ready;
+    }
+
+    // ── Mobile path (unchanged) ─────────────────────────────────────────────
+
     // ── 1. Force update check ───────────────────────────────────────────────
     // This runs before anything else: if an update is required the user is
     // blocked immediately. The check is intentionally fail-open — if the
@@ -76,6 +89,7 @@ class _SplashWrapperState extends State<SplashWrapper> {
     final bool hasCompletedOnboarding =
         prefs.getBool(prefOnboardingCompleted) ?? false;
 
+    // On Mobile (iOS & Android): Show language, permissions, and onboarding flows.
     if (!hasSelectedLanguage) {
       return AppStatus.needsLanguage;
     } else if (!hasCompletedPermissions) {

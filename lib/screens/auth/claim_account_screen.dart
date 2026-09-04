@@ -118,8 +118,8 @@ class _ClaimAccountScreenState extends State<ClaimAccountScreen> {
         ),
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 26.0, vertical: 24.0),
-            child: Form(
+              padding: const EdgeInsets.symmetric(horizontal: 26.0, vertical: 24.0),
+              child: Form(
               key: _formKey,
               child: Column(
                 children: [
@@ -131,7 +131,7 @@ class _ClaimAccountScreenState extends State<ClaimAccountScreen> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AdminUiKit.goldAccent.withOpacity(0.35),
+                          color: AdminUiKit.goldAccent.withValues(alpha: 0.35),
                           blurRadius: 24,
                           spreadRadius: 2,
                         ),
@@ -161,7 +161,7 @@ class _ClaimAccountScreenState extends State<ClaimAccountScreen> {
                     'Enter your invitation credentials to claim and activate your moderator or administrator access.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.plusJakartaSans(
-                      color: Colors.white.withOpacity(0.85),
+                      color: Colors.white.withValues(alpha: 0.85),
                       fontSize: 13,
                       height: 1.4,
                     ),
@@ -306,13 +306,13 @@ class _ClaimAccountScreenState extends State<ClaimAccountScreen> {
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      labelStyle: GoogleFonts.plusJakartaSans(color: Colors.white.withOpacity(0.75), fontSize: 13.5),
+      labelStyle: GoogleFonts.plusJakartaSans(color: Colors.white.withValues(alpha: 0.75), fontSize: 13.5),
       prefixIcon: Icon(icon, color: Colors.white70, size: 20),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.12),
+      fillColor: Colors.white.withValues(alpha: 0.12),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AdminUiKit.goldAccent, width: 1.8)),
     );
   }

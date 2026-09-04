@@ -49,6 +49,7 @@ dependencies:
   flutter_native_splash: ^2.4.0
   tutorial_coach_mark: ^1.2.12
   sqflite: ^2.4.2
+  sqflite_common_ffi_web: ^0.4.5
   flutter_launcher_icons: ^0.14.4
   flutter_animate: ^4.5.2
   fl_chart: ^1.0.0
@@ -63,6 +64,7 @@ dependencies:
   package_info_plus: ^8.0.0
   pub_semver: ^2.1.4
 
+  path: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

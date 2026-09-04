@@ -97,15 +97,15 @@ class _LoginScreenState extends State<LoginScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              theme.colorScheme.primary.withOpacity(0.8),
-              theme.colorScheme.secondary.withOpacity(0.6),
+              theme.colorScheme.primary.withValues(alpha: 0.8),
+              theme.colorScheme.secondary.withValues(alpha: 0.6),
             ],
           ),
         ),
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(32.0),
-            child: Form(
+              padding: const EdgeInsets.all(32.0),
+              child: Form(
               key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -117,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFDFB76C).withOpacity(0.3),
+                          color: const Color(0xFFDFB76C).withValues(alpha: 0.3),
                           blurRadius: 24,
                           spreadRadius: 2,
                         ),
@@ -136,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 24),
                   Text(l10n.moderatorPortal, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 32, color: Colors.white)),
                   const SizedBox(height: 8),
-                  Text(l10n.pleaseSignInToContinue, style: GoogleFonts.poppins(color: Colors.white.withOpacity(0.8), fontSize: 16)),
+                  Text(l10n.pleaseSignInToContinue, style: GoogleFonts.poppins(color: Colors.white.withValues(alpha: 0.8), fontSize: 16)),
                   const SizedBox(height: 48),
 
                   TextFormField(
@@ -152,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     obscureText: _obscureText,
                     decoration: _inputDecoration(l10n.password, Icons.lock_outline_rounded).copyWith(
                       suffixIcon: IconButton(
-                        icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: Colors.white.withOpacity(0.7)),
+                        icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: Colors.white.withValues(alpha: 0.7)),
                         onPressed: () => setState(() => _obscureText = !_obscureText),
                       ),
                     ),
@@ -179,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(l10n.firstTimeHere, style: TextStyle(color: Colors.white.withOpacity(0.8))),
+                      Text(l10n.firstTimeHere, style: TextStyle(color: Colors.white.withValues(alpha: 0.8))),
                       TextButton(
                         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClaimAccountScreen())),
                         child: Text(l10n.claimAccount, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -198,10 +198,10 @@ class _LoginScreenState extends State<LoginScreen> {
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-      prefixIcon: Icon(icon, color: Colors.white.withOpacity(0.7)),
+      labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+      prefixIcon: Icon(icon, color: Colors.white.withValues(alpha: 0.7)),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.1),
+      fillColor: Colors.white.withValues(alpha: 0.1),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Colors.white, width: 2)),
     );

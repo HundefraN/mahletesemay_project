@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -47,8 +46,8 @@ class PitchService with ChangeNotifier {
   final List<int> _audioByteBuffer = [];
   // 4096 bytes = 2048 samples (PCM 16-bit mono at 44.1 kHz)
   static const int _targetBytes = 4096;
-  // 1024 bytes hop = 512 samples (~11.6ms refresh rate with 75% overlap)
-  static const int _hopBytes = 1024;
+  // 2048 bytes hop = 1024 samples (~23.2ms refresh rate with 50% overlap for 43 FPS smooth updates)
+  static const int _hopBytes = 2048;
   static const int _sampleRate = 44100;
   
   double _noiseFloor = 25.0;
@@ -138,7 +137,7 @@ class PitchService with ChangeNotifier {
           _audioByteBuffer.removeRange(0, excess);
         }
 
-        while (_audioByteBuffer.length >= _targetBytes) {
+        if (_audioByteBuffer.length >= _targetBytes) {
           final chunkBytes = Uint8List.fromList(_audioByteBuffer.sublist(0, _targetBytes));
           _audioByteBuffer.removeRange(0, _hopBytes);
 
@@ -164,7 +163,7 @@ class PitchService with ChangeNotifier {
               _smoothedPitch = 0.0;
               notifyListeners();
             }
-            continue;
+            return;
           }
 
           try {
@@ -287,11 +286,12 @@ class PitchService with ChangeNotifier {
     final int windowSize = samplesCount ~/ 2;
     final nsdf = Float64List(windowSize);
 
-    // Limits for 40 Hz (tau ~ 1102) to 1500 Hz (tau ~ 29)
+    // Limits for 50 Hz (tau ~ 882) to 1500 Hz (tau ~ 29)
     final int minTau = (sampleRate / 1500.0).floor().clamp(2, windowSize - 1);
-    final int maxTau = (sampleRate / 40.0).ceil().clamp(minTau + 1, windowSize - 1);
+    final int maxTau = (sampleRate / 50.0).ceil().clamp(minTau + 1, windowSize - 1);
 
-    for (int tau = 0; tau <= maxTau; tau++) {
+    final int startTau = (minTau > 1) ? minTau - 1 : 1;
+    for (int tau = startTau; tau <= maxTau; tau++) {
       double acf = 0.0;
       double divisor = 0.0;
       for (int i = 0; i < windowSize; i++) {

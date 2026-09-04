@@ -5,7 +5,7 @@ class VocalProgressProvider with ChangeNotifier {
   String? _gender;
   String? get gender => _gender;
 
-  Map<String, Set<int>> _progress = {};
+  final Map<String, Set<int>> _progress = {};
   Map<String, Set<int>> get progress => _progress;
 
   DateTime? _lastCompletionDate;

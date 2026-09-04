@@ -1,11 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:mahlete_semay_project/screens/lyrics/suggest_lyrics_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:mahlete_semay_project/models/submission_history_model.dart';
-import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
+import 'package:mahlete_semay_project/widgets/web_content_wrapper.dart';
 
 class MySubmissionsScreen extends StatefulWidget {
   const MySubmissionsScreen({super.key});
@@ -80,27 +79,30 @@ class _MySubmissionsScreenState extends State<MySubmissionsScreen> {
 
           final history = snapshot.data!;
 
-          return ListView.builder(
-            itemCount: history.length,
-            itemBuilder: (context, index) {
-              final entry = history[index];
-              return ListTile(
-                leading: const Icon(Icons.music_note_outlined),
-                title: Text(entry.songTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(entry.artistName),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(timeago.format(entry.submittedAt, locale: Localizations.localeOf(context).languageCode), style: Theme.of(context).textTheme.bodySmall),
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 20),
-                      tooltip: l10n.recallAndEdit,
-                      onPressed: () => _editSubmission(entry),
-                    ),
-                  ],
-                ),
-              );
-            },
+          return WebContentWrapper(
+            maxWidth: 800,
+            child: ListView.builder(
+              itemCount: history.length,
+              itemBuilder: (context, index) {
+                final entry = history[index];
+                return ListTile(
+                  leading: const Icon(Icons.music_note_outlined),
+                  title: Text(entry.songTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(entry.artistName),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(timeago.format(entry.submittedAt, locale: Localizations.localeOf(context).languageCode), style: Theme.of(context).textTheme.bodySmall),
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, size: 20),
+                        tooltip: l10n.recallAndEdit,
+                        onPressed: () => _editSubmission(entry),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           );
         },
       ),

@@ -1,12 +1,32 @@
 -- ==============================================================================
 -- Mahlete Semay - Database Fix & Permissions Script
 -- Run this in your Supabase SQL Editor to enable flawless Moderator/Admin Claiming
--- (Bypasses email rate limits and auto-confirms moderator accounts)
+-- (Bypasses email rate limits, fixes auth.users schema NULL tokens, and auto-confirms moderator accounts)
 -- ==============================================================================
 
 -- 0. Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- 0.1 CRITICAL: Repair auth.users NULL string columns
+-- Supabase GoTrue throws "500: Database error querying schema" if string columns are NULL.
+UPDATE auth.users
+SET confirmation_token = COALESCE(confirmation_token, ''),
+    recovery_token = COALESCE(recovery_token, ''),
+    email_change_token_new = COALESCE(email_change_token_new, ''),
+    email_change = COALESCE(email_change, ''),
+    email_change_token_current = COALESCE(email_change_token_current, ''),
+    reauthentication_token = COALESCE(reauthentication_token, ''),
+    phone_change = COALESCE(phone_change, ''),
+    phone_change_token = COALESCE(phone_change_token, '')
+WHERE confirmation_token IS NULL
+   OR recovery_token IS NULL
+   OR email_change_token_new IS NULL
+   OR email_change IS NULL
+   OR email_change_token_current IS NULL
+   OR reauthentication_token IS NULL
+   OR phone_change IS NULL
+   OR phone_change_token IS NULL;
 
 -- 1. Ensure moderators table has all required columns
 ALTER TABLE public.moderators ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active';
@@ -61,6 +81,39 @@ BEGIN
 END;
 $$;
 
+-- 4.1 Standalone procedure to self-heal auth.users schema
+CREATE OR REPLACE FUNCTION public.repair_auth_users_schema()
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+DECLARE
+    v_updated_count INT;
+BEGIN
+    UPDATE auth.users
+    SET confirmation_token = COALESCE(confirmation_token, ''),
+        recovery_token = COALESCE(recovery_token, ''),
+        email_change_token_new = COALESCE(email_change_token_new, ''),
+        email_change = COALESCE(email_change, ''),
+        email_change_token_current = COALESCE(email_change_token_current, ''),
+        reauthentication_token = COALESCE(reauthentication_token, ''),
+        phone_change = COALESCE(phone_change, ''),
+        phone_change_token = COALESCE(phone_change_token, '')
+    WHERE confirmation_token IS NULL
+       OR recovery_token IS NULL
+       OR email_change_token_new IS NULL
+       OR email_change IS NULL
+       OR email_change_token_current IS NULL
+       OR reauthentication_token IS NULL
+       OR phone_change IS NULL
+       OR phone_change_token IS NULL;
+
+    GET DIAGNOSTICS v_updated_count = ROW_COUNT;
+    RETURN jsonb_build_object('success', true, 'repaired_users', v_updated_count);
+END;
+$$;
+
 -- 5. Drop any prior overloaded versions of claim_moderator_account
 DROP FUNCTION IF EXISTS public.claim_moderator_account(UUID, TEXT, TEXT, JSONB);
 DROP FUNCTION IF EXISTS public.claim_moderator_account(TEXT, TEXT, TEXT, JSONB, UUID);
@@ -96,23 +149,26 @@ BEGIN
     v_clean_code := UPPER(REPLACE(REPLACE(TRIM(p_code), '-', ''), ' ', ''));
 
     -- 1. Validate invitation code and email
+    -- Allow matching email and code even if previously marked claimed so user can finalize or re-claim credentials
     SELECT * INTO v_invitation
     FROM public.invitations
     WHERE LOWER(TRIM(email)) = v_clean_email
       AND UPPER(REPLACE(REPLACE(TRIM(code), '-', ''), ' ', '')) = v_clean_code
-      AND status = 'pending'
     LIMIT 1;
 
     IF NOT FOUND THEN
         IF EXISTS (
             SELECT 1 FROM public.invitations 
-            WHERE LOWER(TRIM(email)) = v_clean_email 
-              AND UPPER(REPLACE(REPLACE(TRIM(code), '-', ''), ' ', '')) = v_clean_code
+            WHERE UPPER(REPLACE(REPLACE(TRIM(code), '-', ''), ' ', '')) = v_clean_code
         ) THEN
-            RETURN jsonb_build_object('success', false, 'error', 'This invitation code has already been claimed. Please sign in with your password.');
+            RETURN jsonb_build_object('success', false, 'error', 'This invitation code belongs to a different email address.');
         ELSE
-            RETURN jsonb_build_object('success', false, 'error', 'Invalid invitation code or email address mismatch.');
+            RETURN jsonb_build_object('success', false, 'error', 'Invalid invitation code.');
         END IF;
+    END IF;
+
+    IF v_invitation.status = 'revoked' THEN
+        RETURN jsonb_build_object('success', false, 'error', 'This invitation was revoked by an administrator.');
     END IF;
 
     v_role := COALESCE(v_invitation.role, 'moderator');
@@ -130,22 +186,23 @@ BEGIN
 
     IF v_existing_auth_id IS NOT NULL THEN
         v_user_id := v_existing_auth_id;
-        -- Update password and confirm email (Note: confirmed_at is generated automatically by Supabase)
-        IF v_encrypted_pw IS NOT NULL THEN
-            UPDATE auth.users
-            SET encrypted_password = v_encrypted_pw,
-                email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
-                updated_at = NOW(),
-                raw_app_meta_data = '{"provider": "email", "providers": ["email"]}'::jsonb
-            WHERE id = v_user_id;
-        ELSE
-            UPDATE auth.users
-            SET email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
-                updated_at = NOW()
-            WHERE id = v_user_id;
-        END IF;
+        -- Update password and ensure all token columns are non-null strings
+        UPDATE auth.users
+        SET encrypted_password = COALESCE(v_encrypted_pw, encrypted_password),
+            email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
+            confirmation_token = COALESCE(confirmation_token, ''),
+            recovery_token = COALESCE(recovery_token, ''),
+            email_change_token_new = COALESCE(email_change_token_new, ''),
+            email_change = COALESCE(email_change, ''),
+            email_change_token_current = COALESCE(email_change_token_current, ''),
+            reauthentication_token = COALESCE(reauthentication_token, ''),
+            phone_change = COALESCE(phone_change, ''),
+            phone_change_token = COALESCE(phone_change_token, ''),
+            updated_at = NOW(),
+            raw_app_meta_data = '{"provider": "email", "providers": ["email"]}'::jsonb
+        WHERE id = v_user_id;
     ELSE
-        -- Create new user in auth.users directly (bypasses email rate limiter completely)
+        -- Create new user in auth.users directly with ALL token columns initialized to empty strings
         v_user_id := COALESCE(p_user_id, gen_random_uuid());
         INSERT INTO auth.users (
             instance_id,
@@ -155,8 +212,17 @@ BEGIN
             email,
             encrypted_password,
             email_confirmed_at,
+            confirmation_token,
+            recovery_token,
+            email_change_token_new,
+            email_change,
+            email_change_token_current,
+            reauthentication_token,
+            phone_change,
+            phone_change_token,
             raw_app_meta_data,
             raw_user_meta_data,
+            is_super_admin,
             created_at,
             updated_at
         ) VALUES (
@@ -167,8 +233,17 @@ BEGIN
             v_clean_email,
             COALESCE(v_encrypted_pw, crypt('DefaultPassword123!', gen_salt('bf', 10))),
             NOW(),
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
             '{"provider": "email", "providers": ["email"]}'::jsonb,
-            jsonb_build_object('firstName', v_invitation.first_name, 'lastName', v_invitation.last_name),
+            jsonb_build_object('firstName', v_invitation.first_name, 'lastName', v_invitation.last_name, 'sub', v_user_id::text),
+            FALSE,
             NOW(),
             NOW()
         );
@@ -185,16 +260,18 @@ BEGIN
                 created_at,
                 updated_at
             ) VALUES (
-                v_clean_email,
+                v_user_id::text,
                 v_user_id,
-                jsonb_build_object('sub', v_user_id::TEXT, 'email', v_clean_email),
+                jsonb_build_object('sub', v_user_id::TEXT, 'email', v_clean_email, 'email_verified', true),
                 'email',
-                v_clean_email,
+                v_user_id::text,
                 NOW(),
                 NOW(),
                 NOW()
             )
-            ON CONFLICT DO NOTHING;
+            ON CONFLICT (provider, id) DO UPDATE SET
+                identity_data = EXCLUDED.identity_data,
+                updated_at = NOW();
         EXCEPTION WHEN OTHERS THEN
             NULL;
         END;
@@ -322,7 +399,7 @@ CREATE POLICY "Invitations readable for validation or admin" ON public.invitatio
     FOR SELECT USING (true);
 
 CREATE POLICY "Anyone can claim pending invitation" ON public.invitations 
-    FOR UPDATE USING (status = 'pending' OR is_admin());
+    FOR UPDATE USING (status = 'pending' OR status = 'claimed' OR is_admin());
 
 CREATE POLICY "Admins can manage invitations" ON public.invitations 
     FOR ALL USING (is_admin());
@@ -347,6 +424,7 @@ CREATE POLICY "Admins can delete moderators" ON public.moderators
 -- 9. Grant Execution Rights
 GRANT EXECUTE ON FUNCTION public.claim_moderator_account(TEXT, TEXT, TEXT, JSONB, UUID) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.confirm_user_email(UUID) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.repair_auth_users_schema() TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.is_active_moderator() TO anon, authenticated, service_role;
 
@@ -382,4 +460,3 @@ BEGIN
         ALTER PUBLICATION supabase_realtime ADD TABLE public.app_settings;
     END IF;
 END $$;
-

@@ -10,6 +10,7 @@ import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
+import 'package:mahlete_semay_project/widgets/web_content_wrapper.dart';
 
 class ServiceReminderScreen extends StatelessWidget {
   const ServiceReminderScreen({super.key});
@@ -21,7 +22,7 @@ class ServiceReminderScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
+      backgroundColor: theme.colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -42,25 +43,28 @@ class ServiceReminderScreen extends StatelessWidget {
                     ? SliverFillRemaining(
                         hasScrollBody: false,
                         child: _buildEmptyState(context, l10n))
-                    : SliverPadding(
-                        padding: EdgeInsets.fromLTRB(
-                          context.w(16),
-                          context.w(8),
-                          context.w(16),
-                          context.w(100),
-                        ),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final reminder = provider.reminders[index];
-                              return _ReminderCard(reminder: reminder)
-                                  .animate()
-                                  .fadeIn(delay: (80 * index).ms)
-                                  .slideY(
-                                      begin: 0.15,
-                                      curve: Curves.easeOutCubic);
-                            },
-                            childCount: provider.reminders.length,
+                    : SliverWebContentWrapper(
+                        maxWidth: 800,
+                        sliver: SliverPadding(
+                          padding: EdgeInsets.fromLTRB(
+                            context.w(16),
+                            context.w(8),
+                            context.w(16),
+                            context.w(100),
+                          ),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final reminder = provider.reminders[index];
+                                return _ReminderCard(reminder: reminder)
+                                    .animate()
+                                    .fadeIn(delay: (80 * index).ms)
+                                    .slideY(
+                                        begin: 0.15,
+                                        curve: Curves.easeOutCubic);
+                              },
+                              childCount: provider.reminders.length,
+                            ),
                           ),
                         ),
                       ),
@@ -89,8 +93,8 @@ class ServiceReminderScreen extends StatelessWidget {
       pinned: true,
       stretch: true,
       backgroundColor: isDark
-          ? const Color(0xFF0D1B2A).withOpacity(0.95)
-          : const Color(0xFFF0F4FF).withOpacity(0.95),
+          ? const Color(0xFF0D1B2A).withValues(alpha: 0.95)
+          : const Color(0xFFF0F4FF).withValues(alpha: 0.95),
       flexibleSpace: FlexibleSpaceBar(
         title: Text(l10n.serviceReminders,
             style: GoogleFonts.poppins(
@@ -102,7 +106,7 @@ class ServiceReminderScreen extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                theme.colorScheme.primary.withOpacity(0.15),
+                theme.colorScheme.primary.withValues(alpha: 0.15),
                 Colors.transparent,
               ],
               begin: Alignment.topCenter,
@@ -118,10 +122,10 @@ class ServiceReminderScreen extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.12),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                        color: theme.colorScheme.primary.withOpacity(0.25)),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.25)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -164,17 +168,17 @@ class ServiceReminderScreen extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
                   colors: [
-                    theme.colorScheme.primary.withOpacity(0.12),
-                    theme.colorScheme.primary.withOpacity(0.04),
+                    theme.colorScheme.primary.withValues(alpha: 0.12),
+                    theme.colorScheme.primary.withValues(alpha: 0.04),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 border: Border.all(
-                    color: theme.colorScheme.primary.withOpacity(0.15)),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.15)),
               ),
               child: Icon(Icons.alarm_off_rounded,
-                  size: 64, color: theme.colorScheme.primary.withOpacity(0.5)),
+                  size: 64, color: theme.colorScheme.primary.withValues(alpha: 0.5)),
             ),
             const SizedBox(height: 28),
             Text(
@@ -192,7 +196,7 @@ class ServiceReminderScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 height: 1.6,
-                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -281,12 +285,6 @@ class _ReminderCardState extends State<_ReminderCard>
     return const Color(0xFF66BB6A); // Green
   }
 
-  Color _urgencyGlow(ThemeData theme) {
-    if (_remaining.isNegative) return Colors.grey.withOpacity(0.1);
-    if (_remaining.inHours < 24) return const Color(0xFFE53935).withOpacity(0.15);
-    if (_remaining.inDays < 3) return const Color(0xFFFFA726).withOpacity(0.12);
-    return const Color(0xFF66BB6A).withOpacity(0.10);
-  }
 
   String _urgencyLabel() {
     if (_remaining.isNegative) return 'Service Started';
@@ -317,13 +315,13 @@ class _ReminderCardState extends State<_ReminderCard>
             boxShadow: [
               if (!isPast)
                 BoxShadow(
-                  color: urgency.withOpacity(glowOpacity),
+                  color: urgency.withValues(alpha: glowOpacity),
                   blurRadius: 24,
                   spreadRadius: -2,
                   offset: const Offset(0, 8),
                 ),
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
                 blurRadius: 20,
                 spreadRadius: -5,
                 offset: const Offset(0, 6),
@@ -340,18 +338,18 @@ class _ReminderCardState extends State<_ReminderCard>
                   gradient: LinearGradient(
                     colors: isDark
                         ? [
-                            const Color(0xFF1A2332).withOpacity(0.9),
-                            const Color(0xFF162030).withOpacity(0.9),
+                            const Color(0xFF1A2332).withValues(alpha: 0.9),
+                            const Color(0xFF162030).withValues(alpha: 0.9),
                           ]
                         : [
-                            Colors.white.withOpacity(0.85),
-                            Colors.white.withOpacity(0.7),
+                            Colors.white.withValues(alpha: 0.85),
+                            Colors.white.withValues(alpha: 0.7),
                           ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   border: Border.all(
-                    color: urgency.withOpacity(isPast ? 0.1 : 0.3),
+                    color: urgency.withValues(alpha: isPast ? 0.1 : 0.3),
                     width: 1.5,
                   ),
                 ),
@@ -435,7 +433,7 @@ class _ReminderCardState extends State<_ReminderCard>
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: urgency.withOpacity(0.12),
+                      color: urgency.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -454,7 +452,7 @@ class _ReminderCardState extends State<_ReminderCard>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.08),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -485,7 +483,7 @@ class _ReminderCardState extends State<_ReminderCard>
           duration: const Duration(milliseconds: 300),
           child: Icon(
             Icons.keyboard_arrow_down_rounded,
-            color: theme.colorScheme.onSurface.withOpacity(0.4),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
           ),
         ),
       ],
@@ -503,14 +501,14 @@ class _ReminderCardState extends State<_ReminderCard>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            urgency.withOpacity(0.08),
-            urgency.withOpacity(0.03),
+            urgency.withValues(alpha: 0.08),
+            urgency.withValues(alpha: 0.03),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: urgency.withOpacity(0.15)),
+        border: Border.all(color: urgency.withValues(alpha: 0.15)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -551,7 +549,7 @@ class _ReminderCardState extends State<_ReminderCard>
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.onSurface.withOpacity(0.04),
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -559,13 +557,13 @@ class _ReminderCardState extends State<_ReminderCard>
         children: [
           Icon(Icons.note_alt_outlined,
               size: 16,
-              color: theme.colorScheme.onSurface.withOpacity(0.4)),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               widget.reminder.notes!,
               style: TextStyle(
-                color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                 fontStyle: FontStyle.italic,
                 height: 1.4,
                 fontSize: 13,
@@ -586,7 +584,7 @@ class _ReminderCardState extends State<_ReminderCard>
           _isExpanded ? 'Hide alert schedule' : 'Tap to see alert schedule',
           style: TextStyle(
             fontSize: 11,
-            color: theme.colorScheme.onSurface.withOpacity(0.35),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
             fontStyle: FontStyle.italic,
           ),
         ),
@@ -700,7 +698,7 @@ class _CountdownDigit extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: 9,
             fontWeight: FontWeight.w600,
-            color: color.withOpacity(0.6),
+            color: color.withValues(alpha: 0.6),
             letterSpacing: 1,
           ),
         ),
@@ -722,7 +720,7 @@ class _CountdownSeparator extends StatelessWidget {
         style: GoogleFonts.jetBrainsMono(
           fontSize: 22,
           fontWeight: FontWeight.w800,
-          color: color.withOpacity(0.5),
+          color: color.withValues(alpha: 0.5),
         ),
       ),
     );
@@ -749,14 +747,14 @@ class _InfoChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: theme.colorScheme.onSurface.withOpacity(0.04),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon,
-                size: 14, color: theme.colorScheme.primary.withOpacity(0.7)),
+                size: 14, color: theme.colorScheme.primary.withValues(alpha: 0.7)),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
@@ -803,7 +801,7 @@ class _ActionButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(8),
-          child: Icon(icon, size: 20, color: color.withOpacity(0.6)),
+          child: Icon(icon, size: 20, color: color.withValues(alpha: 0.6)),
         ),
       ),
     );
@@ -886,7 +884,7 @@ class _AnimatedAlarmBellState extends State<_AnimatedAlarmBell>
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: widget.urgencyColor.withOpacity(0.1),
+            color: widget.urgencyColor.withValues(alpha: 0.1),
           ),
           child: Transform.rotate(
             angle: (angle * 3.14159 * 2) *
@@ -928,10 +926,10 @@ class _NotificationTimeline extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.onSurface.withOpacity(0.03),
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(16),
         border:
-            Border.all(color: theme.colorScheme.onSurface.withOpacity(0.06)),
+            Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -998,9 +996,9 @@ class _TimelineSlot extends StatelessWidget {
                   height: isHighlighted ? 28 : 22,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: color.withOpacity(isHighlighted ? 0.2 : 0.1),
+                    color: color.withValues(alpha: isHighlighted ? 0.2 : 0.1),
                     border: Border.all(
-                      color: color.withOpacity(isHighlighted ? 0.8 : 0.4),
+                      color: color.withValues(alpha: isHighlighted ? 0.8 : 0.4),
                       width: isHighlighted ? 2.5 : 1.5,
                     ),
                   ),
@@ -1012,7 +1010,7 @@ class _TimelineSlot extends StatelessWidget {
                       width: 2,
                       margin: const EdgeInsets.symmetric(vertical: 2),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.2),
+                        color: color.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(1),
                       ),
                     ),
@@ -1028,9 +1026,9 @@ class _TimelineSlot extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: isHighlighted
                   ? BoxDecoration(
-                      color: color.withOpacity(0.06),
+                      color: color.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: color.withOpacity(0.15)),
+                      border: Border.all(color: color.withValues(alpha: 0.15)),
                     )
                   : null,
               child: Row(
@@ -1060,7 +1058,7 @@ class _TimelineSlot extends StatelessWidget {
                                     horizontal: 5, vertical: 1),
                                 decoration: BoxDecoration(
                                   color:
-                                      const Color(0xFFE53935).withOpacity(0.1),
+                                      const Color(0xFFE53935).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -1083,7 +1081,7 @@ class _TimelineSlot extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             color: theme.textTheme.bodySmall?.color
-                                ?.withOpacity(0.6),
+                                ?.withValues(alpha: 0.6),
                           ),
                         ),
                       ],
@@ -1094,7 +1092,7 @@ class _TimelineSlot extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.15),
+                        color: color.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -1109,7 +1107,7 @@ class _TimelineSlot extends StatelessWidget {
                     ),
                   if (slot.status == AlertSlotStatus.fired)
                     Icon(Icons.check_circle_rounded,
-                        size: 16, color: color.withOpacity(0.6)),
+                        size: 16, color: color.withValues(alpha: 0.6)),
                 ],
               ),
             ),
@@ -1128,7 +1126,7 @@ class _TimelineSlot extends StatelessWidget {
       case AlertSlotStatus.scheduled:
         return const Color(0xFF66BB6A);
       case AlertSlotStatus.skipped:
-        return Colors.grey.withOpacity(0.5);
+        return Colors.grey.withValues(alpha: 0.5);
     }
   }
 
@@ -1200,6 +1198,7 @@ class _AddEditReminderDialogState extends State<_AddEditReminderDialog> {
       context: context,
       initialTime: TimeOfDay.fromDateTime(_selectedDateTime ?? now),
     );
+    if (!context.mounted) return;
     if (pickedTime == null) return;
 
     setState(() {
@@ -1237,6 +1236,7 @@ class _AddEditReminderDialogState extends State<_AddEditReminderDialog> {
             ],
           ),
         );
+        if (!context.mounted) return;
         if (confirm != true) return;
       }
 
@@ -1284,7 +1284,7 @@ class _AddEditReminderDialogState extends State<_AddEditReminderDialog> {
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: theme.colorScheme.primary.withOpacity(0.08),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.08),
                   ),
                   child: Icon(
                     isEditing
@@ -1307,7 +1307,7 @@ class _AddEditReminderDialogState extends State<_AddEditReminderDialog> {
                   'You\'ll receive 7 alerts starting 5 days before',
                   style: TextStyle(
                     fontSize: 12,
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -1428,7 +1428,7 @@ void _showConfirmationSheet(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withOpacity(0.15),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1438,7 +1438,7 @@ void _showConfirmationSheet(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF66BB6A).withOpacity(0.1),
+                  color: const Color(0xFF66BB6A).withValues(alpha: 0.1),
                 ),
                 child: const Icon(Icons.check_circle_rounded,
                     color: Color(0xFF66BB6A), size: 40),
@@ -1458,7 +1458,7 @@ void _showConfirmationSheet(
                 reminder.title,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1466,7 +1466,7 @@ void _showConfirmationSheet(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.08),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -1492,12 +1492,12 @@ void _showConfirmationSheet(
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: isNext
-                        ? const Color(0xFF1E88E5).withOpacity(0.06)
-                        : theme.colorScheme.onSurface.withOpacity(0.03),
+                        ? const Color(0xFF1E88E5).withValues(alpha: 0.06)
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.03),
                     borderRadius: BorderRadius.circular(12),
                     border: isNext
                         ? Border.all(
-                            color: const Color(0xFF1E88E5).withOpacity(0.2))
+                            color: const Color(0xFF1E88E5).withValues(alpha: 0.2))
                         : null,
                   ),
                   child: Row(
@@ -1509,7 +1509,7 @@ void _showConfirmationSheet(
                         size: 18,
                         color: isNext
                             ? const Color(0xFF1E88E5)
-                            : theme.colorScheme.onSurface.withOpacity(0.4),
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -1534,7 +1534,7 @@ void _showConfirmationSheet(
                               style: TextStyle(
                                 fontSize: 11,
                                 color: theme.textTheme.bodySmall?.color
-                                    ?.withOpacity(0.5),
+                                    ?.withValues(alpha: 0.5),
                               ),
                             ),
                           ],
@@ -1545,7 +1545,7 @@ void _showConfirmationSheet(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E88E5).withOpacity(0.12),
+                            color: const Color(0xFF1E88E5).withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -1564,7 +1564,7 @@ void _showConfirmationSheet(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 1),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE53935).withOpacity(0.08),
+                              color: const Color(0xFFE53935).withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -1586,7 +1586,7 @@ void _showConfirmationSheet(
                 'Alerts will fire even when the app is closed',
                 style: TextStyle(
                   fontSize: 11,
-                  color: theme.colorScheme.onSurface.withOpacity(0.35),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
                   fontStyle: FontStyle.italic,
                 ),
               ),

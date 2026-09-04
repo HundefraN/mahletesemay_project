@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/artist_model.dart';
 import '../models/album_model.dart';
@@ -138,10 +140,12 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
       // Affinity matches
       score += artistAffinity[candidate.artistId] ?? 0.0;
       score += albumAffinity[candidate.albumId] ?? 0.0;
-      if (candidate.scale != null)
+      if (candidate.scale != null) {
         score += scaleAffinity[candidate.scale!] ?? 0.0;
-      if (candidate.rhythm != null)
+      }
+      if (candidate.rhythm != null) {
         score += rhythmAffinity[candidate.rhythm!] ?? 0.0;
+      }
 
       // Global popularity signal (normalized log scale to prevent extreme outliers)
       final normViews =
@@ -207,6 +211,22 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
   void _init() async {
     WidgetsBinding.instance.addObserver(this);
 
+    if (kIsWeb) {
+      // On web, skip local SQLite DB (its WASM worker can hang) and fetch
+      // directly from Supabase. The browser always has network, so there is
+      // no benefit to a local cache.
+      await _fetchFromNetwork();
+      _isLoading = false;
+      notifyListeners();
+
+      await _loadFavorites();
+      await _loadHistory();
+
+      _subscribeToRealtimeStreams();
+      return;
+    }
+
+    // ── Mobile path ──────────────────────────────────────────────────────────
     await _loadFromLocalDb();
     if (_songs.isNotEmpty) {
       _isLoading = false;
@@ -236,41 +256,90 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
     _subscribeToRealtimeStreams();
   }
 
+  void _safeNotifyListeners() {
+    if (WidgetsBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
+    } else {
+      notifyListeners();
+    }
+  }
+
+  /// Fetches artists, albums and songs directly from Supabase in parallel.
+  /// Used on web where the local SQLite database is not available.
+  Future<void> _fetchFromNetwork() async {
+    try {
+      final results = await Future.wait([
+        _firebaseService.getArtists(),
+        _firebaseService.getAlbums(),
+        _firebaseService.getSongs(),
+      ]);
+      final fetchedArtists = results[0] as List<Artist>;
+      final fetchedAlbums = results[1] as List<Album>;
+      final fetchedSongs = results[2] as List<Song>;
+
+      if (fetchedArtists.isNotEmpty || _artists.isEmpty) {
+        _artists = fetchedArtists;
+      }
+      if (fetchedAlbums.isNotEmpty || _albums.isEmpty) {
+        _albums = fetchedAlbums;
+      }
+      if (fetchedSongs.isNotEmpty || _songs.isEmpty) {
+        _songs = fetchedSongs;
+      }
+      debugPrint(
+          'Fetched network data: ${_artists.length} artists, ${_albums.length} albums, ${_songs.length} songs');
+    } catch (e) {
+      debugPrint('Error fetching from network: $e');
+    }
+  }
+
   void _subscribeToRealtimeStreams() {
     _artistsStreamSubscription?.cancel();
     _artistsStreamSubscription = _firebaseService.getArtistsStream().listen(
       (artists) {
-        if (_hasDataChanged(_artists, artists)) {
+        if (artists.isNotEmpty && _hasDataChanged(_artists, artists)) {
           _artists = artists;
-          _localDbService.syncArtists(artists);
-          notifyListeners();
+          if (!kIsWeb) _localDbService.syncArtists(artists);
+          _safeNotifyListeners();
         }
       },
-      onError: (e) => debugPrint('Artists realtime stream error: $e'),
+      onError: (e) {
+        debugPrint('Artists realtime stream error: $e');
+        _fetchFromNetwork().then((_) => _safeNotifyListeners());
+      },
     );
 
     _albumsStreamSubscription?.cancel();
     _albumsStreamSubscription = _firebaseService.getAlbumsStream().listen(
       (albums) {
-        if (_hasDataChanged(_albums, albums)) {
+        if (albums.isNotEmpty && _hasDataChanged(_albums, albums)) {
           _albums = albums;
-          _localDbService.syncAlbums(albums);
-          notifyListeners();
+          if (!kIsWeb) _localDbService.syncAlbums(albums);
+          _safeNotifyListeners();
         }
       },
-      onError: (e) => debugPrint('Albums realtime stream error: $e'),
+      onError: (e) {
+        debugPrint('Albums realtime stream error: $e');
+        _fetchFromNetwork().then((_) => _safeNotifyListeners());
+      },
     );
 
     _songsStreamSubscription?.cancel();
     _songsStreamSubscription = _firebaseService.getSongsStream().listen(
       (songs) {
-        if (_hasDataChanged(_songs, songs)) {
+        if (songs.isNotEmpty && _hasDataChanged(_songs, songs)) {
           _songs = songs;
-          _localDbService.syncSongs(songs);
-          notifyListeners();
+          if (!kIsWeb) _localDbService.syncSongs(songs);
+          _safeNotifyListeners();
         }
       },
-      onError: (e) => debugPrint('Songs realtime stream error: $e'),
+      onError: (e) {
+        debugPrint('Songs realtime stream error: $e');
+        _fetchFromNetwork().then((_) => _safeNotifyListeners());
+      },
     );
   }
 
@@ -299,6 +368,14 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> refreshData() async {
+    if (kIsWeb) {
+      _isSyncing = true;
+      notifyListeners();
+      await _fetchFromNetwork();
+      _isSyncing = false;
+      notifyListeners();
+      return;
+    }
     await _handleSync(forceOnMobile: true);
   }
 

@@ -193,7 +193,7 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF13233D) : Colors.black.withOpacity(0.04),
+              color: isDark ? const Color(0xFF13233D) : Colors.black.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(16),
             ),
             padding: const EdgeInsets.all(4),
@@ -206,7 +206,7 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -245,16 +245,16 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
           final worldwideArtists = _allArtists.where((a) => a.region == 'Worldwide').toList();
 
           return Column(
-            children: [
+              children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: _isSelectionMode
                     ? Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
-                          color: AdminUiKit.roseRed.withOpacity(0.12),
+                          color: AdminUiKit.roseRed.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AdminUiKit.roseRed.withOpacity(0.3)),
+                          border: Border.all(color: AdminUiKit.roseRed.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           children: [
@@ -365,8 +365,8 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
               borderColor: isSelected ? AdminUiKit.goldAccent : null,
               customColor: isSelected
                   ? (isDark
-                      ? AdminUiKit.goldAccent.withOpacity(0.15)
-                      : AdminUiKit.primaryNavy.withOpacity(0.08))
+                      ? AdminUiKit.goldAccent.withValues(alpha: 0.15)
+                      : AdminUiKit.primaryNavy.withValues(alpha: 0.08))
                   : null,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               borderRadius: 16,
@@ -379,7 +379,7 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected ? AdminUiKit.goldAccent : AdminUiKit.goldAccent.withOpacity(0.3),
+                        color: isSelected ? AdminUiKit.goldAccent : AdminUiKit.goldAccent.withValues(alpha: 0.3),
                         width: 1.8,
                       ),
                     ),
@@ -389,12 +389,12 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
                               artist.imageUrl,
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Container(
-                                color: AdminUiKit.goldAccent.withOpacity(0.15),
+                                color: AdminUiKit.goldAccent.withValues(alpha: 0.15),
                                 child: const Icon(Icons.person_rounded, color: AdminUiKit.goldAccent),
                               ),
                             )
                           : Container(
-                              color: AdminUiKit.goldAccent.withOpacity(0.15),
+                              color: AdminUiKit.goldAccent.withValues(alpha: 0.15),
                               child: Center(
                                 child: Text(
                                   artist.name.isNotEmpty ? artist.name[0].toUpperCase() : 'A',
@@ -429,7 +429,7 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: (artist.region == 'Ethiopian' ? AdminUiKit.emeraldGreen : AdminUiKit.royalBlue).withOpacity(0.12),
+                                color: (artist.region == 'Ethiopian' ? AdminUiKit.emeraldGreen : AdminUiKit.royalBlue).withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -459,7 +459,7 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
                     Container(
                       padding: const EdgeInsets.all(7),
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white10 : Colors.black.withOpacity(0.04),
+                        color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(

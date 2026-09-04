@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -55,7 +54,7 @@ How to activate your account:
 
 This code is single-use and linked to your email.
 ''';
-    Share.share(message, subject: 'Mahlete Semay - Moderator Portal Invitation');
+    SharePlus.instance.share(ShareParams(text: message, subject: 'Mahlete Semay - Moderator Portal Invitation'));
   }
 
   Future<void> _deleteInvitation(Invitation invite) async {
@@ -143,7 +142,7 @@ This code is single-use and linked to your email.
           }).toList();
 
           return Column(
-            children: [
+              children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: AdminSearchBar(
@@ -209,7 +208,7 @@ This code is single-use and linked to your email.
         decoration: BoxDecoration(
           color: isSelected
               ? (isDark ? AdminUiKit.goldAccent : AdminUiKit.primaryNavy)
-              : (isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04)),
+              : (isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? Colors.transparent : (isDark ? Colors.white12 : Colors.black12),
@@ -288,7 +287,7 @@ This code is single-use and linked to your email.
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03),
+                color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.03),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
               ),

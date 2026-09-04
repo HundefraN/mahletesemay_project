@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../utils/constants.dart';
+import '../home_screen.dart';
 import 'onboarding_screen.dart';
 
 class LanguageSelectionScreen extends StatefulWidget {
@@ -86,6 +88,20 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
 
     if (!mounted) return;
 
+    // On Web: Skip permissions and onboarding, navigate directly to HomeScreen.
+    if (kIsWeb) {
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const HomeScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      );
+      return;
+    }
+
     final hasCompletedPermissions =
         prefs.getBool(prefPermissionsCompleted) ?? false;
     final hasCompletedOnboarding =
@@ -97,7 +113,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen>
     } else if (!hasCompletedOnboarding) {
       nextScreen = const OnboardingScreen();
     } else {
-      nextScreen = const OnboardingScreen();
+      nextScreen = const HomeScreen();
     }
 
     Navigator.of(context).pushReplacement(

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -7,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 class PermissionHelper {
   /// Request Microphone permission with a clear rationale dialog when permanently denied.
   static Future<bool> requestMicrophone(BuildContext context) async {
+    if (kIsWeb) return true;
     final status = await Permission.microphone.status;
     if (status.isGranted) return true;
 
@@ -27,6 +29,7 @@ class PermissionHelper {
 
   /// Request Notification permission with SDK checks and clear rationale dialog.
   static Future<bool> requestNotification(BuildContext context) async {
+    if (kIsWeb) return true;
     if (Platform.isAndroid) {
       final androidInfo = await DeviceInfoPlugin().androidInfo;
       if (androidInfo.version.sdkInt >= 31) {
@@ -61,6 +64,7 @@ class PermissionHelper {
 
   /// Request Photo/Gallery permission depending on platform and Android version.
   static Future<bool> requestPhotoAccess(BuildContext context) async {
+    if (kIsWeb) return true;
     Permission targetPermission = Permission.photos;
 
     if (Platform.isAndroid) {
@@ -89,6 +93,7 @@ class PermissionHelper {
 
   /// Request Camera permission with clear rationale.
   static Future<bool> requestCameraAccess(BuildContext context) async {
+    if (kIsWeb) return true;
     final status = await Permission.camera.status;
     if (status.isGranted) return true;
 
@@ -108,7 +113,7 @@ class PermissionHelper {
 
   /// Request Audio file access permission depending on Android version.
   static Future<bool> requestAudioAccess(BuildContext context) async {
-    if (Platform.isIOS) return true; // iOS uses system file picker UI without explicit permission
+    if (kIsWeb || Platform.isIOS) return true; // iOS uses system file picker UI without explicit permission
 
     Permission targetPermission = Permission.audio;
     final androidInfo = await DeviceInfoPlugin().androidInfo;

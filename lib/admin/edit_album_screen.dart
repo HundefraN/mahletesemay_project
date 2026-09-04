@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
@@ -33,7 +33,7 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
   final _firebaseService = FirebaseService();
   bool _isSaving = false;
   double _uploadProgress = 0.0;
-  File? _pickedImage;
+  Uint8List? _pickedImageBytes;
 
   @override
   void initState() {
@@ -59,29 +59,40 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
     try {
       final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
       if (pickedFile != null) {
-        CroppedFile? croppedFile;
-        try {
-          croppedFile = await ImageCropper().cropImage(
-            sourcePath: pickedFile.path,
-            aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-            uiSettings: [
-              AndroidUiSettings(
-                toolbarTitle: 'Crop Cover Image',
-                toolbarColor: Theme.of(context).colorScheme.primary,
-                toolbarWidgetColor: Colors.white,
-                initAspectRatio: CropAspectRatioPreset.square,
-                lockAspectRatio: true,
-              ),
-              IOSUiSettings(title: 'Crop Cover Image', aspectRatioLockEnabled: true),
-            ],
-          );
-        } catch (e) {
-          debugPrint('Image cropping error: $e');
+        Uint8List? imageBytes;
+        if (!kIsWeb) {
+          CroppedFile? croppedFile;
+          try {
+            croppedFile = await ImageCropper().cropImage(
+              sourcePath: pickedFile.path,
+              aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+              uiSettings: [
+                AndroidUiSettings(
+                  toolbarTitle: 'Crop Cover Image',
+                  toolbarColor: Theme.of(context).colorScheme.primary,
+                  toolbarWidgetColor: Colors.white,
+                  initAspectRatio: CropAspectRatioPreset.square,
+                  lockAspectRatio: true,
+                ),
+                IOSUiSettings(title: 'Crop Cover Image', aspectRatioLockEnabled: true),
+              ],
+            );
+          } catch (e) {
+            debugPrint('Image cropping error: $e');
+          }
+
+          if (croppedFile != null) {
+            imageBytes = await croppedFile.readAsBytes();
+          } else {
+            imageBytes = await pickedFile.readAsBytes();
+          }
+        } else {
+          imageBytes = await pickedFile.readAsBytes();
         }
 
         if (mounted) {
           setState(() {
-            _pickedImage = File(croppedFile?.path ?? pickedFile.path);
+            _pickedImageBytes = imageBytes;
           });
         }
       }
@@ -98,9 +109,9 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
       try {
         String finalImageUrl = _existingCoverUrl;
 
-        if (_pickedImage != null) {
-          final uploadedUrl = await SupabaseStorageService.uploadImage(
-            _pickedImage!,
+        if (_pickedImageBytes != null) {
+          final uploadedUrl = await SupabaseStorageService.uploadImageBytes(
+            _pickedImageBytes!,
             onProgress: (count, total) => setState(() => _uploadProgress = count / total),
           );
           if (uploadedUrl != null) {
@@ -216,11 +227,11 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
         ],
       ),
       body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          physics: const BouncingScrollPhysics(),
-          children: [
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            physics: const BouncingScrollPhysics(),
+            children: [
             // Section 1: Details
             AdminSectionHeader(
               title: AppLocalizations.of(context)?.albumDetailsSection ?? 'Album Details',
@@ -296,13 +307,13 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
   Widget _buildCoverImagePicker(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (_pickedImage != null || _existingCoverUrl.isNotEmpty) {
+    if (_pickedImageBytes != null || _existingCoverUrl.isNotEmpty) {
       return Column(
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: _pickedImage != null
-                ? Image.file(_pickedImage!, height: 130, width: double.infinity, fit: BoxFit.cover)
+            child: _pickedImageBytes != null
+                ? Image.memory(_pickedImageBytes!, height: 130, width: double.infinity, fit: BoxFit.cover)
                 : Image.network(
                     _existingCoverUrl,
                     height: 130,
@@ -324,10 +335,10 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
                 icon: const Icon(Icons.change_circle_rounded, size: 16),
                 label: Text(AppLocalizations.of(context)?.changeCover ?? 'Change Cover', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
               ),
-              if (_pickedImage != null) ...[
+              if (_pickedImageBytes != null) ...[
                 const SizedBox(width: 8),
                 TextButton.icon(
-                  onPressed: () => setState(() => _pickedImage = null),
+                  onPressed: () => setState(() => _pickedImageBytes = null),
                   icon: const Icon(Icons.undo_rounded, size: 16),
                   label: Text(AppLocalizations.of(context)?.revert ?? 'Revert', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
                 ),
@@ -345,7 +356,7 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
         height: 110,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.02),
+          color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.02),
           border: Border.all(
             color: isDark ? Colors.white24 : Colors.black12,
             width: 1.2,
@@ -359,7 +370,7 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AdminUiKit.amberOrange.withOpacity(0.12),
+                color: AdminUiKit.amberOrange.withValues(alpha: 0.12),
               ),
               child: const Icon(Icons.add_photo_alternate_rounded, size: 24, color: AdminUiKit.amberOrange),
             ),

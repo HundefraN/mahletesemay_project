@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -64,13 +63,13 @@ class AdminGlassCard extends StatelessWidget {
 
     final bg = customColor ??
         (isDark
-            ? const Color(0xFF13233D).withOpacity(0.85)
-            : Colors.white.withOpacity(0.95));
+            ? const Color(0xFF13233D).withValues(alpha: 0.85)
+            : Colors.white.withValues(alpha: 0.95));
 
     final border = borderColor ??
         (isDark
-            ? Colors.white.withOpacity(0.08)
-            : theme.colorScheme.primary.withOpacity(0.08));
+            ? Colors.white.withValues(alpha: 0.08)
+            : theme.colorScheme.primary.withValues(alpha: 0.08));
 
     Widget content = Container(
       margin: margin,
@@ -81,10 +80,10 @@ class AdminGlassCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: isGlowing && glowColor != null
-                ? glowColor!.withOpacity(0.18)
+                ? glowColor!.withValues(alpha: 0.18)
                 : (isDark
-                    ? Colors.black.withOpacity(0.3)
-                    : theme.colorScheme.primary.withOpacity(0.05)),
+                    ? Colors.black.withValues(alpha: 0.3)
+                    : theme.colorScheme.primary.withValues(alpha: 0.05)),
             blurRadius: isGlowing ? 20 : (elevation > 0 ? elevation * 4 : 12),
             offset: Offset(0, elevation > 0 ? elevation * 1.5 : 4),
           ),
@@ -107,8 +106,8 @@ class AdminGlassCard extends StatelessWidget {
                     onLongPress!();
                   }
                 : null,
-            splashColor: AdminUiKit.goldAccent.withOpacity(0.12),
-            highlightColor: theme.colorScheme.primary.withOpacity(0.05),
+            splashColor: AdminUiKit.goldAccent.withValues(alpha: 0.12),
+            highlightColor: theme.colorScheme.primary.withValues(alpha: 0.05),
             child: Padding(
               padding: padding,
               child: child,
@@ -152,7 +151,7 @@ class AdminSectionHeader extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
-                color: AdminUiKit.goldAccent.withOpacity(0.15),
+                color: AdminUiKit.goldAccent.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -192,10 +191,10 @@ class AdminSectionHeader extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: AdminUiKit.goldAccent.withOpacity(0.18),
+                color: AdminUiKit.goldAccent.withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AdminUiKit.goldAccent.withOpacity(0.3),
+                  color: AdminUiKit.goldAccent.withValues(alpha: 0.3),
                 ),
               ),
               child: Text(
@@ -240,20 +239,20 @@ class AdminSearchBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF13233D).withOpacity(0.7)
+            ? const Color(0xFF13233D).withValues(alpha: 0.7)
             : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.08)
-              : theme.colorScheme.primary.withOpacity(0.1),
+              ? Colors.white.withValues(alpha: 0.08)
+              : theme.colorScheme.primary.withValues(alpha: 0.1),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
             color: isDark
-                ? Colors.black.withOpacity(0.2)
-                : theme.colorScheme.primary.withOpacity(0.04),
+                ? Colors.black.withValues(alpha: 0.2)
+                : theme.colorScheme.primary.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -376,10 +375,10 @@ class AdminStatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(isOutlined ? 0.05 : 0.12),
+        color: color.withValues(alpha: isOutlined ? 0.05 : 0.12),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: color.withOpacity(isOutlined ? 0.6 : 0.25),
+          color: color.withValues(alpha: isOutlined ? 0.6 : 0.25),
           width: 1,
         ),
       ),
@@ -461,7 +460,7 @@ class AdminPrimaryButton extends StatelessWidget {
                 },
           style: OutlinedButton.styleFrom(
             side: BorderSide(
-              color: isDark ? Colors.white24 : theme.colorScheme.primary.withOpacity(0.2),
+              color: isDark ? Colors.white24 : theme.colorScheme.primary.withValues(alpha: 0.2),
               width: 1.2,
             ),
             shape: RoundedRectangleBorder(
@@ -503,7 +502,7 @@ class AdminPrimaryButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
-            color: primaryBg.withOpacity(0.25),
+            color: primaryBg.withValues(alpha: 0.25),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -586,9 +585,9 @@ class AdminEmptyState extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AdminUiKit.goldAccent.withOpacity(0.1),
+                color: AdminUiKit.goldAccent.withValues(alpha: 0.1),
                 border: Border.all(
-                  color: AdminUiKit.goldAccent.withOpacity(0.25),
+                  color: AdminUiKit.goldAccent.withValues(alpha: 0.25),
                   width: 1.5,
                 ),
               ),

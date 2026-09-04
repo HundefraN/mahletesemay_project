@@ -74,6 +74,9 @@ class ForceUpdateService {
   /// - The version strings cannot be parsed.
   /// - The installed version is greater than or equal to the minimum.
   Future<ForceUpdateResult> checkForUpdate() async {
+    if (kIsWeb) {
+      return const ForceUpdateResult(updateRequired: false);
+    }
     try {
       // 1. Fetch the minimum required version from the backend.
       final minVersionString = await SupabaseService().getMinRequiredVersion();

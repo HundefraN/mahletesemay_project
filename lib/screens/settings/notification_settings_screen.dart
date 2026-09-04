@@ -7,6 +7,7 @@ import '../../providers/notification_settings_provider.dart';
 import '../../providers/service_reminder_provider.dart';
 import '../../services/notification_service.dart';
 import '../../widgets/custom_snackbar.dart';
+import '../../widgets/web_content_wrapper.dart';
 import 'service_reminder_screen.dart';
 
 class NotificationSettingsScreen extends StatelessWidget {
@@ -49,91 +50,94 @@ class NotificationSettingsScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 60),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      _PermissionBanner(settings: settings),
-                      _SectionHeader(l10n.practice, theme),
-                      _Card(
-                        theme: theme,
-                        children: [
-                          _SwitchTile(
-                            icon: Icons.notifications_active_outlined,
-                            title: l10n.dailyPracticeReminder,
-                            subtitle: settings.dailyRemindersEnabled
-                                ? l10n.dailyReminderAt(settings.dailyReminderTime.format(context))
-                                : l10n.dailyReminderOff,
-                            value: settings.dailyRemindersEnabled,
-                            onChanged: settings.setDailyRemindersEnabled,
-                          ),
-                          if (settings.dailyRemindersEnabled) ...[
+                SliverWebContentWrapper(
+                  maxWidth: 700,
+                  sliver: SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 60),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        _PermissionBanner(settings: settings),
+                        _SectionHeader(l10n.practice, theme),
+                        _Card(
+                          theme: theme,
+                          children: [
+                            _SwitchTile(
+                              icon: Icons.notifications_active_outlined,
+                              title: l10n.dailyPracticeReminder,
+                              subtitle: settings.dailyRemindersEnabled
+                                  ? l10n.dailyReminderAt(settings.dailyReminderTime.format(context))
+                                  : l10n.dailyReminderOff,
+                              value: settings.dailyRemindersEnabled,
+                              onChanged: settings.setDailyRemindersEnabled,
+                            ),
+                            if (settings.dailyRemindersEnabled) ...[
+                              _Divider(),
+                              _NavTile(
+                                icon: Icons.schedule_outlined,
+                                title: l10n.reminderTime,
+                                subtitle:
+                                    settings.dailyReminderTime.format(context),
+                                onTap: () => _pickTime(context, settings),
+                              ),
+                            ],
                             _Divider(),
-                            _NavTile(
-                              icon: Icons.schedule_outlined,
-                              title: l10n.reminderTime,
-                              subtitle:
-                                  settings.dailyReminderTime.format(context),
-                              onTap: () => _pickTime(context, settings),
+                            _SwitchTile(
+                              icon: Icons.replay_circle_filled_outlined,
+                              title: l10n.unfinishedSessionNudge,
+                              subtitle: l10n.unfinishedSessionDesc,
+                              value: settings.practiceFollowUpsEnabled,
+                              onChanged: settings.setPracticeFollowUpsEnabled,
                             ),
                           ],
-                          _Divider(),
-                          _SwitchTile(
-                            icon: Icons.replay_circle_filled_outlined,
-                            title: l10n.unfinishedSessionNudge,
-                            subtitle: l10n.unfinishedSessionDesc,
-                            value: settings.practiceFollowUpsEnabled,
-                            onChanged: settings.setPracticeFollowUpsEnabled,
-                          ),
-                        ],
-                      ),
-                      _SectionHeader(l10n.services, theme),
-                      _Card(
-                        theme: theme,
-                        children: [
-                          _NavTile(
-                            icon: Icons.event_available_outlined,
-                            title: l10n.serviceReminders,
-                            subtitle: _serviceSubtitle(reminders),
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ServiceReminderScreen(),
+                        ),
+                        _SectionHeader(l10n.services, theme),
+                        _Card(
+                          theme: theme,
+                          children: [
+                            _NavTile(
+                              icon: Icons.event_available_outlined,
+                              title: l10n.serviceReminders,
+                              subtitle: _serviceSubtitle(reminders),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ServiceReminderScreen(),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      _SectionHeader('Library', theme),
-                      _Card(
-                        theme: theme,
-                        children: [
-                          _SwitchTile(
-                            icon: Icons.library_music_outlined,
-                            title: AppLocalizations.of(context)?.newSongsAlertTitle ?? 'New songs & content',
-                            subtitle:
-                                'Tell me when new songs are added to the library',
-                            value: settings.newContentAlertsEnabled,
-                            onChanged: settings.setNewContentAlertsEnabled,
-                          ),
-                        ],
-                      ),
-                      _SectionHeader('Troubleshooting', theme),
-                      _Card(
-                        theme: theme,
-                        children: [
-                          _NavTile(
-                            icon: Icons.send_outlined,
-                            title: AppLocalizations.of(context)?.sendTestNotification ?? 'Send a test notification',
-                            subtitle:
-                                'Check that alerts reach this device correctly',
-                            onTap: () => _sendTest(context, settings),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      _ScheduledSummary(reminders: reminders),
-                    ]),
+                          ],
+                        ),
+                        _SectionHeader('Library', theme),
+                        _Card(
+                          theme: theme,
+                          children: [
+                            _SwitchTile(
+                              icon: Icons.library_music_outlined,
+                              title: AppLocalizations.of(context)?.newSongsAlertTitle ?? 'New songs & content',
+                              subtitle:
+                                  'Tell me when new songs are added to the library',
+                              value: settings.newContentAlertsEnabled,
+                              onChanged: settings.setNewContentAlertsEnabled,
+                            ),
+                          ],
+                        ),
+                        _SectionHeader('Troubleshooting', theme),
+                        _Card(
+                          theme: theme,
+                          children: [
+                            _NavTile(
+                              icon: Icons.send_outlined,
+                              title: AppLocalizations.of(context)?.sendTestNotification ?? 'Send a test notification',
+                              subtitle:
+                                  'Check that alerts reach this device correctly',
+                              onTap: () => _sendTest(context, settings),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        _ScheduledSummary(reminders: reminders),
+                      ]),
+                    ),
                   ),
                 ),
               ],
@@ -268,9 +272,9 @@ class _Banner extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withOpacity(0.35)),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,7 +301,7 @@ class _Banner extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               height: 1.4,
-              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.75),
+              color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.75),
             ),
           ),
           const SizedBox(height: 14),
@@ -334,10 +338,10 @@ class _ScheduledSummary extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.08),
+              color: theme.colorScheme.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: theme.colorScheme.primary.withOpacity(0.15),
+                color: theme.colorScheme.primary.withValues(alpha: 0.15),
               ),
             ),
             child: Row(
@@ -403,7 +407,7 @@ class _Card extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
       ),
       child: Column(children: children),
     );
@@ -418,7 +422,7 @@ class _Divider extends StatelessWidget {
       thickness: 1,
       indent: 56,
       endIndent: 20,
-      color: Colors.grey.withOpacity(0.1),
+      color: Colors.grey.withValues(alpha: 0.1),
     );
   }
 }
@@ -451,7 +455,7 @@ class _SwitchTile extends StatelessWidget {
         child: Switch.adaptive(
           value: value,
           onChanged: onChanged,
-          activeColor: theme.colorScheme.primary,
+          activeTrackColor: theme.colorScheme.primary,
         ),
       ),
     );
@@ -530,7 +534,7 @@ class _TileShell extends StatelessWidget {
                         fontSize: 13,
                         height: 1.3,
                         color: theme.textTheme.bodyMedium?.color
-                            ?.withOpacity(0.6),
+                            ?.withValues(alpha: 0.6),
                       ),
                     ),
                   ],

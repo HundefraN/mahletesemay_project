@@ -101,10 +101,10 @@ class ManageGeneralExercisesScreen extends StatelessWidget {
           }
           final exercises = snapshot.data!;
           return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
-            physics: const BouncingScrollPhysics(),
-            itemCount: exercises.length,
-            itemBuilder: (context, index) {
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+              physics: const BouncingScrollPhysics(),
+              itemCount: exercises.length,
+              itemBuilder: (context, index) {
               final exercise = exercises[index];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10.0),
@@ -122,7 +122,7 @@ class ManageGeneralExercisesScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AdminUiKit.violetPurple.withOpacity(0.14),
+                          color: AdminUiKit.violetPurple.withValues(alpha: 0.14),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(Icons.graphic_eq_rounded, color: AdminUiKit.violetPurple, size: 22),

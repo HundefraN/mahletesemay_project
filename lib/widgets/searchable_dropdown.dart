@@ -165,9 +165,9 @@ class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
       child: Container(
         margin: const EdgeInsets.all(16).copyWith(top: MediaQuery.of(context).padding.top + 32),
         decoration: BoxDecoration(
-          color: isDark ? theme.cardColor.withOpacity(0.9) : theme.cardColor.withOpacity(0.95),
+          color: isDark ? theme.cardColor.withValues(alpha: 0.9) : theme.cardColor.withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
         child: Column(
           children: [
@@ -203,7 +203,7 @@ class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
                           : null,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                       filled: true,
-                      fillColor: theme.scaffoldBackgroundColor.withOpacity(0.5),
+                      fillColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
                     ),
                   );
                 },

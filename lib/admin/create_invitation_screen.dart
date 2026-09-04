@@ -96,7 +96,7 @@ How to activate your account:
 
 This code is single-use and linked to your email. Welcome to the team!
 ''';
-    Share.share(message, subject: 'Mahlete Semay - Moderator Portal Invitation');
+    SharePlus.instance.share(ShareParams(text: message, subject: 'Mahlete Semay - Moderator Portal Invitation'));
   }
 
   String get invitedEmail => _invitedEmail ?? _emailController.text.trim();
@@ -126,9 +126,9 @@ This code is single-use and linked to your email. Welcome to the team!
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        physics: const BouncingScrollPhysics(),
-        children: [
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          physics: const BouncingScrollPhysics(),
+          children: [
           // If code was generated, show success card
           if (_generatedCode != null) ...[
             AdminSectionHeader(
@@ -148,7 +148,7 @@ This code is single-use and linked to your email. Welcome to the team!
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.black38 : AdminUiKit.goldAccent.withOpacity(0.15),
+                          color: isDark ? Colors.black38 : AdminUiKit.goldAccent.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: AdminUiKit.goldAccent, width: 1.5),
                         ),
@@ -257,7 +257,7 @@ This code is single-use and linked to your email. Welcome to the team!
                   ),
                   const SizedBox(height: 14),
                   DropdownButtonFormField<String>(
-                    value: _selectedRole,
+                    initialValue: _selectedRole,
                     decoration: _inputDecoration('Assigned Role', Icons.shield_outlined),
                     items: [
                       DropdownMenuItem(value: 'moderator', child: Text(AppLocalizations.of(context)?.moderatorRoleDesc ?? 'Moderator (Content Editor)')),

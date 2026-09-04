@@ -145,8 +145,8 @@ class _PermissionScreenState extends State<PermissionScreen>
 
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
                 children: [
                   const SizedBox(height: 16),
 

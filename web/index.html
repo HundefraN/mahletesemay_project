@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Mahlete Semay - Ethiopian & International Worship, Songs, Vocal Training and Spiritual Lessons">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0A1E3F">
+
+  <!-- Performance Preconnects & DNS Prefetching -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://xyzcompany.supabase.co" crossorigin>
+  <link rel="preconnect" href="https://firebaseinstallations.googleapis.com" crossorigin>
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+  <link rel="dns-prefetch" href="https://xyzcompany.supabase.co">
+  <link rel="dns-prefetch" href="https://firebaseinstallations.googleapis.com">
+
+  <!-- Preload critical fonts & scripts -->
+  <link rel="preload" href="flutter_bootstrap.js" as="script">
+  <link rel="preload" href="assets/logo/logo.png" as="image">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mahlete Semay">
+  <link rel="apple-touch-icon" href="assets/logo/logo.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/logo/logo.png"/>
+
+  <title>Mahlete Semay</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* ── RESET & BASE VARIABLES ── */
+    :root {
+      --bg-main: #0A1E3F;
+      --bg-surface: #0E2752;
+      --bg-card: #133166;
+      --accent-gold: #D4AF37;
+      --accent-gold-glow: rgba(212, 175, 55, 0.4);
+      --shimmer-base: #153872;
+      --shimmer-glow: #1F4C96;
+      --text-muted: rgba(255, 255, 255, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: #FFFFFF;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      user-select: none;
+    }
+
+    /* ── TOP SLIM PROGRESS BAR ── */
+    #top-progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      z-index: 99999;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    #top-progress-bar .bar {
+      position: absolute;
+      top: 0;
+      left: -40%;
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, var(--accent-gold), #FFF8DC, transparent);
+      box-shadow: 0 0 10px var(--accent-gold-glow);
+      animation: progress-slide 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes progress-slide {
+      0% { left: -40%; width: 30%; }
+      50% { left: 40%; width: 60%; }
+      100% { left: 100%; width: 40%; }
+    }
+
+    /* ── INSTANT APP SHELL SKELETON ── */
+    #app-shell {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: row;
+      background: radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.08), transparent 45%),
+                  radial-gradient(circle at 20% 80%, rgba(26, 75, 153, 0.18), transparent 50%),
+                  var(--bg-main);
+      z-index: 99990;
+      opacity: 1;
+      transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: auto;
+    }
+
+    #app-shell.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* ── SIDEBAR RAIL (DESKTOP) ── */
+    .shell-sidebar {
+      width: 80px;
+      height: 100%;
+      background: rgba(8, 24, 51, 0.85);
+      backdrop-filter: blur(12px);
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 0;
+      gap: 28px;
+      flex-shrink: 0;
+    }
+
+    .shell-brand-logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4), 0 0 12px var(--accent-gold-glow);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      object-fit: cover;
+      animation: pulse-glow 2.5s infinite ease-in-out;
+    }
+
+    .shell-nav-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--shimmer-base);
+      animation: skeleton-shimmer 1.6s infinite linear;
+    }
+
+    /* ── MAIN CONTENT AREA ── */
+    .shell-main {
+      flex: 1;
+      height: 100%;
+      overflow-y: auto;
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ── HEADER SKELETON ── */
+    .shell-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .shell-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .shell-title {
+      width: 220px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--shimmer-base);
+      animation: skeleton-shimmer 1.6s infinite linear;
+    }
+
+    .shell-subtitle {
+      width: 140px;
+      height: 16px;
+      border-radius: 4px;
+      background: var(--shimmer-base);
+      opacity: 0.6;
+      animation: skeleton-shimmer 1.6s infinite linear;
+    }
+
+    .shell-search {
+      width: 100%;
+      max-width: 400px;
+      height: 46px;
+      border-radius: 23px;
+      background: var(--bg-surface);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      gap: 12px;
+    }
+
+    .shell-search-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--shimmer-base);
+    }
+
+    .shell-search-text {
+      width: 120px;
+      height: 12px;
+      border-radius: 4px;
+      background: var(--shimmer-base);
+      animation: skeleton-shimmer 1.6s infinite linear;
+    }
+
+    /* ── SECTION HEADER ── */
+    .shell-section-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .shell-section-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--shimmer-base);
+    }
+
+    .shell-section-title {
+      width: 170px;
+      height: 18px;
+      border-radius: 4px;
+      background: var(--shimmer-base);
+      animation: skeleton-shimmer 1.6s infinite linear;
+    }
+
+    /* ── GRID SKELETON (CARDS) ── */
+    .shell-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .shell-card {
+      height: 74px;
+      border-radius: 16px;
+      background: var(--bg-surface);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      gap: 14px;
+    }
+
+    .shell-card-img {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--shimmer-base);
+      flex-shrink: 0;
+      animation: skeleton-shimmer 1.6s infinite linear;
+    }
+
+    .shell-card-lines {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .shell-card-line-1 {
+      width: 80%;
+      height: 14px;
+      border-radius: 4px;
+      background: var(--shimmer-base);
+      animation: skeleton-shimmer 1.6s infinite linear;
+    }
+
+    .shell-card-line-2 {
+      width: 50%;
+      height: 11px;
+      border-radius: 4px;
+      background: var(--shimmer-base);
+      opacity: 0.6;
+      animation: skeleton-shimmer 1.6s infinite linear;
+    }
+
+    /* ── ARTIST CIRCLE CAROUSEL ── */
+    .shell-carousel {
+      display: flex;
+      gap: 20px;
+      overflow-x: hidden;
+      padding-bottom: 6px;
+    }
+
+    .shell-artist-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100px;
+      flex-shrink: 0;
+    }
+
+    .shell-avatar {
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      background: var(--shimmer-base);
+      border: 2px solid rgba(255, 255, 255, 0.08);
+      animation: skeleton-shimmer 1.6s infinite linear;
+    }
+
+    .shell-avatar-name {
+      width: 70px;
+      height: 12px;
+      border-radius: 4px;
+      background: var(--shimmer-base);
+      animation: skeleton-shimmer 1.6s infinite linear;
+    }
+
+    /* ── SHIMMER ANIMATION ── */
+    @keyframes skeleton-shimmer {
+      0% {
+        background-color: var(--shimmer-base);
+      }
+      50% {
+        background-color: var(--shimmer-glow);
+      }
+      100% {
+        background-color: var(--shimmer-base);
+      }
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4), 0 0 10px var(--accent-gold-glow);
+      }
+      50% {
+        transform: scale(1.04);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.65);
+      }
+    }
+
+    /* ── MOBILE ADAPTATIONS (<768px) ── */
+    @media (max-width: 768px) {
+      .shell-sidebar {
+        display: none;
+      }
+      .shell-main {
+        padding: 18px 16px;
+        gap: 22px;
+      }
+      .shell-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+      }
+      .shell-search {
+        max-width: 100%;
+      }
+      .shell-grid {
+        grid-template-columns: 1fr;
+      }
+      .shell-avatar {
+        width: 72px;
+        height: 72px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Slim glowing top progress line -->
+  <div id="top-progress-bar">
+    <div class="bar"></div>
+  </div>
+
+  <!-- Instant CSS App Shell — Renders in <50ms -->
+  <div id="app-shell">
+    <!-- Desktop Sidebar -->
+    <div class="shell-sidebar">
+      <img class="shell-brand-logo" src="assets/logo/logo.png" alt="Mahlete Semay" />
+      <div class="shell-nav-icon" style="background: rgba(212, 175, 55, 0.25);"></div>
+      <div class="shell-nav-icon"></div>
+      <div class="shell-nav-icon"></div>
+      <div class="shell-nav-icon"></div>
+    </div>
+
+    <!-- Main Content Skeleton -->
+    <div class="shell-main">
+      <!-- Header -->
+      <div class="shell-header">
+        <div class="shell-title-group">
+          <div class="shell-title"></div>
+          <div class="shell-subtitle"></div>
+        </div>
+        <div class="shell-search">
+          <div class="shell-search-icon"></div>
+          <div class="shell-search-text"></div>
+        </div>
+      </div>
+
+      <!-- Section: Recommended -->
+      <div>
+        <div class="shell-section-head">
+          <div class="shell-section-badge"></div>
+          <div class="shell-section-title"></div>
+        </div>
+        <div class="shell-grid">
+          <div class="shell-card">
+            <div class="shell-card-img"></div>
+            <div class="shell-card-lines">
+              <div class="shell-card-line-1"></div>
+              <div class="shell-card-line-2"></div>
+            </div>
+          </div>
+          <div class="shell-card">
+            <div class="shell-card-img"></div>
+            <div class="shell-card-lines">
+              <div class="shell-card-line-1"></div>
+              <div class="shell-card-line-2"></div>
+            </div>
+          </div>
+          <div class="shell-card">
+            <div class="shell-card-img"></div>
+            <div class="shell-card-lines">
+              <div class="shell-card-line-1"></div>
+              <div class="shell-card-line-2"></div>
+            </div>
+          </div>
+          <div class="shell-card">
+            <div class="shell-card-img"></div>
+            <div class="shell-card-lines">
+              <div class="shell-card-line-1"></div>
+              <div class="shell-card-line-2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Ethiopian Artists -->
+      <div>
+        <div class="shell-section-head">
+          <div class="shell-section-badge"></div>
+          <div class="shell-section-title" style="width: 140px;"></div>
+        </div>
+        <div class="shell-carousel">
+          <div class="shell-artist-item"><div class="shell-avatar"></div><div class="shell-avatar-name"></div></div>
+          <div class="shell-artist-item"><div class="shell-avatar"></div><div class="shell-avatar-name"></div></div>
+          <div class="shell-artist-item"><div class="shell-avatar"></div><div class="shell-avatar-name"></div></div>
+          <div class="shell-artist-item"><div class="shell-avatar"></div><div class="shell-avatar-name"></div></div>
+          <div class="shell-artist-item"><div class="shell-avatar"></div><div class="shell-avatar-name"></div></div>
+          <div class="shell-artist-item"><div class="shell-avatar"></div><div class="shell-avatar-name"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Smooth transition hook when Flutter takes over the screen
+    window._removeAppShell = function() {
+      const shell = document.getElementById('app-shell');
+      const progressBar = document.getElementById('top-progress-bar');
+      if (shell) {
+        shell.classList.add('fade-out');
+        setTimeout(function() {
+          if (shell && shell.parentNode) {
+            shell.parentNode.removeChild(shell);
+          }
+        }, 450);
+      }
+      if (progressBar) {
+        progressBar.style.opacity = '0';
+        progressBar.style.transition = 'opacity 0.3s ease';
+        setTimeout(function() {
+          if (progressBar && progressBar.parentNode) {
+            progressBar.parentNode.removeChild(progressBar);
+          }
+        }, 350);
+      }
+    };
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

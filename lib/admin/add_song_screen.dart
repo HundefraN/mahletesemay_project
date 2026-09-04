@@ -322,11 +322,11 @@ class _AddSongScreenState extends State<AddSongScreen> {
           ),
         ),
         body: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            physics: const BouncingScrollPhysics(),
-            children: [
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              physics: const BouncingScrollPhysics(),
+              children: [
               // Draft restoration banner
               if (_hasDraftBanner) _buildDraftBanner(isDark),
 
@@ -344,11 +344,11 @@ class _AddSongScreenState extends State<AddSongScreen> {
                     Container(
                       decoration: BoxDecoration(
                         color: _isSingle
-                            ? AdminUiKit.goldAccent.withOpacity(0.12)
-                            : (isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03)),
+                            ? AdminUiKit.goldAccent.withValues(alpha: 0.12)
+                            : (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.03)),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: _isSingle ? AdminUiKit.goldAccent.withOpacity(0.3) : Colors.transparent,
+                          color: _isSingle ? AdminUiKit.goldAccent.withValues(alpha: 0.3) : Colors.transparent,
                         ),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -367,7 +367,7 @@ class _AddSongScreenState extends State<AddSongScreen> {
                           style: GoogleFonts.plusJakartaSans(fontSize: 11),
                         ),
                         value: _isSingle,
-                        activeColor: AdminUiKit.goldAccent,
+                        activeThumbColor: AdminUiKit.goldAccent,
                         onChanged: (value) {
                           AdminUiKit.hapticLight();
                           setState(() {
@@ -474,7 +474,7 @@ class _AddSongScreenState extends State<AddSongScreen> {
                     const SizedBox(height: 10),
 
                     DropdownButtonFormField<String>(
-                      value: _selectedScale,
+                      initialValue: _selectedScale,
                       decoration: _inputDecoration('Musical Scale (Optional)', Icons.graphic_eq_rounded),
                       items: scaleMenuItems.map((scale) => DropdownMenuItem(value: scale, child: Text(scale, style: GoogleFonts.plusJakartaSans(fontSize: 13)))).toList(),
                       onChanged: (value) {
@@ -496,7 +496,7 @@ class _AddSongScreenState extends State<AddSongScreen> {
                     const SizedBox(height: 10),
 
                     DropdownButtonFormField<String>(
-                      value: _selectedRhythm,
+                      initialValue: _selectedRhythm,
                       decoration: _inputDecoration('Rhythm Pattern (Optional)', Icons.speed_rounded),
                       items: rhythmMenuItems.map((rhythm) => DropdownMenuItem(value: rhythm, child: Text(rhythm, style: GoogleFonts.plusJakartaSans(fontSize: 13)))).toList(),
                       onChanged: (value) {
@@ -556,13 +556,13 @@ class _AddSongScreenState extends State<AddSongScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AdminUiKit.royalBlue.withOpacity(0.12),
-            AdminUiKit.royalBlue.withOpacity(0.05),
+            AdminUiKit.royalBlue.withValues(alpha: 0.12),
+            AdminUiKit.royalBlue.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: AdminUiKit.royalBlue.withOpacity(0.25),
+          color: AdminUiKit.royalBlue.withValues(alpha: 0.25),
           width: 1.2,
         ),
       ),
@@ -574,7 +574,7 @@ class _AddSongScreenState extends State<AddSongScreen> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AdminUiKit.royalBlue.withOpacity(0.15),
+                color: AdminUiKit.royalBlue.withValues(alpha: 0.15),
               ),
               child: const Icon(Icons.restore_rounded, color: AdminUiKit.royalBlue, size: 20),
             ),
@@ -626,7 +626,7 @@ class _AddSongScreenState extends State<AddSongScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                backgroundColor: AdminUiKit.royalBlue.withOpacity(0.12),
+                backgroundColor: AdminUiKit.royalBlue.withValues(alpha: 0.12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: Text(

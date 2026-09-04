@@ -18,6 +18,16 @@ class SupabaseService {
 
   SupabaseClient get _client => Supabase.instance.client;
 
+  static final Map<String, DateTime> _lastStreamErrorLog = {};
+  static void _logStreamErrorThrottled(String key, dynamic error) {
+    final now = DateTime.now();
+    final lastLog = _lastStreamErrorLog[key];
+    if (lastLog == null || now.difference(lastLog).inSeconds >= 15) {
+      _lastStreamErrorLog[key] = now;
+      debugPrint('SupabaseService: Realtime stream connection notice [$key]: $error');
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // ARTISTS
   // ---------------------------------------------------------------------------
@@ -26,7 +36,11 @@ class SupabaseService {
     return _client
         .from('artists')
         .stream(primaryKey: ['id'])
-        .map((maps) => maps.map((item) => Artist.fromMap(item)).toList());
+        .map((maps) => maps.map((item) => Artist.fromMap(item)).toList())
+        .handleError((e) {
+          _logStreamErrorThrottled('artists', e);
+          return <Artist>[];
+        });
   }
 
   Future<List<Artist>> getArtists() async {
@@ -102,7 +116,11 @@ class SupabaseService {
     return _client
         .from('albums')
         .stream(primaryKey: ['id'])
-        .map((maps) => maps.map((item) => Album.fromMap(item)).toList());
+        .map((maps) => maps.map((item) => Album.fromMap(item)).toList())
+        .handleError((e) {
+          _logStreamErrorThrottled('albums', e);
+          return <Album>[];
+        });
   }
 
   Future<List<Album>> getAlbums() async {
@@ -174,7 +192,11 @@ class SupabaseService {
     return _client
         .from('songs')
         .stream(primaryKey: ['id'])
-        .map((maps) => maps.map((item) => Song.fromMap(item)).toList());
+        .map((maps) => maps.map((item) => Song.fromMap(item)).toList())
+        .handleError((e) {
+          _logStreamErrorThrottled('songs', e);
+          return <Song>[];
+        });
   }
 
   Future<bool> hasNewSongsSince(DateTime date) async {
@@ -885,6 +907,16 @@ class SupabaseService {
     }
   }
 
+  Future<bool> repairAuthUsersSchema() async {
+    try {
+      await _client.rpc('repair_auth_users_schema');
+      return true;
+    } catch (e) {
+      debugPrint('repair_auth_users_schema RPC info: $e');
+      return false;
+    }
+  }
+
   Stream<List<Invitation>> getInvitationsStream() {
     return _client
         .from('invitations')
@@ -982,6 +1014,10 @@ class SupabaseService {
           final isRepair = maps.isNotEmpty ? (maps.any((m) => m['is_repair_mode'] == true)) : false;
           _lastKnownRepairMode = isRepair;
           return isRepair;
+        })
+        .handleError((e) {
+          debugPrint('Error in getRepairModeStream: $e');
+          return _lastKnownRepairMode;
         })
         .asBroadcastStream();
     return _repairModeStream!;

@@ -1,7 +1,7 @@
 import '../../l10n/app_localizations.dart';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -72,7 +72,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
 
   String _fontFamily = 'Poppins';
   double _fontSize = 20.0;
-  FontWeight _fontWeight = FontWeight.w700;
+  final FontWeight _fontWeight = FontWeight.w700;
   TextAlign _textAlign = TextAlign.center;
   Color _selectedTextColor = Colors.white;
 
@@ -208,18 +208,13 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
         throw Exception('Failed to generate image bytes');
       }
 
-      final tempDir = await getTemporaryDirectory();
-      final filePath =
-          '${tempDir.path}/mahletesemay_lyrics_${DateTime.now().millisecondsSinceEpoch}.png';
-      final file = await File(filePath).create();
-      await file.writeAsBytes(pngBytes);
-
-      final xFile = XFile(file.path);
-      await Share.shareXFiles(
-        [xFile],
+      final fileName = 'mahletesemay_lyrics_${DateTime.now().millisecondsSinceEpoch}.png';
+      final xFile = XFile.fromData(pngBytes, mimeType: 'image/png', name: fileName);
+      await SharePlus.instance.share(ShareParams(
+        files: [xFile],
         text:
             '🎵 "${widget.song.title}" - ${widget.song.artistName}\n#MahleteSemay #Worship',
-      );
+      ));
     } catch (e) {
       if (mounted) {
         CustomSnackbar.show(
@@ -243,11 +238,16 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
         throw Exception('Failed to generate image bytes');
       }
 
-      final tempDir = await getTemporaryDirectory();
-      final filePath =
-          '${tempDir.path}/saved_lyrics_${DateTime.now().millisecondsSinceEpoch}.png';
-      final file = await File(filePath).create();
-      await file.writeAsBytes(pngBytes);
+      final fileName = 'saved_lyrics_${DateTime.now().millisecondsSinceEpoch}.png';
+      if (!kIsWeb) {
+        final tempDir = await getTemporaryDirectory();
+        final filePath = '${tempDir.path}/$fileName';
+        final file = await File(filePath).create();
+        await file.writeAsBytes(pngBytes);
+      } else {
+        final xFile = XFile.fromData(pngBytes, mimeType: 'image/png', name: fileName);
+        await xFile.saveTo(fileName);
+      }
 
       if (mounted) {
         CustomSnackbar.show(context, 'Image created successfully!');
@@ -294,11 +294,11 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                 padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? theme.colorScheme.surface.withOpacity(0.96)
+                      ? theme.colorScheme.surface.withValues(alpha: 0.96)
                       : Colors.white,
                   borderRadius: BorderRadius.circular(26),
                   border: Border.all(
-                      color: theme.colorScheme.onSurface.withOpacity(0.08)),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.08)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -310,7 +310,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
                           color:
-                              theme.colorScheme.onSurface.withOpacity(0.2),
+                              theme.colorScheme.onSurface.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -336,7 +336,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                       'Type custom text or tap lines below to quickly insert:',
                       style: TextStyle(
                         fontSize: 12,
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -345,11 +345,11 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                     Container(
                       height: 120,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurface.withOpacity(0.04),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                             color: theme.colorScheme.onSurface
-                                .withOpacity(0.12)),
+                                .withValues(alpha: 0.12)),
                       ),
                       padding: const EdgeInsets.all(10),
                       child: TextField(
@@ -422,15 +422,15 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                               decoration: BoxDecoration(
                                 color: isInText
                                     ? theme.colorScheme.primary
-                                        .withOpacity(0.12)
+                                        .withValues(alpha: 0.12)
                                     : Colors.transparent,
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: isInText
                                       ? theme.colorScheme.primary
-                                          .withOpacity(0.4)
+                                          .withValues(alpha: 0.4)
                                       : theme.colorScheme.onSurface
-                                          .withOpacity(0.08),
+                                          .withValues(alpha: 0.08),
                                 ),
                               ),
                               child: Row(
@@ -544,76 +544,168 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                 ),
         ],
       ),
-      body: Column(
-        children: [
-          // Top Quick Utility Bar (Aspect Ratio Chips + Text Picker Pill)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-            child: Row(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWideScreen = constraints.maxWidth >= 800;
+
+          if (isWideScreen) {
+            return Row(
               children: [
+                // Left Pane: Live Canvas Preview
                 Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      children: AspectRatioPreset.values.map((preset) {
-                        final isSelected = _aspectRatio == preset;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: ChoiceChip(
-                            label: Text(preset.label,
-                                style: const TextStyle(fontSize: 11)),
-                            selected: isSelected,
-                            visualDensity: VisualDensity.compact,
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            onSelected: (val) =>
-                                setState(() => _aspectRatio = preset),
+                  flex: 5,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                physics: const BouncingScrollPhysics(),
+                                child: Row(
+                                  children: AspectRatioPreset.values.map((preset) {
+                                    final isSelected = _aspectRatio == preset;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 6),
+                                      child: ChoiceChip(
+                                        label: Text(preset.label, style: const TextStyle(fontSize: 11)),
+                                        selected: isSelected,
+                                        visualDensity: VisualDensity.compact,
+                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        onSelected: (val) => setState(() => _aspectRatio = preset),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ActionChip(
+                              avatar: const Icon(IconsaxPlusBold.edit_2, size: 13),
+                              label: Text(AppLocalizations.of(context)?.editText ?? 'Edit Text',
+                                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                              visualDensity: VisualDensity.compact,
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              onPressed: _openTextAndWordEditor,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: AspectRatio(
+                              aspectRatio: _aspectRatio.ratio,
+                              child: RepaintBoundary(
+                                key: _captureKey,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(22),
+                                  child: _buildTemplateCanvas(),
+                                ),
+                              ),
+                            ),
                           ),
-                        );
-                      }).toList(),
-                    ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 6),
-                ActionChip(
-                  avatar: const Icon(IconsaxPlusBold.edit_2, size: 13),
-                  label: Text(AppLocalizations.of(context)?.editText ?? 'Edit Text',
-                      style: TextStyle(
-                          fontSize: 11.5, fontWeight: FontWeight.w600)),
-                  visualDensity: VisualDensity.compact,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  onPressed: _openTextAndWordEditor,
+                VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08),
+                ),
+                // Right Pane: Studio Toolbar Panel
+                SizedBox(
+                  width: 380,
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: _buildControlToolbar(theme, isDark),
+                      ),
+                    ],
+                  ),
                 ),
               ],
-            ),
-          ),
+            );
+          }
 
-          // Main Canvas Preview Area
-          Expanded(
-            child: Center(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                child: AspectRatio(
-                  aspectRatio: _aspectRatio.ratio,
-                  child: RepaintBoundary(
-                    key: _captureKey,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(22),
-                      child: _buildTemplateCanvas(),
+          return Column(
+            children: [
+              // Top Quick Utility Bar (Aspect Ratio Chips + Text Picker Pill)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        child: Row(
+                          children: AspectRatioPreset.values.map((preset) {
+                            final isSelected = _aspectRatio == preset;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: ChoiceChip(
+                                label: Text(preset.label,
+                                    style: const TextStyle(fontSize: 11)),
+                                selected: isSelected,
+                                visualDensity: VisualDensity.compact,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                onSelected: (val) =>
+                                    setState(() => _aspectRatio = preset),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    ActionChip(
+                      avatar: const Icon(IconsaxPlusBold.edit_2, size: 13),
+                      label: Text(AppLocalizations.of(context)?.editText ?? 'Edit Text',
+                          style: TextStyle(
+                              fontSize: 11.5, fontWeight: FontWeight.w600)),
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      onPressed: _openTextAndWordEditor,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Main Canvas Preview Area
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                    child: AspectRatio(
+                      aspectRatio: _aspectRatio.ratio,
+                      child: RepaintBoundary(
+                        key: _captureKey,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(22),
+                          child: _buildTemplateCanvas(),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
 
-          // Customization Control Center
-          _buildControlToolbar(theme, isDark),
-        ],
+              // Customization Control Center
+              _buildControlToolbar(theme, isDark),
+            ],
+          );
+        },
       ),
     );
   }
@@ -657,9 +749,9 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
           height: logoSize + 4,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.12),
+            color: Colors.white.withValues(alpha: 0.12),
             border: Border.all(
-                color: Colors.white.withOpacity(0.2), width: 1),
+                color: Colors.white.withValues(alpha: 0.2), width: 1),
           ),
           padding: const EdgeInsets.all(2.5),
           child: ClipOval(
@@ -682,7 +774,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                 style: GoogleFonts.outfit(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
-                  color: (textColor ?? Colors.white).withOpacity(0.9),
+                  color: (textColor ?? Colors.white).withValues(alpha: 0.9),
                   letterSpacing: 1.2,
                 ),
               ),
@@ -691,7 +783,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                   customSubtext,
                   style: GoogleFonts.outfit(
                     fontSize: 8.5,
-                    color: (textColor ?? Colors.white).withOpacity(0.6),
+                    color: (textColor ?? Colors.white).withValues(alpha: 0.6),
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -735,8 +827,8 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.35),
-                  Colors.black.withOpacity(0.78),
+                  Colors.black.withValues(alpha: 0.35),
+                  Colors.black.withValues(alpha: 0.78),
                 ],
               ),
             ),
@@ -761,7 +853,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                           borderRadius: BorderRadius.circular(10),
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
+                                color: Colors.black.withValues(alpha: 0.3),
                                 blurRadius: 8),
                           ],
                         ),
@@ -844,7 +936,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
       height: height,
       margin: const EdgeInsets.symmetric(horizontal: 1.5),
       decoration: BoxDecoration(
-        color: Colors.greenAccent.shade400.withOpacity(opacity),
+        color: Colors.greenAccent.shade400.withValues(alpha: opacity),
         borderRadius: BorderRadius.circular(2),
       ),
     );
@@ -950,10 +1042,10 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF9D4EDD).withOpacity(0.3),
+                    color: const Color(0xFF9D4EDD).withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: const Color(0xFFC77DFF).withOpacity(0.5)),
+                        color: const Color(0xFFC77DFF).withValues(alpha: 0.5)),
                   ),
                   child: Text(
                     widget.song.title,
@@ -983,10 +1075,10 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                   style: _getLyricsStyle().copyWith(
                     shadows: [
                       Shadow(
-                          color: const Color(0xFF00F5D4).withOpacity(0.6),
+                          color: const Color(0xFF00F5D4).withValues(alpha: 0.6),
                           blurRadius: 18),
                       Shadow(
-                          color: const Color(0xFF7B2CBF).withOpacity(0.7),
+                          color: const Color(0xFF7B2CBF).withValues(alpha: 0.7),
                           blurRadius: 22),
                     ],
                   ),
@@ -1249,7 +1341,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                   borderRadius: BorderRadius.circular(4),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.12),
+                      color: Colors.black.withValues(alpha: 0.12),
                       blurRadius: 6,
                     ),
                   ],
@@ -1387,7 +1479,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 14,
             offset: const Offset(0, -4),
           ),
@@ -1429,7 +1521,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected
-              ? theme.colorScheme.primary.withOpacity(0.14)
+              ? theme.colorScheme.primary.withValues(alpha: 0.14)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
@@ -1439,7 +1531,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                 size: 15,
                 color: isSelected
                     ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface.withOpacity(0.6)),
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.6)),
             const SizedBox(width: 5),
             Text(
               label,
@@ -1448,7 +1540,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
                 color: isSelected
                     ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface.withOpacity(0.7),
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -1490,8 +1582,8 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? theme.colorScheme.primary.withOpacity(0.18)
-                      : theme.colorScheme.onSurface.withOpacity(0.05),
+                      ? theme.colorScheme.primary.withValues(alpha: 0.18)
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: isSelected
@@ -1506,7 +1598,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                         size: 15,
                         color: isSelected
                             ? theme.colorScheme.primary
-                            : theme.colorScheme.onSurface.withOpacity(0.7)),
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.7)),
                     const SizedBox(width: 6),
                     Text(
                       tmpl.label,
@@ -1635,13 +1727,13 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
                   border: Border.all(
                     color: isSelected
                         ? theme.colorScheme.primary
-                        : Colors.grey.withOpacity(0.3),
+                        : Colors.grey.withValues(alpha: 0.3),
                     width: isSelected ? 2.5 : 1,
                   ),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                              color: theme.colorScheme.primary.withOpacity(0.3),
+                              color: theme.colorScheme.primary.withValues(alpha: 0.3),
                               blurRadius: 8)
                         ]
                       : null,

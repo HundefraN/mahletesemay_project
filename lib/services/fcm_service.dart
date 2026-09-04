@@ -16,7 +16,9 @@ class FcmService {
 
   static Future<void> initialize() async {
     try {
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      if (!kIsWeb) {
+        FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      }
 
       // Listen for token refreshments
       _messaging.onTokenRefresh.listen((newToken) {
@@ -29,8 +31,11 @@ class FcmService {
         debugPrint('Received foreground FCM message: ${message.notification?.title}');
       });
 
-      // Request permissions and sync token asynchronously without blocking app startup
-      _syncInitialToken();
+      // On mobile (iOS & Android): sync initial token asynchronously.
+      // On Web: never ask for permissions on startup; permission is requested only on user action.
+      if (!kIsWeb) {
+        _syncInitialToken();
+      }
     } catch (e) {
       debugPrint('Error initializing FCM service: $e');
     }
@@ -61,8 +66,43 @@ class FcmService {
     });
   }
 
+  /// Explicitly requests notification permission and syncs FCM token on user action (Web & Mobile).
+  static Future<bool> requestPermissionAndSyncToken({String? userId}) async {
+    try {
+      final settings = await _messaging.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+      final isAuthorized = settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional;
+      if (isAuthorized) {
+        final token = await _messaging.getToken();
+        if (token != null) {
+          await _saveTokenToSupabase(token, userId: userId);
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error requesting FCM permission: $e');
+      return false;
+    }
+  }
+
   static Future<void> updateUserToken(String? userId) async {
     try {
+      if (kIsWeb) {
+        final settings = await _messaging.getNotificationSettings();
+        if (settings.authorizationStatus != AuthorizationStatus.authorized &&
+            settings.authorizationStatus != AuthorizationStatus.provisional) {
+          return;
+        }
+      }
       final token = await _messaging.getToken();
       if (token != null) {
         await _saveTokenToSupabase(token, userId: userId);
@@ -75,7 +115,15 @@ class FcmService {
   static Future<void> _saveTokenToSupabase(String token, {String? userId}) async {
     try {
       Map<String, dynamic> deviceInfo = {};
-      if (Platform.isAndroid) {
+      if (kIsWeb) {
+        final web = await _deviceInfoPlugin.webBrowserInfo;
+        deviceInfo = {
+          'id': 'web_${web.userAgent?.hashCode.abs() ?? DateTime.now().millisecondsSinceEpoch}',
+          'brand': web.browserName.name,
+          'model': web.platform ?? 'Web Browser',
+          'os': 'Web',
+        };
+      } else if (Platform.isAndroid) {
         final android = await _deviceInfoPlugin.androidInfo;
         deviceInfo = {
           'id': android.id,

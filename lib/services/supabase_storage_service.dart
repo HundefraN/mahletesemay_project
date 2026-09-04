@@ -7,6 +7,74 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SupabaseStorageService {
   static SupabaseClient get _client => Supabase.instance.client;
 
+  /// Uploads raw image bytes to Supabase storage bucket (`covers` by default)
+  /// and returns its full public URL. Works seamlessly on Web, iOS, and Android.
+  static Future<String?> uploadImageBytes(
+    Uint8List bytes, {
+    String extension = '.jpg',
+    String bucket = 'covers',
+    String? folder,
+    void Function(int count, int total)? onProgress,
+  }) async {
+    try {
+      final ext = extension.startsWith('.') ? extension : '.$extension';
+      final fileName = '${nanoid(12)}$ext';
+      final filePath = folder != null && folder.isNotEmpty ? '$folder/$fileName' : fileName;
+
+      // Upload binary to Supabase Storage
+      await _client.storage.from(bucket).uploadBinary(
+            filePath,
+            bytes,
+            fileOptions: const FileOptions(
+              cacheControl: '3600',
+              upsert: true,
+            ),
+          );
+
+      // Retrieve public CDN URL
+      final publicUrl = _client.storage.from(bucket).getPublicUrl(filePath);
+      debugPrint('Uploaded image bytes to Supabase ($bucket): $publicUrl');
+      return publicUrl;
+    } catch (e) {
+      debugPrint('Error uploading image bytes to Supabase Storage: $e');
+      return null;
+    }
+  }
+
+  /// Uploads raw audio bytes to Supabase storage bucket (`audio` by default)
+  /// and returns its full public URL. Works seamlessly on Web, iOS, and Android.
+  static Future<String?> uploadAudioBytes(
+    Uint8List bytes, {
+    String extension = '.mp3',
+    String bucket = 'audio',
+    String? folder,
+    void Function(int count, int total)? onProgress,
+  }) async {
+    try {
+      final ext = extension.startsWith('.') ? extension : '.$extension';
+      final fileName = '${nanoid(12)}$ext';
+      final filePath = folder != null && folder.isNotEmpty ? '$folder/$fileName' : fileName;
+
+      // Upload binary to Supabase Storage
+      await _client.storage.from(bucket).uploadBinary(
+            filePath,
+            bytes,
+            fileOptions: const FileOptions(
+              cacheControl: '3600',
+              upsert: true,
+            ),
+          );
+
+      // Retrieve public CDN URL
+      final publicUrl = _client.storage.from(bucket).getPublicUrl(filePath);
+      debugPrint('Uploaded audio bytes to Supabase ($bucket): $publicUrl');
+      return publicUrl;
+    } catch (e) {
+      debugPrint('Error uploading audio bytes to Supabase Storage: $e');
+      return null;
+    }
+  }
+
   /// Uploads an image file to the specified Supabase storage bucket (`covers` by default)
   /// and returns its full public URL.
   static Future<String?> uploadImage(
@@ -16,25 +84,15 @@ class SupabaseStorageService {
     void Function(int count, int total)? onProgress,
   }) async {
     try {
+      final bytes = await imageFile.readAsBytes();
       final ext = p.extension(imageFile.path).toLowerCase();
-      final extension = ext.isNotEmpty ? ext : '.jpg';
-      final fileName = '${nanoid(12)}$extension';
-      final filePath = folder != null && folder.isNotEmpty ? '$folder/$fileName' : fileName;
-
-      // Upload binary to Supabase Storage
-      await _client.storage.from(bucket).upload(
-            filePath,
-            imageFile,
-            fileOptions: const FileOptions(
-              cacheControl: '3600',
-              upsert: true,
-            ),
-          );
-
-      // Retrieve public CDN URL
-      final publicUrl = _client.storage.from(bucket).getPublicUrl(filePath);
-      debugPrint('Uploaded image to Supabase ($bucket): $publicUrl');
-      return publicUrl;
+      return await uploadImageBytes(
+        bytes,
+        extension: ext.isNotEmpty ? ext : '.jpg',
+        bucket: bucket,
+        folder: folder,
+        onProgress: onProgress,
+      );
     } catch (e) {
       debugPrint('Error uploading image to Supabase Storage: $e');
       return null;
@@ -50,25 +108,15 @@ class SupabaseStorageService {
     void Function(int count, int total)? onProgress,
   }) async {
     try {
+      final bytes = await audioFile.readAsBytes();
       final ext = p.extension(audioFile.path).toLowerCase();
-      final extension = ext.isNotEmpty ? ext : '.mp3';
-      final fileName = '${nanoid(12)}$extension';
-      final filePath = folder != null && folder.isNotEmpty ? '$folder/$fileName' : fileName;
-
-      // Upload binary to Supabase Storage
-      await _client.storage.from(bucket).upload(
-            filePath,
-            audioFile,
-            fileOptions: const FileOptions(
-              cacheControl: '3600',
-              upsert: true,
-            ),
-          );
-
-      // Retrieve public CDN URL
-      final publicUrl = _client.storage.from(bucket).getPublicUrl(filePath);
-      debugPrint('Uploaded audio to Supabase ($bucket): $publicUrl');
-      return publicUrl;
+      return await uploadAudioBytes(
+        bytes,
+        extension: ext.isNotEmpty ? ext : '.mp3',
+        bucket: bucket,
+        folder: folder,
+        onProgress: onProgress,
+      );
     } catch (e) {
       debugPrint('Error uploading audio to Supabase Storage: $e');
       return null;

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
@@ -64,7 +65,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   Future<void> _shareApp() {
     const String appUrl = "https://play.google.com/store/apps/details?id=your.package.name";
     const String message = "Check out Mahlete Semay, the ultimate app for worship singers! Download it here: $appUrl";
-    return Share.share(message);
+    return SharePlus.instance.share(ShareParams(text: message));
   }
 
   Future<void> _showExitDialog() async {
@@ -104,9 +105,9 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
           child: Container(
             margin: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardColor.withOpacity(0.9),
+              color: Theme.of(context).cardColor.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
             padding: const EdgeInsets.all(24.0),
             child: Column(
@@ -117,7 +118,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   height: 5,
                   margin: const EdgeInsets.only(bottom: 24),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2.5),
                   ),
                 ),
@@ -166,7 +167,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16),
         decoration: BoxDecoration(
-          color: isSelected ? theme.colorScheme.primary.withOpacity(0.1) : Colors.transparent,
+          color: isSelected ? theme.colorScheme.primary.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -224,8 +225,15 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 60),
-              sliver: SliverList(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 60),
+              sliver: SliverLayoutBuilder(
+                builder: (context, constraints) {
+                  final screenW = MediaQuery.of(context).size.width;
+                  final maxW = screenW >= 1024 ? 700.0 : (screenW >= 600 ? 600.0 : screenW);
+                  final hPad = ((constraints.crossAxisExtent - maxW) / 2).clamp(0.0, double.infinity);
+                  return SliverPadding(
+                    padding: EdgeInsets.symmetric(horizontal: hPad),
+                    sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   FadeTransition(
                     opacity: _fadeAnimation,
@@ -262,7 +270,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                                 trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                               ),
                               _buildDivider(),
-                              _buildSettingsTile(icon: Icon(isDark ? Icons.dark_mode : Icons.light_mode, size: 20, color: theme.colorScheme.primary), title: l10n.darkMode, trailing: Transform.scale(scale: 0.75, child: Switch.adaptive(value: isDark, onChanged: (_) => themeProvider.toggleTheme(), activeColor: theme.colorScheme.primary))),
+                              _buildSettingsTile(icon: Icon(isDark ? Icons.dark_mode : Icons.light_mode, size: 20, color: theme.colorScheme.primary), title: l10n.darkMode, trailing: Transform.scale(scale: 0.75, child: Switch.adaptive(value: isDark, onChanged: (_) => themeProvider.toggleTheme(), activeTrackColor: theme.colorScheme.primary))),
                               _buildDivider(),
                               Consumer<NotificationSettingsProvider>(
                                 builder: (context, settings, _) => _buildSettingsTile(
@@ -327,24 +335,37 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                             ],
                           ),
 
-                          Padding(
-                            padding: const EdgeInsets.only(top: 24.0),
-                            child: Center(
-                              child: authProvider.currentUser != null && !authProvider.isLoadingUser
-                                  ? ElevatedButton.icon(
-                                onPressed: () => authProvider.signOut(),
-                                icon: const Icon(Icons.logout_rounded, size: 18),
-                                label: Text(l10n.signOut, style: const TextStyle(fontSize: 13)),
-                                style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error.withOpacity(0.1), foregroundColor: theme.colorScheme.error, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24))),
-                              )
-                                  : ElevatedButton.icon(
-                                onPressed: _showExitDialog,
-                                icon: const Icon(Icons.exit_to_app_rounded, size: 18),
-                                label: Text(l10n.exitApp, style: const TextStyle(fontSize: 13)),
-                                style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error.withOpacity(0.1), foregroundColor: theme.colorScheme.error, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24))),
+                          if (!kIsWeb)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 24.0),
+                              child: Center(
+                                child: authProvider.currentUser != null && !authProvider.isLoadingUser
+                                    ? ElevatedButton.icon(
+                                  onPressed: () => authProvider.signOut(),
+                                  icon: const Icon(Icons.logout_rounded, size: 18),
+                                  label: Text(l10n.signOut, style: const TextStyle(fontSize: 13)),
+                                  style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error.withValues(alpha: 0.1), foregroundColor: theme.colorScheme.error, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24))),
+                                )
+                                    : ElevatedButton.icon(
+                                  onPressed: _showExitDialog,
+                                  icon: const Icon(Icons.exit_to_app_rounded, size: 18),
+                                  label: Text(l10n.exitApp, style: const TextStyle(fontSize: 13)),
+                                  style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error.withValues(alpha: 0.1), foregroundColor: theme.colorScheme.error, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24))),
+                                ),
                               ),
                             ),
-                          ),
+                          if (kIsWeb && authProvider.currentUser != null && !authProvider.isLoadingUser)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 24.0),
+                              child: Center(
+                                child: ElevatedButton.icon(
+                                  onPressed: () => authProvider.signOut(),
+                                  icon: const Icon(Icons.logout_rounded, size: 18),
+                                  label: Text(l10n.signOut, style: const TextStyle(fontSize: 13)),
+                                  style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.error.withValues(alpha: 0.1), foregroundColor: theme.colorScheme.error, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24))),
+                                ),
+                              ),
+                            ),
                           const SizedBox(height: 20),
                           Center(
                             child: Column(
@@ -363,7 +384,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                                 Text(
                                   'Mahlete Semay v1.0.0',
                                   style: TextStyle(
-                                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.5),
+                                    color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
                                     fontSize: 11,
                                   ),
                                 ),
@@ -375,6 +396,9 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                     ),
                   ),
                 ]),
+              ),
+                  );
+                },
               ),
             ),
           ],
@@ -389,7 +413,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.5), width: 1),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -401,12 +425,12 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
           const SizedBox(height: 2),
           Text(
             '@${moderator.username}',
-            style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 13),
+            style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6), fontSize: 13),
           ),
           const Divider(height: 16),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: theme.colorScheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(24)),
+            decoration: BoxDecoration(color: theme.colorScheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(24)),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -427,7 +451,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.5), width: 1),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5), width: 1),
       ),
       child: const Center(child: CircularProgressIndicator()),
     );
@@ -442,7 +466,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
 
   Widget _buildSettingsCard({required ThemeData theme, required List<Widget> children}) {
     return Container(
-      decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(18), border: Border.all(color: theme.dividerColor.withOpacity(0.5), width: 1)),
+      decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(18), border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5), width: 1)),
       child: Column(children: children),
     );
   }
@@ -463,7 +487,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(title, style: GoogleFonts.poppins(fontSize: 14.5, fontWeight: FontWeight.w500)),
-                    if (subtitle != null) ...[const SizedBox(height: 2), Text(subtitle, style: TextStyle(fontSize: 12.5, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6)))],
+                    if (subtitle != null) ...[const SizedBox(height: 2), Text(subtitle, style: TextStyle(fontSize: 12.5, color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6)))],
                   ],
                 ),
               ),
@@ -476,6 +500,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   }
 
   Widget _buildDivider() {
-    return Divider(height: 1, thickness: 1, indent: 46, endIndent: 14, color: Colors.grey.withOpacity(0.1));
+    return Divider(height: 1, thickness: 1, indent: 46, endIndent: 14, color: Colors.grey.withValues(alpha: 0.1));
   }
 }

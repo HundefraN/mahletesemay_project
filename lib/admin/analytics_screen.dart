@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/song_provider.dart';
 import '../../providers/stats_provider.dart';
+import '../../utils/responsive_sizer.dart';
 import 'widgets/admin_ui_kit.dart';
 
 class AnalyticsScreen extends StatelessWidget {
@@ -37,19 +38,19 @@ class AnalyticsScreen extends StatelessWidget {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        physics: const BouncingScrollPhysics(),
-        children: [
-          // Key Metrics Header
-          AdminSectionHeader(
-            title: AppLocalizations.of(context)?.keyPlatformMetrics ?? 'Key Platform Metrics',
-            icon: Icons.dashboard_customize_rounded,
-            padding: EdgeInsets.only(top: 8, bottom: 12),
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          physics: const BouncingScrollPhysics(),
+          children: [
+            // Key Metrics Header
+            AdminSectionHeader(
+              title: AppLocalizations.of(context)?.keyPlatformMetrics ?? 'Key Platform Metrics',
+              icon: Icons.dashboard_customize_rounded,
+              padding: EdgeInsets.only(top: 8, bottom: 12),
+            ),
 
-          // 2x2 Metric Cards
-          GridView.count(
-            crossAxisCount: 2,
+            // 2x2 Metric Cards
+            GridView.count(
+              crossAxisCount: context.isDesktop ? 4 : (context.isTablet ? 3 : 2),
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 14,
@@ -188,7 +189,7 @@ class AnalyticsScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AdminUiKit.amberOrange.withOpacity(0.15),
+                            color: AdminUiKit.amberOrange.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(Icons.trending_up_rounded, color: AdminUiKit.amberOrange, size: 20),
@@ -218,7 +219,7 @@ class AnalyticsScreen extends StatelessWidget {
                           ),
                         ),
                         AdminStatusBadge(
-                          label: '${NumberFormat.compact().format(song.viewCount)} ${AppLocalizations.of(context)?.views?.toLowerCase() ?? "views"}',
+                          label: '${NumberFormat.compact().format(song.viewCount)} ${AppLocalizations.of(context)?.views.toLowerCase() ?? "views"}',
                           color: AdminUiKit.emeraldGreen,
                           icon: Icons.visibility_rounded,
                         ),
@@ -311,7 +312,7 @@ class AnalyticsScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.14),
+                  color: accentColor.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: accentColor, size: 20),

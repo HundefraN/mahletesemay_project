@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -58,11 +59,30 @@ class AppThemes {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       ),
     ),
-    pageTransitionsTheme: const PageTransitionsTheme(
-      builders: {
-        TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-      },
+    pageTransitionsTheme: PageTransitionsTheme(
+      builders: kIsWeb
+          ? {
+              TargetPlatform.android: const FadeUpwardsPageTransitionsBuilder(),
+              TargetPlatform.iOS: const FadeUpwardsPageTransitionsBuilder(),
+              TargetPlatform.linux: const FadeUpwardsPageTransitionsBuilder(),
+              TargetPlatform.macOS: const FadeUpwardsPageTransitionsBuilder(),
+              TargetPlatform.windows: const FadeUpwardsPageTransitionsBuilder(),
+            }
+          : const {
+              TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            },
+    ),
+    scrollbarTheme: ScrollbarThemeData(
+      thumbVisibility: kIsWeb ? WidgetStateProperty.all(true) : null,
+      thickness: kIsWeb ? WidgetStateProperty.all(6.0) : null,
+      radius: const Radius.circular(8),
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.hovered)) {
+          return royalNavy.withValues(alpha: 0.5);
+        }
+        return royalNavy.withValues(alpha: 0.2);
+      }),
     ),
     cardTheme: CardThemeData(
       color: Colors.white,
@@ -125,19 +145,38 @@ class AppThemes {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       ),
     ),
-    pageTransitionsTheme: const PageTransitionsTheme(
-      builders: {
-        TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-      },
+    pageTransitionsTheme: PageTransitionsTheme(
+      builders: kIsWeb
+          ? {
+              TargetPlatform.android: const FadeUpwardsPageTransitionsBuilder(),
+              TargetPlatform.iOS: const FadeUpwardsPageTransitionsBuilder(),
+              TargetPlatform.linux: const FadeUpwardsPageTransitionsBuilder(),
+              TargetPlatform.macOS: const FadeUpwardsPageTransitionsBuilder(),
+              TargetPlatform.windows: const FadeUpwardsPageTransitionsBuilder(),
+            }
+          : const {
+              TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            },
+    ),
+    scrollbarTheme: ScrollbarThemeData(
+      thumbVisibility: kIsWeb ? WidgetStateProperty.all(true) : null,
+      thickness: kIsWeb ? WidgetStateProperty.all(6.0) : null,
+      radius: const Radius.circular(8),
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.hovered)) {
+          return celestialGold.withValues(alpha: 0.6);
+        }
+        return celestialGold.withValues(alpha: 0.25);
+      }),
     ),
     cardTheme: CardThemeData(
       color: navyCardDark,
       elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.4),
+      shadowColor: Colors.black.withValues(alpha: 0.4),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: celestialGold.withOpacity(0.12), width: 1),
+        side: BorderSide(color: celestialGold.withValues(alpha: 0.12), width: 1),
       ),
     ),
     snackBarTheme: const SnackBarThemeData(

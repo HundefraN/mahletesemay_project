@@ -110,10 +110,10 @@ class ManagePlanDaysScreen extends StatelessWidget {
           }
           final days = snapshot.data!;
           return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
-            physics: const BouncingScrollPhysics(),
-            itemCount: days.length,
-            itemBuilder: (context, index) {
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+              physics: const BouncingScrollPhysics(),
+              itemCount: days.length,
+              itemBuilder: (context, index) {
               final day = days[index];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10.0),
@@ -136,7 +136,7 @@ class ManagePlanDaysScreen extends StatelessWidget {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.08) : AdminUiKit.royalBlue.withOpacity(0.1),
+                          color: isDark ? Colors.white.withValues(alpha: 0.08) : AdminUiKit.royalBlue.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(

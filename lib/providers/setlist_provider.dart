@@ -5,7 +5,7 @@ import '../services/local_db_service.dart';
 class SetlistProvider with ChangeNotifier {
   final LocalDbService _localDbService = LocalDbService();
   List<Setlist> _setlists = [];
-  Map<int, List<SetlistSong>> _setlistSongs = {};
+  final Map<int, List<SetlistSong>> _setlistSongs = {};
   bool _isLoading = true;
 
   List<Setlist> get setlists => _setlists;

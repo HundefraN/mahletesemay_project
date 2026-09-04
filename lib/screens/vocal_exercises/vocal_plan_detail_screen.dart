@@ -17,6 +17,7 @@ import 'package:mahlete_semay_project/services/notification_service.dart';
 import 'package:mahlete_semay_project/utils/responsive_sizer.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
 import 'package:mahlete_semay_project/widgets/real_audio_waveform_visualizer.dart';
+import 'package:mahlete_semay_project/widgets/web_content_wrapper.dart';
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 
 class VocalPlanDetailScreen extends StatefulWidget {
@@ -137,7 +138,7 @@ class _VocalPlanDetailScreenState extends State<VocalPlanDetailScreen>
           child: IconButton.filledTonal(
             icon: Icon(Icons.arrow_back_rounded, size: context.w(20)),
             style: IconButton.styleFrom(
-              backgroundColor: theme.colorScheme.surface.withOpacity(0.7),
+              backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.7),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(context.w(14))),
             ),
@@ -156,7 +157,7 @@ class _VocalPlanDetailScreenState extends State<VocalPlanDetailScreen>
             color: theme.colorScheme.onSurface,
           ),
         ),
-        backgroundColor: theme.colorScheme.surface.withOpacity(0.4),
+        backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.4),
         scrolledUnderElevation: 0,
         elevation: 0,
         centerTitle: true,
@@ -179,11 +180,11 @@ class _VocalPlanDetailScreenState extends State<VocalPlanDetailScreen>
                 radius: 1.3,
                 colors: isDark
                     ? [
-                        theme.colorScheme.primary.withOpacity(0.22),
+                        theme.colorScheme.primary.withValues(alpha: 0.22),
                         const Color(0xFF090D16),
                       ]
                     : [
-                        theme.colorScheme.primary.withOpacity(0.12),
+                        theme.colorScheme.primary.withValues(alpha: 0.12),
                         theme.colorScheme.surface,
                       ],
               ),
@@ -200,7 +201,7 @@ class _VocalPlanDetailScreenState extends State<VocalPlanDetailScreen>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: theme.colorScheme.secondary
-                    .withOpacity(isDark ? 0.15 : 0.08),
+                    .withValues(alpha: isDark ? 0.15 : 0.08),
               ),
             ),
           ),
@@ -232,7 +233,7 @@ class _VocalPlanDetailScreenState extends State<VocalPlanDetailScreen>
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: theme.colorScheme.primaryContainer
-                                .withOpacity(0.3),
+                                .withValues(alpha: 0.3),
                           ),
                           child: Icon(
                             Icons.graphic_eq_rounded,
@@ -268,33 +269,36 @@ class _VocalPlanDetailScreenState extends State<VocalPlanDetailScreen>
               }
 
               return SafeArea(
-                child: Row(
-                  children: [
-                    _buildTimeline(_days, lastCompletedDay),
-                    Expanded(
-                      child: PageView.builder(
-                        controller: _pageController,
-                        physics: const BouncingScrollPhysics(),
-                        scrollDirection: Axis.vertical,
-                        itemCount: _days.length,
-                        onPageChanged: (page) =>
-                            setState(() => _currentPage = page),
-                        itemBuilder: (context, index) {
-                          final day = _days[index];
-                          return _DayCard(
-                            key: ValueKey(day.id),
-                            day: day,
-                            planId: widget.planId,
-                            onCompleted: _onDayCompleted,
-                            onNext: _goToNextPage,
-                            isLastDay: index == _days.length - 1,
-                            isLocked: day.dayNumber > lastCompletedDay + 1,
-                            lastCompletedDay: lastCompletedDay,
-                          );
-                        },
+                child: WebContentWrapper(
+                  maxWidth: 900,
+                  child: Row(
+                    children: [
+                      _buildTimeline(_days, lastCompletedDay),
+                      Expanded(
+                        child: PageView.builder(
+                          controller: _pageController,
+                          physics: const BouncingScrollPhysics(),
+                          scrollDirection: Axis.vertical,
+                          itemCount: _days.length,
+                          onPageChanged: (page) =>
+                              setState(() => _currentPage = page),
+                          itemBuilder: (context, index) {
+                            final day = _days[index];
+                            return _DayCard(
+                              key: ValueKey(day.id),
+                              day: day,
+                              planId: widget.planId,
+                              onCompleted: _onDayCompleted,
+                              onNext: _goToNextPage,
+                              isLastDay: index == _days.length - 1,
+                              isLocked: day.dayNumber > lastCompletedDay + 1,
+                              lastCompletedDay: lastCompletedDay,
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
@@ -422,7 +426,7 @@ class _DayCardState extends State<_DayCard> {
                 child: BackdropFilter(
                   filter: ui.ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
                   child: Container(
-                    color: Colors.black.withOpacity(0.35),
+                    color: Colors.black.withValues(alpha: 0.35),
                   ),
                 ),
               ),
@@ -434,14 +438,14 @@ class _DayCardState extends State<_DayCard> {
                       padding: EdgeInsets.all(context.w(20)),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.black.withOpacity(0.65),
+                        color: Colors.black.withValues(alpha: 0.65),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.25),
+                          color: Colors.white.withValues(alpha: 0.25),
                           width: 1.5,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
+                            color: Colors.black.withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -462,10 +466,10 @@ class _DayCardState extends State<_DayCard> {
                         vertical: context.w(8),
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(context.w(20)),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                         ),
                       ),
                       child: Text(
@@ -501,14 +505,14 @@ class _DayCardState extends State<_DayCard> {
     return Container(
       padding: EdgeInsets.all(context.w(22)),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh.withOpacity(0.75),
+        color: theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.75),
         borderRadius: BorderRadius.circular(context.w(28)),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.3),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
@@ -528,15 +532,15 @@ class _DayCardState extends State<_DayCard> {
         Container(
           padding: EdgeInsets.all(context.w(28)),
           decoration: BoxDecoration(
-            color: theme.colorScheme.primaryContainer.withOpacity(0.4),
+            color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
             shape: BoxShape.circle,
             border: Border.all(
-              color: theme.colorScheme.primary.withOpacity(0.2),
+              color: theme.colorScheme.primary.withValues(alpha: 0.2),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.15),
+                color: theme.colorScheme.primary.withValues(alpha: 0.15),
                 blurRadius: 20,
               ),
             ],
@@ -586,7 +590,7 @@ class _DayCardState extends State<_DayCard> {
                 vertical: context.w(6),
               ),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.12),
+                color: theme.colorScheme.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(context.w(16)),
               ),
               child: Text(
@@ -606,10 +610,10 @@ class _DayCardState extends State<_DayCard> {
                   vertical: context.w(4),
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.15),
+                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(context.w(16)),
                   border: Border.all(
-                    color: const Color(0xFF10B981).withOpacity(0.3),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -641,7 +645,7 @@ class _DayCardState extends State<_DayCard> {
           ),
         ),
         SizedBox(height: context.w(10)),
-        Divider(color: theme.colorScheme.outlineVariant.withOpacity(0.3)),
+        Divider(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
         SizedBox(height: context.w(6)),
         Expanded(
           child: SingleChildScrollView(
@@ -650,7 +654,7 @@ class _DayCardState extends State<_DayCard> {
               widget.day.description,
               style: theme.textTheme.bodyMedium?.copyWith(
                 height: 1.6,
-                color: theme.colorScheme.onSurface.withOpacity(0.85),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
                 fontSize: context.sp(14),
               ),
             ),
@@ -720,7 +724,7 @@ class _DayCardState extends State<_DayCard> {
             backgroundColor: const Color(0xFF10B981),
             foregroundColor: Colors.white,
             elevation: 4,
-            shadowColor: const Color(0xFF10B981).withOpacity(0.4),
+            shadowColor: const Color(0xFF10B981).withValues(alpha: 0.4),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(context.w(18))),
             textStyle: GoogleFonts.poppins(
@@ -773,10 +777,10 @@ class _TimelineNode extends StatelessWidget {
     Widget nodeChild;
 
     if (isLocked) {
-      nodeColor = theme.colorScheme.surfaceContainerHighest.withOpacity(0.6);
+      nodeColor = theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6);
       nodeChild = Icon(Icons.lock_rounded,
           size: context.w(14),
-          color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5));
+          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5));
     } else if (isCompleted) {
       nodeColor = const Color(0xFF10B981);
       nodeChild =
@@ -823,7 +827,7 @@ class _TimelineNode extends StatelessWidget {
                     ? Colors.transparent
                     : (isCompleted
                         ? lineColor
-                        : theme.colorScheme.outlineVariant.withOpacity(0.3)),
+                        : theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -845,7 +849,7 @@ class _TimelineNode extends StatelessWidget {
                 boxShadow: isActive
                     ? [
                         BoxShadow(
-                          color: theme.colorScheme.primary.withOpacity(0.45),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.45),
                           blurRadius: 14,
                           spreadRadius: 2,
                         )
@@ -863,7 +867,7 @@ class _TimelineNode extends StatelessWidget {
                     ? Colors.transparent
                     : (isCompleted
                         ? lineColor
-                        : theme.colorScheme.outlineVariant.withOpacity(0.3)),
+                        : theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -981,11 +985,11 @@ class __ModernAudioPlayerState extends State<_ModernAudioPlayer>
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(context.w(22)),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.3),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -1020,7 +1024,7 @@ class __ModernAudioPlayerState extends State<_ModernAudioPlayer>
               overlayShape:
                   RoundSliderOverlayShape(overlayRadius: context.w(12)),
               activeTrackColor: theme.colorScheme.primary,
-              inactiveTrackColor: theme.colorScheme.primary.withOpacity(0.15),
+              inactiveTrackColor: theme.colorScheme.primary.withValues(alpha: 0.15),
               thumbColor: theme.colorScheme.primary,
             ),
             child: Slider(
@@ -1075,7 +1079,7 @@ class __ModernAudioPlayerState extends State<_ModernAudioPlayer>
                     vertical: context.w(6),
                   ),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer.withOpacity(0.5),
+                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(context.w(12)),
                   ),
                   child: Text(
@@ -1118,7 +1122,7 @@ class __ModernAudioPlayerState extends State<_ModernAudioPlayer>
                     color: theme.colorScheme.primary,
                     boxShadow: [
                       BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.35),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.35),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       )
@@ -1153,7 +1157,7 @@ class __ModernAudioPlayerState extends State<_ModernAudioPlayer>
                 size: context.w(20),
                 color: _localPath != null
                     ? const Color(0xFF10B981)
-                    : theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),
             ],
           ),

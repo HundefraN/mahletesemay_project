@@ -1,16 +1,15 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:mahlete_semay_project/models/artist_model.dart';
-import 'package:mahlete_semay_project/models/search_result_model.dart';
 import 'package:mahlete_semay_project/providers/song_provider.dart';
 import 'package:mahlete_semay_project/services/search_service.dart';
 import 'package:mahlete_semay_project/utils/responsive_sizer.dart';
 import 'package:mahlete_semay_project/widgets/cached_image.dart';
 import 'package:mahlete_semay_project/widgets/text_highlighter.dart';
+import 'package:mahlete_semay_project/widgets/web_content_wrapper.dart';
 import 'albums_list_screen.dart';
 
 class AllArtistsScreen extends StatefulWidget {
@@ -74,7 +73,7 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
           SliverAppBar(
             pinned: true,
             expandedHeight: 140,
-            backgroundColor: theme.scaffoldBackgroundColor.withOpacity(0.85),
+            backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.85),
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 56, bottom: 16, right: 16),
               title: Text(
@@ -95,8 +94,8 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          theme.colorScheme.primary.withOpacity(isDark ? 0.15 : 0.08),
-                          theme.colorScheme.secondary.withOpacity(isDark ? 0.1 : 0.04),
+                          theme.colorScheme.primary.withValues(alpha: isDark ? 0.15 : 0.08),
+                          theme.colorScheme.secondary.withValues(alpha: isDark ? 0.1 : 0.04),
                           theme.scaffoldBackgroundColor,
                         ],
                       ),
@@ -110,7 +109,7 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                       height: 140,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: theme.colorScheme.primary.withOpacity(0.08),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.08),
                       ),
                     ),
                   ),
@@ -143,15 +142,15 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                   Container(
                     decoration: BoxDecoration(
                       color: isDark
-                          ? theme.colorScheme.surface.withOpacity(0.6)
+                          ? theme.colorScheme.surface.withValues(alpha: 0.6)
                           : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: theme.colorScheme.onSurface.withOpacity(0.08),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
                           blurRadius: 10,
                           offset: const Offset(0, 3),
                         ),
@@ -164,7 +163,7 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                       decoration: InputDecoration(
                         hintText: AppLocalizations.of(context)?.searchArtistsHint ?? 'Search artists in English, Amharic or Afaan Oromoo...',
                         hintStyle: TextStyle(
-                          color: theme.colorScheme.onSurface.withOpacity(0.4),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                           fontSize: 13.5,
                         ),
                         prefixIcon: Icon(
@@ -197,7 +196,7 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 13,
-                              color: theme.colorScheme.onSurface.withOpacity(0.7),
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -223,12 +222,12 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: theme.colorScheme.primary.withOpacity(0.1),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
                         ),
                         child: Icon(
                           IconsaxPlusBold.user_search,
                           size: 44,
-                          color: theme.colorScheme.primary.withOpacity(0.7),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.7),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -239,7 +238,7 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.onSurface.withOpacity(0.8),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -249,40 +248,45 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
               ),
             )
           else if (_isGridView)
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 14,
-                  mainAxisSpacing: 14,
-                  childAspectRatio: 0.82,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final artist = filteredArtists[index];
-                    return _ArtistGridCard(
-                      artist: artist,
-                      searchQuery: _searchQuery,
-                    );
-                  },
-                  childCount: filteredArtists.length,
+            SliverWebContentWrapper(
+              sliver: SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: context.gridCrossAxisCount,
+                    crossAxisSpacing: 14,
+                    mainAxisSpacing: 14,
+                    childAspectRatio: 0.82,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final artist = filteredArtists[index];
+                      return _ArtistGridCard(
+                        artist: artist,
+                        searchQuery: _searchQuery,
+                      );
+                    },
+                    childCount: filteredArtists.length,
+                  ),
                 ),
               ),
             )
           else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final artist = filteredArtists[index];
-                    return _ArtistListTile(
-                      artist: artist,
-                      searchQuery: _searchQuery,
-                    );
-                  },
-                  childCount: filteredArtists.length,
+            SliverWebContentWrapper(
+              maxWidth: context.readableWidth + 100,
+              sliver: SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final artist = filteredArtists[index];
+                      return _ArtistListTile(
+                        artist: artist,
+                        searchQuery: _searchQuery,
+                      );
+                    },
+                    childCount: filteredArtists.length,
+                  ),
                 ),
               ),
             ),
@@ -314,16 +318,16 @@ class _ArtistListTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: isDark ? theme.cardColor.withOpacity(0.4) : Colors.white,
+        color: isDark ? theme.cardColor.withValues(alpha: 0.4) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.onSurface.withOpacity(isDark ? 0.06 : 0.05),
+          color: theme.colorScheme.onSurface.withValues(alpha: isDark ? 0.06 : 0.05),
         ),
         boxShadow: isDark
             ? []
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -356,12 +360,12 @@ class _ArtistListTile extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: theme.colorScheme.primary.withOpacity(0.4),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.4),
                         width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: theme.colorScheme.primary.withOpacity(0.15),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.15),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -423,7 +427,7 @@ class _ArtistListTile extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withOpacity(0.1),
+                              color: theme.colorScheme.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -440,7 +444,7 @@ class _ArtistListTile extends StatelessWidget {
                             Text(
                               '•',
                               style: TextStyle(
-                                color: theme.colorScheme.onSurface.withOpacity(0.4),
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                                 fontSize: 12,
                               ),
                             ),
@@ -449,7 +453,7 @@ class _ArtistListTile extends StatelessWidget {
                               '${songs.length} ${songs.length == 1 ? (AppLocalizations.of(context)?.trackSingular ?? 'Track') : (AppLocalizations.of(context)?.tracksPlural ?? 'Tracks')}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -459,7 +463,7 @@ class _ArtistListTile extends StatelessWidget {
                             Text(
                               '•',
                               style: TextStyle(
-                                color: theme.colorScheme.onSurface.withOpacity(0.4),
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                                 fontSize: 12,
                               ),
                             ),
@@ -467,14 +471,14 @@ class _ArtistListTile extends StatelessWidget {
                             Icon(
                               IconsaxPlusLinear.eye,
                               size: 13,
-                              color: theme.colorScheme.onSurface.withOpacity(0.5),
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
                             const SizedBox(width: 3),
                             Text(
                               '$compactViews ${AppLocalizations.of(context)?.views ?? "Views"}',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -489,7 +493,7 @@ class _ArtistListTile extends StatelessWidget {
                   height: 32,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: theme.colorScheme.primary.withOpacity(0.08),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.08),
                   ),
                   child: Icon(
                     Icons.arrow_forward_ios_rounded,
@@ -525,16 +529,16 @@ class _ArtistGridCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? theme.cardColor.withOpacity(0.4) : Colors.white,
+        color: isDark ? theme.cardColor.withValues(alpha: 0.4) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: theme.colorScheme.onSurface.withOpacity(isDark ? 0.06 : 0.05),
+          color: theme.colorScheme.onSurface.withValues(alpha: isDark ? 0.06 : 0.05),
         ),
         boxShadow: isDark
             ? []
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -568,12 +572,12 @@ class _ArtistGridCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: theme.colorScheme.primary.withOpacity(0.4),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.4),
                         width: 2.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: theme.colorScheme.primary.withOpacity(0.2),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.2),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -632,7 +636,7 @@ class _ArtistGridCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

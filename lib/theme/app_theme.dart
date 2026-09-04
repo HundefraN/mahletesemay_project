@@ -86,10 +86,10 @@ class AppTheme {
     cardTheme: CardThemeData(
       color: darkCardColor,
       elevation: 4,
-      shadowColor: Colors.black.withOpacity(0.3),
+      shadowColor: Colors.black.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: secondaryColor.withOpacity(0.15)),
+        side: BorderSide(color: secondaryColor.withValues(alpha: 0.15)),
       ),
     ),
   );

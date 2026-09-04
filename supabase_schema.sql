@@ -650,19 +650,21 @@ BEGIN
     FROM public.invitations
     WHERE LOWER(TRIM(email)) = v_clean_email
       AND UPPER(REPLACE(REPLACE(TRIM(code), '-', ''), ' ', '')) = v_clean_code
-      AND status = 'pending'
     LIMIT 1;
 
     IF NOT FOUND THEN
         IF EXISTS (
             SELECT 1 FROM public.invitations 
-            WHERE LOWER(TRIM(email)) = v_clean_email 
-              AND UPPER(REPLACE(REPLACE(TRIM(code), '-', ''), ' ', '')) = v_clean_code
+            WHERE UPPER(REPLACE(REPLACE(TRIM(code), '-', ''), ' ', '')) = v_clean_code
         ) THEN
-            RETURN jsonb_build_object('success', false, 'error', 'This invitation code has already been claimed. Please sign in with your password.');
+            RETURN jsonb_build_object('success', false, 'error', 'This invitation code belongs to a different email address.');
         ELSE
-            RETURN jsonb_build_object('success', false, 'error', 'Invalid invitation code or email address mismatch.');
+            RETURN jsonb_build_object('success', false, 'error', 'Invalid invitation code.');
         END IF;
+    END IF;
+
+    IF v_invitation.status = 'revoked' THEN
+        RETURN jsonb_build_object('success', false, 'error', 'This invitation was revoked by an administrator.');
     END IF;
 
     v_role := COALESCE(v_invitation.role, 'moderator');
@@ -680,19 +682,20 @@ BEGIN
 
     IF v_existing_auth_id IS NOT NULL THEN
         v_user_id := v_existing_auth_id;
-        IF v_encrypted_pw IS NOT NULL THEN
-            UPDATE auth.users
-            SET encrypted_password = v_encrypted_pw,
-                email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
-                updated_at = NOW(),
-                raw_app_meta_data = '{"provider": "email", "providers": ["email"]}'::jsonb
-            WHERE id = v_user_id;
-        ELSE
-            UPDATE auth.users
-            SET email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
-                updated_at = NOW()
-            WHERE id = v_user_id;
-        END IF;
+        UPDATE auth.users
+        SET encrypted_password = COALESCE(v_encrypted_pw, encrypted_password),
+            email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
+            confirmation_token = COALESCE(confirmation_token, ''),
+            recovery_token = COALESCE(recovery_token, ''),
+            email_change_token_new = COALESCE(email_change_token_new, ''),
+            email_change = COALESCE(email_change, ''),
+            email_change_token_current = COALESCE(email_change_token_current, ''),
+            reauthentication_token = COALESCE(reauthentication_token, ''),
+            phone_change = COALESCE(phone_change, ''),
+            phone_change_token = COALESCE(phone_change_token, ''),
+            updated_at = NOW(),
+            raw_app_meta_data = '{"provider": "email", "providers": ["email"]}'::jsonb
+        WHERE id = v_user_id;
     ELSE
         -- Create new user in auth.users directly (bypasses email rate limiter completely)
         v_user_id := COALESCE(p_user_id, gen_random_uuid());
@@ -704,8 +707,17 @@ BEGIN
             email,
             encrypted_password,
             email_confirmed_at,
+            confirmation_token,
+            recovery_token,
+            email_change_token_new,
+            email_change,
+            email_change_token_current,
+            reauthentication_token,
+            phone_change,
+            phone_change_token,
             raw_app_meta_data,
             raw_user_meta_data,
+            is_super_admin,
             created_at,
             updated_at
         ) VALUES (
@@ -716,8 +728,17 @@ BEGIN
             v_clean_email,
             COALESCE(v_encrypted_pw, crypt('DefaultPassword123!', gen_salt('bf', 10))),
             NOW(),
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
             '{"provider": "email", "providers": ["email"]}'::jsonb,
-            jsonb_build_object('firstName', v_invitation.first_name, 'lastName', v_invitation.last_name),
+            jsonb_build_object('firstName', v_invitation.first_name, 'lastName', v_invitation.last_name, 'sub', v_user_id::text),
+            FALSE,
             NOW(),
             NOW()
         );
@@ -733,16 +754,18 @@ BEGIN
                 created_at,
                 updated_at
             ) VALUES (
-                v_clean_email,
+                v_user_id::text,
                 v_user_id,
-                jsonb_build_object('sub', v_user_id::TEXT, 'email', v_clean_email),
+                jsonb_build_object('sub', v_user_id::TEXT, 'email', v_clean_email, 'email_verified', true),
                 'email',
-                v_clean_email,
+                v_user_id::text,
                 NOW(),
                 NOW(),
                 NOW()
             )
-            ON CONFLICT DO NOTHING;
+            ON CONFLICT (provider, id) DO UPDATE SET
+                identity_data = EXCLUDED.identity_data,
+                updated_at = NOW();
         EXCEPTION WHEN OTHERS THEN
             NULL;
         END;

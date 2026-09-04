@@ -22,9 +22,9 @@ class ManageVocalPlansScreen extends StatelessWidget {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        physics: const BouncingScrollPhysics(),
-        children: [
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          physics: const BouncingScrollPhysics(),
+          children: [
           // Daily Plans
           AdminSectionHeader(
             title: l10n?.dailyTrainingPlans ?? 'Daily Training Plans',
@@ -155,9 +155,9 @@ class ManageVocalPlansScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.14),
+                color: accentColor.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: accentColor.withOpacity(0.25)),
+                border: Border.all(color: accentColor.withValues(alpha: 0.25)),
               ),
               child: Icon(icon, color: accentColor, size: 24),
             ),

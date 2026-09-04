@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
+import 'fcm_service.dart';
 
 /// The kinds of notification this app can raise. The [wireName] is what gets
 /// embedded in the notification payload, so it must stay stable across releases
@@ -186,6 +188,11 @@ class NotificationService {
 
     await _configureTimezone();
 
+    if (kIsWeb) {
+      _initialized = true;
+      return;
+    }
+
     const InitializationSettings settings = InitializationSettings(
       android: AndroidInitializationSettings(_smallIcon),
       iOS: DarwinInitializationSettings(
@@ -212,6 +219,12 @@ class NotificationService {
 
   static Future<void> _configureTimezone() async {
     tz_data.initializeTimeZones();
+    if (kIsWeb) {
+      // On web we never schedule local notifications, so just use UTC.
+      // Skips the expensive FlutterTimezone WASM call.
+      tz.setLocalLocation(tz.getLocation('UTC'));
+      return;
+    }
     try {
       tz.setLocalLocation(tz.getLocation(await FlutterTimezone.getLocalTimezone()));
     } catch (error) {
@@ -221,6 +234,7 @@ class NotificationService {
   }
 
   static Future<void> _createChannels() async {
+    if (kIsWeb) return;
     final android = _androidPlugin;
     if (android == null) return;
 
@@ -238,6 +252,7 @@ class NotificationService {
   /// Picks up a notification tap that launched the app from a terminated state.
   /// The plugin's response callback does not fire for this case.
   static Future<void> _captureLaunchPayload() async {
+    if (kIsWeb) return;
     try {
       final details = await _plugin.getNotificationAppLaunchDetails();
       if (details?.didNotificationLaunchApp ?? false) {
@@ -281,6 +296,9 @@ class NotificationService {
   /// Prompts for notification access. Returns whether notifications may be
   /// posted afterwards.
   static Future<bool> requestPermission() async {
+    if (kIsWeb) {
+      return await FcmService.requestPermissionAndSyncToken();
+    }
     if (Platform.isIOS) {
       final granted = await _iosPlugin?.requestPermissions(
         alert: true,
@@ -299,7 +317,7 @@ class NotificationService {
   /// Opens the system screen where the user can allow exact alarms. Only
   /// meaningful on Android 12+; elsewhere this is a no-op.
   static Future<void> requestExactAlarmPermission() async {
-    if (!Platform.isAndroid) return;
+    if (kIsWeb || !Platform.isAndroid) return;
     try {
       await _androidPlugin?.requestExactAlarmsPermission();
     } catch (error) {
@@ -308,6 +326,15 @@ class NotificationService {
   }
 
   static Future<bool> areNotificationsEnabled() async {
+    if (kIsWeb) {
+      try {
+        final settings = await FirebaseMessaging.instance.getNotificationSettings();
+        return settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional;
+      } catch (error) {
+        return false;
+      }
+    }
     try {
       if (Platform.isAndroid) {
         return await _androidPlugin?.areNotificationsEnabled() ?? true;
@@ -321,7 +348,7 @@ class NotificationService {
   }
 
   static Future<bool> canScheduleExactAlarms() async {
-    if (!Platform.isAndroid) return true;
+    if (kIsWeb || !Platform.isAndroid) return true;
     try {
       return await _androidPlugin?.canScheduleExactNotifications() ?? true;
     } catch (error) {

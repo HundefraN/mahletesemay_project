@@ -278,8 +278,9 @@ class _SongDetailScreenState extends State<SongDetailScreen>
 
   void _scheduleNextAutoScrollTick() {
     _autoScrollTimer?.cancel();
-    if (!_isAutoScrolling || _isUserDragging || _isAutoScrollPausedByUser)
+    if (!_isAutoScrolling || _isUserDragging || _isAutoScrollPausedByUser) {
       return;
+    }
 
     final currentLine =
         (_activeLineIndex >= 0 && _activeLineIndex < _rawLines.length)
@@ -556,7 +557,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     HapticFeedback.mediumImpact();
     final shareContent =
         '“$text”\n\n— "${widget.song.title}" by ${widget.song.artistName}\nShared via Mahlete Semay';
-    Share.share(shareContent);
+    SharePlus.instance.share(ShareParams(text: shareContent));
   }
 
   void _copyFullSongClean() {
@@ -591,7 +592,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     HapticFeedback.mediumImpact();
     final shareContent =
         '🎵 "${widget.song.title}"\n👤 ${widget.song.artistName}\n\n${widget.song.lyrics.trim()}\n\nShared via Mahlete Semay App';
-    Share.share(shareContent);
+    SharePlus.instance.share(ShareParams(text: shareContent));
   }
 
   void _openStudioWithSelectedLines() {
@@ -681,17 +682,17 @@ class _SongDetailScreenState extends State<SongDetailScreen>
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF0F1D33).withOpacity(0.96)
-                  : Colors.white.withOpacity(0.98),
+                  ? const Color(0xFF0F1D33).withValues(alpha: 0.96)
+                  : Colors.white.withValues(alpha: 0.98),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
                 color: isDark
-                    ? Colors.white.withOpacity(0.12)
-                    : onSurface.withOpacity(0.08),
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : onSurface.withValues(alpha: 0.08),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withValues(alpha: 0.15),
                   blurRadius: 24,
                   offset: const Offset(0, -4),
                 ),
@@ -709,8 +710,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.white.withOpacity(0.25)
-                          : onSurface.withOpacity(0.2),
+                          ? Colors.white.withValues(alpha: 0.25)
+                          : onSurface.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -722,7 +723,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(0.12),
+                        color: primaryColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(IconsaxPlusBold.export_1,
@@ -746,8 +747,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                             style: GoogleFonts.outfit(
                               fontSize: 12,
                               color: isDark
-                                  ? Colors.white.withOpacity(0.65)
-                                  : onSurface.withOpacity(0.6),
+                                  ? Colors.white.withValues(alpha: 0.65)
+                                  : onSurface.withValues(alpha: 0.6),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -760,7 +761,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                           size: 20,
                           color: isDark
                               ? Colors.white70
-                              : onSurface.withOpacity(0.6)),
+                              : onSurface.withValues(alpha: 0.6)),
                       onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
@@ -780,19 +781,19 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                       gradient: LinearGradient(
                         colors: isDark
                             ? [
-                                primaryColor.withOpacity(0.28),
-                                const Color(0xFF1E1035).withOpacity(0.85),
+                                primaryColor.withValues(alpha: 0.28),
+                                const Color(0xFF1E1035).withValues(alpha: 0.85),
                               ]
                             : [
-                                primaryColor.withOpacity(0.14),
-                                primaryColor.withOpacity(0.06),
+                                primaryColor.withValues(alpha: 0.14),
+                                primaryColor.withValues(alpha: 0.06),
                               ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: primaryColor.withOpacity(isDark ? 0.5 : 0.3),
+                        color: primaryColor.withValues(alpha: isDark ? 0.5 : 0.3),
                         width: 1.5,
                       ),
                     ),
@@ -868,8 +869,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                                 style: GoogleFonts.outfit(
                                   fontSize: 11.5,
                                   color: isDark
-                                      ? Colors.white.withOpacity(0.7)
-                                      : onSurface.withOpacity(0.65),
+                                      ? Colors.white.withValues(alpha: 0.7)
+                                      : onSurface.withValues(alpha: 0.65),
                                 ),
                               ),
                             ],
@@ -879,7 +880,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                             size: 14,
                             color: isDark
                                 ? Colors.white60
-                                : onSurface.withOpacity(0.5)),
+                                : onSurface.withValues(alpha: 0.5)),
                       ],
                     ),
                   ),
@@ -980,8 +981,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                       ),
                       side: BorderSide(
                         color: isDark
-                            ? Colors.white.withOpacity(0.18)
-                            : onSurface.withOpacity(0.15),
+                            ? Colors.white.withValues(alpha: 0.18)
+                            : onSurface.withValues(alpha: 0.15),
                       ),
                     ),
                     icon: Icon(IconsaxPlusBold.send_2,
@@ -1020,13 +1021,13 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
           color: isDark
-              ? Colors.white.withOpacity(0.06)
-              : onSurface.withOpacity(0.04),
+              ? Colors.white.withValues(alpha: 0.06)
+              : onSurface.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isDark
-                ? Colors.white.withOpacity(0.08)
-                : onSurface.withOpacity(0.06),
+                ? Colors.white.withValues(alpha: 0.08)
+                : onSurface.withValues(alpha: 0.06),
           ),
         ),
         child: Row(
@@ -1034,7 +1035,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.1),
+                color: primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: primaryColor, size: 17),
@@ -1060,8 +1061,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                     style: GoogleFonts.outfit(
                       fontSize: 10.5,
                       color: isDark
-                          ? Colors.white.withOpacity(0.6)
-                          : onSurface.withOpacity(0.55),
+                          ? Colors.white.withValues(alpha: 0.6)
+                          : onSurface.withValues(alpha: 0.55),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1098,19 +1099,19 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                 padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF0F1D33).withOpacity(0.96)
-                      : Colors.white.withOpacity(0.98),
+                      ? const Color(0xFF0F1D33).withValues(alpha: 0.96)
+                      : Colors.white.withValues(alpha: 0.98),
                   borderRadius: BorderRadius.circular(26),
                   border: Border.all(
                     color: isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : onSurface.withOpacity(0.08),
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : onSurface.withValues(alpha: 0.08),
                   ),
                   boxShadow: isDark
                       ? null
                       : [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: Colors.black.withValues(alpha: 0.08),
                             blurRadius: 20,
                             offset: const Offset(0, -4),
                           ),
@@ -1127,8 +1128,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                         margin: const EdgeInsets.only(bottom: 14),
                         decoration: BoxDecoration(
                           color: isDark
-                              ? Colors.white.withOpacity(0.25)
-                              : onSurface.withOpacity(0.2),
+                              ? Colors.white.withValues(alpha: 0.25)
+                              : onSurface.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -1151,7 +1152,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                               size: 18,
                               color: isDark
                                   ? Colors.white70
-                                  : onSurface.withOpacity(0.6)),
+                                  : onSurface.withValues(alpha: 0.6)),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
@@ -1166,7 +1167,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                         fontWeight: FontWeight.w600,
                         color: isDark
                             ? Colors.white70
-                            : onSurface.withOpacity(0.7),
+                            : onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1195,7 +1196,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                                     ? (isDark ? Colors.black : Colors.white)
                                     : (isDark
                                         ? Colors.white
-                                        : onSurface.withOpacity(0.9)),
+                                        : onSurface.withValues(alpha: 0.9)),
                               ),
                               selected: isSelected,
                               visualDensity: VisualDensity.compact,
@@ -1205,12 +1206,12 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                                 color: isSelected
                                     ? primaryColor
                                     : (isDark
-                                        ? Colors.white.withOpacity(0.15)
-                                        : onSurface.withOpacity(0.12)),
+                                        ? Colors.white.withValues(alpha: 0.15)
+                                        : onSurface.withValues(alpha: 0.12)),
                               ),
                               backgroundColor: isDark
-                                  ? Colors.white.withOpacity(0.06)
-                                  : onSurface.withOpacity(0.05),
+                                  ? Colors.white.withValues(alpha: 0.06)
+                                  : onSurface.withValues(alpha: 0.05),
                               selectedColor: primaryColor,
                               onSelected: (val) {
                                 setState(() => _selectedFontFamily = font);
@@ -1231,7 +1232,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                         fontWeight: FontWeight.w600,
                         color: isDark
                             ? Colors.white70
-                            : onSurface.withOpacity(0.7),
+                            : onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1254,10 +1255,10 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                               horizontal: 14, vertical: 6),
                           decoration: BoxDecoration(
                             color:
-                                primaryColor.withOpacity(isDark ? 0.18 : 0.1),
+                                primaryColor.withValues(alpha: isDark ? 0.18 : 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                                color: primaryColor.withOpacity(0.4)),
+                                color: primaryColor.withValues(alpha: 0.4)),
                           ),
                           child: Text(
                             '${currentSize.round()} pt',
@@ -1361,7 +1362,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                                   fontWeight: FontWeight.w600,
                                   color: isDark
                                       ? Colors.white70
-                                      : onSurface.withOpacity(0.7),
+                                      : onSurface.withValues(alpha: 0.7),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -1412,7 +1413,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                                   fontWeight: FontWeight.w600,
                                   color: isDark
                                       ? Colors.white70
-                                      : onSurface.withOpacity(0.7),
+                                      : onSurface.withValues(alpha: 0.7),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -1488,16 +1489,16 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         decoration: BoxDecoration(
           color: enabled
               ? (isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : onSurface.withOpacity(0.06))
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : onSurface.withValues(alpha: 0.06))
               : (isDark
-                  ? Colors.white.withOpacity(0.03)
-                  : onSurface.withOpacity(0.02)),
+                  ? Colors.white.withValues(alpha: 0.03)
+                  : onSurface.withValues(alpha: 0.02)),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isDark
-                ? Colors.white.withOpacity(0.12)
-                : onSurface.withOpacity(0.1),
+                ? Colors.white.withValues(alpha: 0.12)
+                : onSurface.withValues(alpha: 0.1),
           ),
         ),
         child: Icon(
@@ -1505,7 +1506,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
           size: 18,
           color: enabled
               ? (isDark ? Colors.white : onSurface)
-              : (isDark ? Colors.white30 : onSurface.withOpacity(0.25)),
+              : (isDark ? Colors.white30 : onSurface.withValues(alpha: 0.25)),
         ),
       ),
     );
@@ -1530,15 +1531,15 @@ class _SongDetailScreenState extends State<SongDetailScreen>
           color: isSelected
               ? primaryColor
               : (isDark
-                  ? Colors.white.withOpacity(0.08)
-                  : onSurface.withOpacity(0.05)),
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : onSurface.withValues(alpha: 0.05)),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected
                 ? primaryColor
                 : (isDark
-                    ? Colors.white.withOpacity(0.12)
-                    : onSurface.withOpacity(0.08)),
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : onSurface.withValues(alpha: 0.08)),
           ),
         ),
         child: Text(
@@ -1573,15 +1574,15 @@ class _SongDetailScreenState extends State<SongDetailScreen>
           color: isSelected
               ? primaryColor
               : (isDark
-                  ? Colors.white.withOpacity(0.08)
-                  : onSurface.withOpacity(0.05)),
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : onSurface.withValues(alpha: 0.05)),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected
                 ? primaryColor
                 : (isDark
-                    ? Colors.white.withOpacity(0.12)
-                    : onSurface.withOpacity(0.1)),
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : onSurface.withValues(alpha: 0.1)),
           ),
         ),
         child: Row(
@@ -1633,19 +1634,19 @@ class _SongDetailScreenState extends State<SongDetailScreen>
             padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF0F1D33).withOpacity(0.96)
-                  : Colors.white.withOpacity(0.98),
+                  ? const Color(0xFF0F1D33).withValues(alpha: 0.96)
+                  : Colors.white.withValues(alpha: 0.98),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
                 color: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : onSurface.withOpacity(0.08),
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : onSurface.withValues(alpha: 0.08),
               ),
               boxShadow: isDark
                   ? null
                   : [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 20,
                         offset: const Offset(0, -4),
                       ),
@@ -1663,8 +1664,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                     margin: const EdgeInsets.only(bottom: 14),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.white.withOpacity(0.25)
-                          : onSurface.withOpacity(0.2),
+                          ? Colors.white.withValues(alpha: 0.25)
+                          : onSurface.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -1686,7 +1687,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                           fontSize: 13,
                           color: isDark
                               ? Colors.white60
-                              : onSurface.withOpacity(0.6),
+                              : onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     )
@@ -1725,7 +1726,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                   Divider(
                     height: 18,
                     color:
-                        isDark ? Colors.white12 : onSurface.withOpacity(0.08),
+                        isDark ? Colors.white12 : onSurface.withValues(alpha: 0.08),
                   ),
                   ListTile(
                     dense: true,
@@ -1795,22 +1796,22 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                 hintText: AppLocalizations.of(context)?.setlistNameHint ?? 'Setlist Name',
                 hintStyle: TextStyle(
                   color: isDark
-                      ? Colors.white.withOpacity(0.4)
-                      : onSurface.withOpacity(0.4),
+                      ? Colors.white.withValues(alpha: 0.4)
+                      : onSurface.withValues(alpha: 0.4),
                 ),
                 isDense: true,
                 filled: true,
                 fillColor: isDark
-                    ? Colors.white.withOpacity(0.08)
-                    : onSurface.withOpacity(0.04),
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : onSurface.withValues(alpha: 0.04),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
                     color: isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : onSurface.withOpacity(0.12),
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : onSurface.withValues(alpha: 0.12),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
@@ -1830,7 +1831,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                 AppLocalizations.of(context)?.cancel ?? 'Cancel',
                 style: GoogleFonts.outfit(
                   fontSize: 13,
-                  color: isDark ? Colors.white70 : onSurface.withOpacity(0.7),
+                  color: isDark ? Colors.white70 : onSurface.withValues(alpha: 0.7),
                 ),
               ),
             ),
@@ -1896,7 +1897,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      primaryColor.withOpacity(isDark ? 0.16 : 0.08),
+                      primaryColor.withValues(alpha: isDark ? 0.16 : 0.08),
                       Colors.transparent,
                     ],
                   ),
@@ -1940,8 +1941,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                       stretch: true,
                       backgroundColor: _showAppBarTitle
                           ? (isDark
-                              ? theme.colorScheme.surface.withOpacity(0.92)
-                              : theme.scaffoldBackgroundColor.withOpacity(0.95))
+                              ? theme.colorScheme.surface.withValues(alpha: 0.92)
+                              : theme.scaffoldBackgroundColor.withValues(alpha: 0.95))
                           : Colors.transparent,
                       elevation: 0,
                       leading: Padding(
@@ -1952,19 +1953,19 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                             child: Container(
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? Colors.white.withOpacity(0.12)
-                                    : Colors.white.withOpacity(0.85),
+                                    ? Colors.white.withValues(alpha: 0.12)
+                                    : Colors.white.withValues(alpha: 0.85),
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: isDark
-                                      ? Colors.white.withOpacity(0.15)
-                                      : onSurface.withOpacity(0.08),
+                                      ? Colors.white.withValues(alpha: 0.15)
+                                      : onSurface.withValues(alpha: 0.08),
                                 ),
                                 boxShadow: isDark
                                     ? null
                                     : [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.06),
+                                          color: Colors.black.withValues(alpha: 0.06),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2),
                                         ),
@@ -1994,20 +1995,20 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                                 height: 40,
                                 decoration: BoxDecoration(
                                   color: isDark
-                                      ? Colors.white.withOpacity(0.12)
-                                      : Colors.white.withOpacity(0.85),
+                                      ? Colors.white.withValues(alpha: 0.12)
+                                      : Colors.white.withValues(alpha: 0.85),
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: isDark
-                                        ? Colors.white.withOpacity(0.15)
-                                        : onSurface.withOpacity(0.08),
+                                        ? Colors.white.withValues(alpha: 0.15)
+                                        : onSurface.withValues(alpha: 0.08),
                                   ),
                                   boxShadow: isDark
                                       ? null
                                       : [
                                           BoxShadow(
                                             color:
-                                                Colors.black.withOpacity(0.06),
+                                                Colors.black.withValues(alpha: 0.06),
                                             blurRadius: 8,
                                             offset: const Offset(0, 2),
                                           ),
@@ -2062,8 +2063,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                                       fontWeight: FontWeight.w500,
                                       fontSize: 12,
                                       color: isDark
-                                          ? Colors.white.withOpacity(0.7)
-                                          : onSurface.withOpacity(0.65),
+                                          ? Colors.white.withValues(alpha: 0.7)
+                                          : onSurface.withValues(alpha: 0.65),
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -2094,11 +2095,11 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                               horizontal: 16, vertical: 10),
                           decoration: BoxDecoration(
                             color:
-                                primaryColor.withOpacity(isDark ? 0.18 : 0.1),
+                                primaryColor.withValues(alpha: isDark ? 0.18 : 0.1),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color:
-                                  primaryColor.withOpacity(isDark ? 0.4 : 0.25),
+                                  primaryColor.withValues(alpha: isDark ? 0.4 : 0.25),
                             ),
                           ),
                           child: Row(
@@ -2132,7 +2133,12 @@ class _SongDetailScreenState extends State<SongDetailScreen>
 
                     // Lyrics Stream Body
                     SliverToBoxAdapter(
-                      child: Padding(
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width >= 600 ? 720.0 : double.infinity,
+                          ),
+                          child: Padding(
                         padding: EdgeInsets.fromLTRB(
                           20,
                           _isShareSelectionMode ? 10 : 24,
@@ -2162,6 +2168,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                         ),
                       ),
                     ),
+                        ),
+                    ),
                   ],
                 ),
               ),
@@ -2185,11 +2193,11 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
-                          color: primaryColor.withOpacity(0.92),
+                          color: primaryColor.withValues(alpha: 0.92),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: primaryColor.withOpacity(0.4),
+                              color: primaryColor.withValues(alpha: 0.4),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -2223,33 +2231,42 @@ class _SongDetailScreenState extends State<SongDetailScreen>
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeOutCubic,
             bottom: _isFullscreen && !_isShareSelectionMode ? -100 : 18,
-            left: 16,
-            right: 16,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              transitionBuilder: (child, animation) {
-                return SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 0.5),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                      parent: animation, curve: Curves.easeOutCubic)),
-                  child: FadeTransition(opacity: animation, child: child),
-                );
-              },
-              child: _isShareSelectionMode
-                  ? _buildSpotifyShareBottomBar(
-                      context,
-                      primaryColor: primaryColor,
-                      isDark: isDark,
-                      onSurface: onSurface,
-                    )
-                  : _buildSpotifyFloatingPill(
-                      context,
-                      primaryColor: primaryColor,
-                      isDark: isDark,
-                      onSurface: onSurface,
-                    ),
+            left: 0,
+            right: 0,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 680),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    transitionBuilder: (child, animation) {
+                      return SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.5),
+                          end: Offset.zero,
+                        ).animate(CurvedAnimation(
+                            parent: animation, curve: Curves.easeOutCubic)),
+                        child: FadeTransition(opacity: animation, child: child),
+                      );
+                    },
+                    child: _isShareSelectionMode
+                        ? _buildSpotifyShareBottomBar(
+                            context,
+                            primaryColor: primaryColor,
+                            isDark: isDark,
+                            onSurface: onSurface,
+                          )
+                        : _buildSpotifyFloatingPill(
+                            context,
+                            primaryColor: primaryColor,
+                            isDark: isDark,
+                            onSurface: onSurface,
+                          ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -2279,8 +2296,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
               boxShadow: [
                 BoxShadow(
                   color: isDark
-                      ? Colors.black.withOpacity(0.4)
-                      : primaryColor.withOpacity(0.15),
+                      ? Colors.black.withValues(alpha: 0.4)
+                      : primaryColor.withValues(alpha: 0.15),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
@@ -2296,7 +2313,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                     )
                   : Container(
                       decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(isDark ? 0.2 : 0.12),
+                        color: primaryColor.withValues(alpha: isDark ? 0.2 : 0.12),
                       ),
                       child: Center(
                         child: Icon(
@@ -2347,8 +2364,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                   widget.song.artistName,
                   style: GoogleFonts.outfit(
                     color: isDark
-                        ? Colors.white.withOpacity(0.85)
-                        : onSurface.withOpacity(0.75),
+                        ? Colors.white.withValues(alpha: 0.85)
+                        : onSurface.withValues(alpha: 0.75),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -2396,13 +2413,13 @@ class _SongDetailScreenState extends State<SongDetailScreen>
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.12)
-            : onSurface.withOpacity(0.06),
+            ? Colors.white.withValues(alpha: 0.12)
+            : onSurface.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.08)
-              : onSurface.withOpacity(0.08),
+              ? Colors.white.withValues(alpha: 0.08)
+              : onSurface.withValues(alpha: 0.08),
         ),
       ),
       child: Row(
@@ -2412,14 +2429,14 @@ class _SongDetailScreenState extends State<SongDetailScreen>
             Icon(
               icon,
               size: 10.5,
-              color: isDark ? Colors.white70 : onSurface.withOpacity(0.7),
+              color: isDark ? Colors.white70 : onSurface.withValues(alpha: 0.7),
             ),
             const SizedBox(width: 3),
           ],
           Text(
             label,
             style: GoogleFonts.outfit(
-              color: isDark ? Colors.white.withOpacity(0.9) : onSurface,
+              color: isDark ? Colors.white.withValues(alpha: 0.9) : onSurface,
               fontSize: 10,
               fontWeight: FontWeight.w600,
             ),
@@ -2458,13 +2475,13 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? Colors.white.withOpacity(0.08)
-                        : primaryColor.withOpacity(0.08),
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : primaryColor.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isDark
-                          ? Colors.white.withOpacity(0.12)
-                          : primaryColor.withOpacity(0.16),
+                          ? Colors.white.withValues(alpha: 0.12)
+                          : primaryColor.withValues(alpha: 0.16),
                     ),
                   ),
                   child: Text(
@@ -2483,7 +2500,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                     padding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.15),
+                      color: primaryColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -2531,15 +2548,15 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         ? (isSelectedForShare
             ? (isDark ? Colors.white : onSurface)
             : (isDark
-                ? Colors.white.withOpacity(0.32)
-                : onSurface.withOpacity(0.32)))
+                ? Colors.white.withValues(alpha: 0.32)
+                : onSurface.withValues(alpha: 0.32)))
         : (_activeLineIndex == -1
-            ? (isDark ? Colors.white.withOpacity(0.92) : onSurface)
+            ? (isDark ? Colors.white.withValues(alpha: 0.92) : onSurface)
             : (isActive
                 ? (isDark ? Colors.white : onSurface)
                 : (isDark
-                    ? Colors.white.withOpacity(0.42)
-                    : onSurface.withOpacity(0.40))));
+                    ? Colors.white.withValues(alpha: 0.42)
+                    : onSurface.withValues(alpha: 0.40))));
 
     final FontWeight fontWeight = (isActive || isSelectedForShare)
         ? FontWeight.w900
@@ -2556,28 +2573,28 @@ class _SongDetailScreenState extends State<SongDetailScreen>
           onTap: () => _onLineTapped(lineIndex),
           onLongPress: () => _onLineLongPressed(lineIndex),
           borderRadius: BorderRadius.circular(14),
-          splashColor: primaryColor.withOpacity(0.15),
+          splashColor: primaryColor.withValues(alpha: 0.15),
           highlightColor: isDark
-              ? Colors.white.withOpacity(0.05)
-              : onSurface.withOpacity(0.04),
+              ? Colors.white.withValues(alpha: 0.05)
+              : onSurface.withValues(alpha: 0.04),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 280),
             curve: Curves.easeOutCubic,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: isSelectedForShare
-                  ? primaryColor.withOpacity(isDark ? 0.22 : 0.12)
+                  ? primaryColor.withValues(alpha: isDark ? 0.22 : 0.12)
                   : (isActive && !_isShareSelectionMode
                       ? (isDark
-                          ? primaryColor.withOpacity(0.16)
-                          : primaryColor.withOpacity(0.09))
+                          ? primaryColor.withValues(alpha: 0.16)
+                          : primaryColor.withValues(alpha: 0.09))
                       : Colors.transparent),
               borderRadius: BorderRadius.circular(14),
               border: isSelectedForShare
                   ? Border.all(color: primaryColor, width: 1.5)
                   : (isActive && !_isShareSelectionMode
                       ? Border.all(
-                          color: primaryColor.withOpacity(isDark ? 0.35 : 0.22),
+                          color: primaryColor.withValues(alpha: isDark ? 0.35 : 0.22),
                           width: 1.2,
                         )
                       : Border.all(color: Colors.transparent, width: 1.2)),
@@ -2585,7 +2602,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                       (isActive && !_isShareSelectionMode)
                   ? [
                       BoxShadow(
-                        color: primaryColor.withOpacity(isDark ? 0.2 : 0.12),
+                        color: primaryColor.withValues(alpha: isDark ? 0.2 : 0.12),
                         blurRadius: 12,
                         offset: const Offset(0, 3),
                       )
@@ -2606,7 +2623,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                       borderRadius: BorderRadius.circular(2),
                       boxShadow: [
                         BoxShadow(
-                          color: primaryColor.withOpacity(0.6),
+                          color: primaryColor.withValues(alpha: 0.6),
                           blurRadius: 6,
                           spreadRadius: 1,
                         ),
@@ -2624,15 +2641,15 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                         color: isSelectedForShare
                             ? primaryColor
                             : (isDark
-                                ? Colors.white.withOpacity(0.1)
-                                : onSurface.withOpacity(0.05)),
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : onSurface.withValues(alpha: 0.05)),
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: isSelectedForShare
                               ? primaryColor
                               : (isDark
                                   ? Colors.white38
-                                  : onSurface.withOpacity(0.25)),
+                                  : onSurface.withValues(alpha: 0.25)),
                           width: 1.5,
                         ),
                       ),
@@ -2658,14 +2675,14 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                           ? (isDark
                               ? [
                                   Shadow(
-                                    color: Colors.black.withOpacity(0.7),
+                                    color: Colors.black.withValues(alpha: 0.7),
                                     blurRadius: 10,
                                     offset: const Offset(0, 1),
                                   ),
                                 ]
                               : [
                                   Shadow(
-                                    color: primaryColor.withOpacity(0.12),
+                                    color: primaryColor.withValues(alpha: 0.12),
                                     blurRadius: 6,
                                   ),
                                 ])
@@ -2699,19 +2716,19 @@ class _SongDetailScreenState extends State<SongDetailScreen>
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
             color: isDark
-                ? const Color(0xFF0F1D33).withOpacity(0.92)
-                : Colors.white.withOpacity(0.94),
+                ? const Color(0xFF0F1D33).withValues(alpha: 0.92)
+                : Colors.white.withValues(alpha: 0.94),
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
               color: isDark
-                  ? Colors.white.withOpacity(0.12)
-                  : onSurface.withOpacity(0.08),
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : onSurface.withValues(alpha: 0.08),
             ),
             boxShadow: [
               BoxShadow(
                 color: isDark
-                    ? Colors.black.withOpacity(0.45)
-                    : onSurface.withOpacity(0.12),
+                    ? Colors.black.withValues(alpha: 0.45)
+                    : onSurface.withValues(alpha: 0.12),
                 blurRadius: 20,
                 offset: const Offset(0, 6),
               ),
@@ -2736,13 +2753,13 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                               height: 44 * _playPulseAnimation.value,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: primaryColor.withOpacity(
+                                color: primaryColor.withValues(alpha: 
                                   (0.35 * (1.3 - _playPulseAnimation.value))
                                       .clamp(0.0, 0.35),
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: primaryColor.withOpacity(0.3),
+                                    color: primaryColor.withValues(alpha: 0.3),
                                     blurRadius: 10,
                                     spreadRadius: 1,
                                   ),
@@ -2763,14 +2780,14 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                                   color: _isAutoScrolling
                                       ? primaryColor
                                       : (isDark
-                                          ? Colors.white.withOpacity(0.1)
-                                          : onSurface.withOpacity(0.06)),
+                                          ? Colors.white.withValues(alpha: 0.1)
+                                          : onSurface.withValues(alpha: 0.06)),
                                   border: Border.all(
                                     color: _isAutoScrolling
                                         ? primaryColor
                                         : (isDark
-                                            ? Colors.white.withOpacity(0.12)
-                                            : onSurface.withOpacity(0.08)),
+                                            ? Colors.white.withValues(alpha: 0.12)
+                                            : onSurface.withValues(alpha: 0.08)),
                                   ),
                                 ),
                                 child: AnimatedSwitcher(
@@ -2810,11 +2827,11 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                                     horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: primaryColor
-                                      .withOpacity(isDark ? 0.22 : 0.14),
+                                      .withValues(alpha: isDark ? 0.22 : 0.14),
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
                                     color: primaryColor
-                                        .withOpacity(isDark ? 0.5 : 0.35),
+                                        .withValues(alpha: isDark ? 0.5 : 0.35),
                                   ),
                                 ),
                                 child: Row(
@@ -2847,7 +2864,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
               // Add to Setlist
               IconButton(
                 icon: const Icon(IconsaxPlusBold.music_playlist, size: 20),
-                color: isDark ? Colors.white70 : onSurface.withOpacity(0.7),
+                color: isDark ? Colors.white70 : onSurface.withValues(alpha: 0.7),
                 tooltip: AppLocalizations.of(context)?.addToSetlist ?? 'Add to Setlist',
                 onPressed: () => _showAddToSetlistDialog(context),
               ),
@@ -2855,7 +2872,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
               // Typography & Lyrics Size
               IconButton(
                 icon: const Icon(IconsaxPlusBold.text, size: 20),
-                color: isDark ? Colors.white70 : onSurface.withOpacity(0.7),
+                color: isDark ? Colors.white70 : onSurface.withValues(alpha: 0.7),
                 tooltip: AppLocalizations.of(context)?.typographyAndSize ?? 'Typography & Size',
                 onPressed: () => _showLyricsAppearanceModal(context),
               ),
@@ -2891,18 +2908,18 @@ class _SongDetailScreenState extends State<SongDetailScreen>
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: isDark
-                ? const Color(0xFF0F1D33).withOpacity(0.96)
-                : Colors.white.withOpacity(0.96),
+                ? const Color(0xFF0F1D33).withValues(alpha: 0.96)
+                : Colors.white.withValues(alpha: 0.96),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: primaryColor.withOpacity(isDark ? 0.4 : 0.3),
+              color: primaryColor.withValues(alpha: isDark ? 0.4 : 0.3),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
                 color: isDark
-                    ? Colors.black.withOpacity(0.5)
-                    : onSurface.withOpacity(0.14),
+                    ? Colors.black.withValues(alpha: 0.5)
+                    : onSurface.withValues(alpha: 0.14),
                 blurRadius: 20,
                 offset: const Offset(0, 6),
               ),
@@ -2915,7 +2932,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(isDark ? 0.18 : 0.1),
+                  color: primaryColor.withValues(alpha: isDark ? 0.18 : 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -2973,7 +2990,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
               // Close selection mode
               IconButton(
                 icon: const Icon(Icons.close_rounded, size: 20),
-                color: isDark ? Colors.white70 : onSurface.withOpacity(0.6),
+                color: isDark ? Colors.white70 : onSurface.withValues(alpha: 0.6),
                 tooltip: 'Cancel',
                 visualDensity: VisualDensity.compact,
                 onPressed: _exitShareMode,
@@ -3073,7 +3090,7 @@ class _AnimatedFavoriteButtonState extends State<_AnimatedFavoriteButton>
       child: InkWell(
         onTap: _onTap,
         borderRadius: BorderRadius.circular(widget.size + 12),
-        splashColor: favColor.withOpacity(0.2),
+        splashColor: favColor.withValues(alpha: 0.2),
         highlightColor: Colors.transparent,
         child: Padding(
           padding: const EdgeInsets.all(6),
@@ -3093,12 +3110,12 @@ class _AnimatedFavoriteButtonState extends State<_AnimatedFavoriteButton>
                     height: widget.size * (1 + _rippleAnimation.value),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: favColor.withOpacity(
+                      color: favColor.withValues(alpha: 
                         _opacityAnimation.value.clamp(0.0, 1.0),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: favColor.withOpacity(
+                          color: favColor.withValues(alpha: 
                             (_opacityAnimation.value * 0.5).clamp(0.0, 1.0),
                           ),
                           blurRadius: 10,
@@ -3125,7 +3142,7 @@ class _AnimatedFavoriteButtonState extends State<_AnimatedFavoriteButton>
                         ? favColor
                         : (widget.isDark
                             ? Colors.white70
-                            : widget.onSurface.withOpacity(0.65)),
+                            : widget.onSurface.withValues(alpha: 0.65)),
                     size: widget.size,
                   ),
                 ),

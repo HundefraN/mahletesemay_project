@@ -11,7 +11,9 @@ import '../../models/song_model.dart';
 import '../../providers/song_provider.dart';
 import '../../services/search_service.dart';
 import '../../utils/constants.dart';
+import '../../utils/responsive_sizer.dart';
 import '../../widgets/cached_image.dart';
+import '../../widgets/web_content_wrapper.dart';
 import 'song_detail_screen.dart';
 
 class SongsListScreen extends StatefulWidget {
@@ -92,7 +94,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
   Widget build(BuildContext context) {
     final songProvider = Provider.of<SongProvider>(context);
     final theme = Theme.of(context);
-    final isTablet = MediaQuery.of(context).size.width > 720;
+    final isWide = !context.isPhone;
     final isDark = theme.brightness == Brightness.dark;
 
     final allSongs = _getSongs(songProvider);
@@ -109,8 +111,14 @@ class _SongsListScreenState extends State<SongsListScreen> {
         physics: const BouncingScrollPhysics(),
         slivers: [
           _buildSliverAppBar(theme, isDark, allSongs),
-          _buildSearchBar(theme, isDark),
-          _buildSongList(filteredSongs, songProvider, theme, isDark, isTablet),
+          SliverWebContentWrapper(
+            maxWidth: 900,
+            sliver: _buildSearchBar(theme, isDark),
+          ),
+          SliverWebContentWrapper(
+            maxWidth: 900,
+            sliver: _buildSongList(filteredSongs, songProvider, theme, isDark, isWide),
+          ),
         ],
       ),
     );
@@ -123,7 +131,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
       expandedHeight: 320,
       pinned: true,
       stretch: true,
-      backgroundColor: _isScrolled ? theme.scaffoldBackgroundColor.withOpacity(0.92) : Colors.transparent,
+      backgroundColor: _isScrolled ? theme.scaffoldBackgroundColor.withValues(alpha: 0.92) : Colors.transparent,
       elevation: 0,
       leading: Padding(
         padding: const EdgeInsets.all(8),
@@ -132,7 +140,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.35),
+                color: Colors.black.withValues(alpha: 0.35),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
@@ -190,8 +198,8 @@ class _SongsListScreenState extends State<SongsListScreen> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withOpacity(0.2),
-                      Colors.black.withOpacity(0.6),
+                      Colors.black.withValues(alpha: 0.2),
+                      Colors.black.withValues(alpha: 0.6),
                       theme.scaffoldBackgroundColor,
                     ],
                     stops: const [0.0, 0.5, 1.0],
@@ -216,7 +224,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.4),
+                            color: Colors.black.withValues(alpha: 0.4),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -268,7 +276,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
                         Text(
                           widget.album.artistName,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.85),
+                            color: Colors.white.withValues(alpha: 0.85),
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
@@ -279,9 +287,9 @@ class _SongsListScreenState extends State<SongsListScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white.withOpacity(0.3)),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
                           ),
                           child: Text(
                             '${allSongs.length} ${allSongs.length == 1 ? (AppLocalizations.of(context)?.trackSingular ?? 'Track') : (AppLocalizations.of(context)?.tracksPlural ?? 'Tracks')}',
@@ -310,10 +318,10 @@ class _SongsListScreenState extends State<SongsListScreen> {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark ? theme.cardColor.withOpacity(0.5) : Colors.grey.shade100,
+            color: isDark ? theme.cardColor.withValues(alpha: 0.5) : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: theme.colorScheme.onSurface.withOpacity(0.06),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
             ),
           ),
           child: TextField(
@@ -323,7 +331,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
             decoration: InputDecoration(
               hintText: AppLocalizations.of(context)?.searchHint ?? 'Search tracks in this album...',
               hintStyle: TextStyle(
-                color: theme.colorScheme.onSurface.withOpacity(0.45),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
                 fontSize: 13.5,
               ),
               prefixIcon: Icon(
@@ -354,7 +362,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
     SongProvider songProvider,
     ThemeData theme,
     bool isDark,
-    bool isTablet,
+    bool isWide,
   ) {
     if (songs.isEmpty) {
       return SliverFillRemaining(
@@ -366,7 +374,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
               Icon(
                 IconsaxPlusBold.music_filter,
                 size: 48,
-                color: theme.colorScheme.onSurface.withOpacity(0.3),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
               ),
               const SizedBox(height: 12),
               Text(
@@ -376,7 +384,7 @@ class _SongsListScreenState extends State<SongsListScreen> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -385,26 +393,32 @@ class _SongsListScreenState extends State<SongsListScreen> {
       );
     }
 
-    return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-      sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final song = songs[index];
-            final songHeroTag = 'song-${song.id}';
-            final coverUrl = _getCoverUrlForSong(song, songProvider);
+    return SliverLayoutBuilder(
+      builder: (context, constraints) {
+        final maxW = MediaQuery.of(context).size.width >= 600 ? 800.0 : double.infinity;
+        final hPad = ((constraints.crossAxisExtent - maxW) / 2).clamp(0.0, double.infinity);
+        return SliverPadding(
+          padding: EdgeInsets.fromLTRB(16 + hPad, 0, 16 + hPad, 100),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final song = songs[index];
+                final songHeroTag = 'song-${song.id}';
+                final coverUrl = _getCoverUrlForSong(song, songProvider);
 
-            return _SongTile(
-              song: song,
-              index: index + 1,
-              coverUrl: coverUrl,
-              heroTag: songHeroTag,
-              isDark: isDark,
-            );
-          },
-          childCount: songs.length,
-        ),
-      ),
+                return _SongTile(
+                  song: song,
+                  index: index + 1,
+                  coverUrl: coverUrl,
+                  heroTag: songHeroTag,
+                  isDark: isDark,
+                );
+              },
+              childCount: songs.length,
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -434,10 +448,10 @@ class _SongTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: isDark ? theme.cardColor.withOpacity(0.35) : Colors.white,
+        color: isDark ? theme.cardColor.withValues(alpha: 0.35) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.onSurface.withOpacity(isDark ? 0.05 : 0.04),
+          color: theme.colorScheme.onSurface.withValues(alpha: isDark ? 0.05 : 0.04),
         ),
       ),
       child: OpenContainer(
@@ -470,7 +484,7 @@ class _SongTile extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
-                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                     ),
                   ),
@@ -486,7 +500,7 @@ class _SongTile extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -533,7 +547,7 @@ class _SongTile extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.primary.withOpacity(0.1),
+                                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
@@ -552,7 +566,7 @@ class _SongTile extends StatelessWidget {
                                 song.rhythm!,
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                                 ),
                               ),
                               const SizedBox(width: 6),
@@ -561,14 +575,14 @@ class _SongTile extends StatelessWidget {
                               Icon(
                                 IconsaxPlusLinear.eye,
                                 size: 12,
-                                color: theme.colorScheme.onSurface.withOpacity(0.4),
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                               ),
                               const SizedBox(width: 3),
                               Text(
                                 '$compactViews ${AppLocalizations.of(context)?.views ?? "Views"}',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                                 ),
                               ),
                             ],
@@ -582,7 +596,7 @@ class _SongTile extends StatelessWidget {
                   IconButton(
                     icon: Icon(
                       isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                      color: isFavorite ? Colors.redAccent : theme.colorScheme.onSurface.withOpacity(0.35),
+                      color: isFavorite ? Colors.redAccent : theme.colorScheme.onSurface.withValues(alpha: 0.35),
                       size: 20,
                     ),
                     onPressed: () => songProvider.toggleFavorite(song.id),

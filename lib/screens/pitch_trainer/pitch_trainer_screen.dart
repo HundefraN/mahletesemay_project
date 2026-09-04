@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +13,7 @@ import 'package:mahlete_semay_project/utils/responsive_sizer.dart';
 import 'package:mahlete_semay_project/widgets/audio_waveform_visualizer.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
 import 'package:mahlete_semay_project/widgets/vocal_piano_roll.dart';
+import 'package:mahlete_semay_project/widgets/web_content_wrapper.dart';
 
 enum TrainerState { idle, playing, listening, finished }
 
@@ -226,6 +226,10 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
       return;
     }
 
+    try {
+      await _audioPlayer.stop();
+    } catch (_) {}
+
     setState(() => _state = TrainerState.listening);
     final started = await _pitchService.startListening();
     if (!started && mounted) {
@@ -307,9 +311,9 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.2),
+                    color: Colors.amber.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.amber.withOpacity(0.5)),
+                    border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -336,9 +340,11 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
         alignment: Alignment.topCenter,
         children: [
           SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
+            child: WebContentWrapper(
+              maxWidth: 750,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
                   child: ConstrainedBox(
                     constraints:
@@ -387,7 +393,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
                             // Note Selector Carousel Chips
                             _buildNoteChipsPicker(theme),
 
-                            const Spacer(),
+                            SizedBox(height: context.w(20)),
 
                             // Main Control Action Button
                             SizedBox(height: context.w(16)),
@@ -402,6 +408,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
               },
             ),
           ),
+        ),
 
           // Confetti Particle Explosion on Bullseye Match
           ConfettiWidget(
@@ -462,10 +469,10 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
       width: double.infinity,
       padding: EdgeInsets.all(context.w(14)),
       decoration: BoxDecoration(
-        color: accentColor.withOpacity(0.12),
+        color: accentColor.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: accentColor.withOpacity(0.35),
+          color: accentColor.withValues(alpha: 0.35),
           width: 1.5,
         ),
       ),
@@ -487,7 +494,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: accentColor.withOpacity(0.4),
+                        color: accentColor.withValues(alpha: 0.4),
                         blurRadius: 10,
                         spreadRadius: 2,
                       ),
@@ -513,7 +520,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
                 Text(
                   subtext,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -540,13 +547,13 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.shadow.withOpacity(0.06),
+            color: theme.colorScheme.shadow.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
         ],
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.12),
+          color: theme.colorScheme.outline.withValues(alpha: 0.12),
         ),
       ),
       child: Column(
@@ -579,7 +586,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withOpacity(0.15),
+                            color: theme.colorScheme.primary.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -604,7 +611,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
                   Text(
                     '${targetPitch.toStringAsFixed(1)} Hz',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -622,7 +629,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
 
           // Transposition Mode & Metric column
           const SizedBox(height: 8),
-          Divider(color: theme.colorScheme.outline.withOpacity(0.1)),
+          Divider(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -681,7 +688,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: theme.colorScheme.outline.withOpacity(0.12)),
+        side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.12)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -705,7 +712,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
                         fontSize: 10.5,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -716,7 +723,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
                     color: (_state == TrainerState.listening
                             ? Colors.green
                             : Colors.grey)
-                        .withOpacity(0.15),
+                        .withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -789,7 +796,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
     final isInTune = absCents <= 20 && _state == TrainerState.listening;
 
     String hintMessage = 'READY';
-    Color hintColor = theme.colorScheme.onSurface.withOpacity(0.5);
+    Color hintColor = theme.colorScheme.onSurface.withValues(alpha: 0.5);
 
     if (_state == TrainerState.listening) {
       if (_pitchService.pitchData.pitch <= 0) {
@@ -814,7 +821,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: theme.colorScheme.outline.withOpacity(0.12)),
+        side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.12)),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
@@ -825,7 +832,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                color: hintColor.withOpacity(0.12),
+                color: hintColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Text(
@@ -876,7 +883,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
                 Text(
                   'cents',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -895,7 +902,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                     Text(
@@ -943,7 +950,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
               fontSize: 11,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.2,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ),
@@ -1026,7 +1033,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
           backgroundColor: buttonColor,
           foregroundColor: Colors.white,
           elevation: 4,
-          shadowColor: buttonColor.withOpacity(0.4),
+          shadowColor: buttonColor.withValues(alpha: 0.4),
           textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
@@ -1060,7 +1067,7 @@ class _PitchFlowPainter extends CustomPainter {
     // In-tune target corridor (corresponds to +-20 cents)
     final corridorHalfHeight = (20 / 50.0) * (size.height / 2);
     final targetCorridorPaint = Paint()
-      ..color = const Color(0xFF00E676).withOpacity(0.15)
+      ..color = const Color(0xFF00E676).withValues(alpha: 0.15)
       ..style = PaintingStyle.fill;
     canvas.drawRect(
       Rect.fromLTRB(0, midY - corridorHalfHeight, size.width, midY + corridorHalfHeight),
@@ -1069,7 +1076,7 @@ class _PitchFlowPainter extends CustomPainter {
 
     // Target Center Line
     final centerLinePaint = Paint()
-      ..color = const Color(0xFF00E676).withOpacity(0.6)
+      ..color = const Color(0xFF00E676).withValues(alpha: 0.6)
       ..strokeWidth = 1.5;
     canvas.drawLine(Offset(0, midY), Offset(size.width, midY), centerLinePaint);
 
@@ -1082,7 +1089,7 @@ class _PitchFlowPainter extends CustomPainter {
     bool hasStarted = false;
 
     final glowPaint = Paint()
-      ..color = const Color(0xFFFFB300).withOpacity(0.8)
+      ..color = const Color(0xFFFFB300).withValues(alpha: 0.8)
       ..strokeWidth = 3.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -1110,7 +1117,7 @@ class _PitchFlowPainter extends CustomPainter {
       if (i == pointCount - 1) {
         final headColor = pt.cents.abs() <= 20 ? const Color(0xFF00E676) : const Color(0xFFFFB300);
         canvas.drawCircle(Offset(x, y), 5.5, Paint()..color = headColor);
-        canvas.drawCircle(Offset(x, y), 8.0, Paint()..color = headColor.withOpacity(0.35));
+        canvas.drawCircle(Offset(x, y), 8.0, Paint()..color = headColor.withValues(alpha: 0.35));
       }
     }
 
@@ -1143,7 +1150,7 @@ class _GaugeVisualizerPainter extends CustomPainter {
 
     // Track Background Container
     final trackPaint = Paint()
-      ..color = theme.colorScheme.surfaceContainerHighest.withOpacity(0.5)
+      ..color = theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -1156,7 +1163,7 @@ class _GaugeVisualizerPainter extends CustomPainter {
     // In-Tune Sweet Spot Zone Window (+-20 Cents)
     final sweetSpotWidth = (40 / 100.0) * size.width;
     final sweetSpotPaint = Paint()
-      ..color = Colors.green.withOpacity(0.2)
+      ..color = Colors.green.withValues(alpha: 0.2)
       ..style = PaintingStyle.fill;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -1172,7 +1179,7 @@ class _GaugeVisualizerPainter extends CustomPainter {
 
     // Tick Marks Paint
     final tickPaint = Paint()
-      ..color = theme.colorScheme.onSurface.withOpacity(0.25)
+      ..color = theme.colorScheme.onSurface.withValues(alpha: 0.25)
       ..strokeWidth = 1.5;
 
     for (int cents = -50; cents <= 50; cents += 10) {

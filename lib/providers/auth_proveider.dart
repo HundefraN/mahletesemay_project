@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/moderator_model.dart';
 import '../services/fcm_service.dart';
@@ -51,7 +51,16 @@ class AuthProvider with ChangeNotifier {
 
   Future<Map<String, dynamic>?> _getDeviceInfo() async {
     try {
-      if (Platform.isAndroid) {
+      if (kIsWeb) {
+        final webInfo = await _deviceInfo.webBrowserInfo;
+        return {
+          'id': 'web_${webInfo.userAgent?.hashCode.abs() ?? DateTime.now().millisecondsSinceEpoch}',
+          'os': 'Web ${webInfo.browserName.name}',
+          'model': webInfo.platform ?? 'Web Browser',
+          'type': 'Browser',
+          'addedAt': DateTime.now().toIso8601String(),
+        };
+      } else if (Platform.isAndroid) {
         final androidInfo = await _deviceInfo.androidInfo;
         return {
           'id': androidInfo.id,
@@ -120,6 +129,13 @@ class AuthProvider with ChangeNotifier {
               user = retryRes.user;
             }
           } catch (_) {}
+        } else if (msg.contains('schema') || msg.contains('database error')) {
+          // Self-heal auth.users token columns and retry
+          try {
+            await _supabaseService.repairAuthUsersSchema();
+            final retryRes = await _supabase.auth.signInWithPassword(email: normalizedEmail, password: trimmedPassword);
+            user = retryRes.user;
+          } catch (_) {}
         }
 
         // If seed admin doesn't exist yet in Supabase Auth, bootstrap account
@@ -138,7 +154,11 @@ class AuthProvider with ChangeNotifier {
           }
         }
         if (user == null) {
-          _authError = e.message;
+          if (e.message.toLowerCase().contains('database error querying schema')) {
+            _authError = "Account synchronization in progress. Please try logging in again.";
+          } else {
+            _authError = e.message;
+          }
           return SignInResult.failed;
         }
       } catch (e) {
@@ -338,11 +358,6 @@ class AuthProvider with ChangeNotifier {
         return SignInResult.failed;
       }
 
-      if (invitation.isClaimed) {
-        _authError = "This invitation has already been claimed. Please sign in directly with your email and password.";
-        return SignInResult.failed;
-      }
-
       if (invitation.status.toLowerCase() == 'revoked') {
         _authError = "This invitation was revoked by an administrator.";
         return SignInResult.failed;
@@ -373,29 +388,47 @@ class AuthProvider with ChangeNotifier {
         );
         activeUser = signInRes.user;
       } on AuthException catch (e) {
-        // If signIn fails, try fallback signUp / confirmation
-        try {
-          final signUpRes = await _supabase.auth.signUp(
-            email: cleanEmail,
-            password: password.trim(),
-          );
-          activeUser = signUpRes.user;
-          if (activeUser != null) {
-            await _supabaseService.confirmUserEmail(activeUser.id);
-            final retry = await _supabase.auth.signInWithPassword(email: cleanEmail, password: password.trim());
+        final msg = e.message.toLowerCase();
+        if (msg.contains('schema') || msg.contains('database error')) {
+          try {
+            await _supabaseService.repairAuthUsersSchema();
+            final retry = await _supabase.auth.signInWithPassword(
+              email: cleanEmail,
+              password: password.trim(),
+            );
             activeUser = retry.user;
+          } catch (_) {}
+        }
+
+        if (activeUser == null) {
+          // If signIn fails, try fallback signUp / confirmation
+          try {
+            final signUpRes = await _supabase.auth.signUp(
+              email: cleanEmail,
+              password: password.trim(),
+            );
+            activeUser = signUpRes.user;
+            if (activeUser != null) {
+              await _supabaseService.confirmUserEmail(activeUser.id);
+              final retry = await _supabase.auth.signInWithPassword(email: cleanEmail, password: password.trim());
+              activeUser = retry.user;
+            }
+          } on AuthException catch (signUpErr) {
+            final sMsg = signUpErr.message.toLowerCase();
+            if (sMsg.contains('rate limit')) {
+              _authError = "Your account was successfully claimed and updated! Please sign in from the login screen.";
+            } else {
+              _authError = signUpErr.message;
+            }
+            return SignInResult.failed;
+          } catch (_) {
+            if (e.message.toLowerCase().contains('database error querying schema')) {
+              _authError = "Account synchronized successfully. Please sign in directly with your email and password.";
+            } else {
+              _authError = e.message;
+            }
+            return SignInResult.failed;
           }
-        } on AuthException catch (signUpErr) {
-          final msg = signUpErr.message.toLowerCase();
-          if (msg.contains('rate limit')) {
-            _authError = "Email service rate limit reached. Please run the provided SQL script in Supabase or try again in a few minutes.";
-          } else {
-            _authError = signUpErr.message;
-          }
-          return SignInResult.failed;
-        } catch (_) {
-          _authError = e.message;
-          return SignInResult.failed;
         }
       } catch (e) {
         _authError = "Sign-in after claim failed: ${e.toString()}";

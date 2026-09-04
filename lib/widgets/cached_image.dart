@@ -71,7 +71,7 @@ class CachedImage extends StatelessWidget {
     return Container(
       height: height,
       width: width,
-      color: Colors.grey.shade900.withOpacity(0.4),
+      color: Colors.grey.shade900.withValues(alpha: 0.4),
       child: const Center(
         child: Icon(
           Icons.music_note_rounded,

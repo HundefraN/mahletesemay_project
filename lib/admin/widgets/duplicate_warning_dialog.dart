@@ -70,12 +70,12 @@ class DuplicateWarningDialog extends StatelessWidget {
           color: isDark ? const Color(0xFF13233D) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               blurRadius: 24,
               offset: const Offset(0, 8),
             ),
@@ -91,8 +91,8 @@ class DuplicateWarningDialog extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    color.withOpacity(0.15),
-                    color.withOpacity(0.05),
+                    color.withValues(alpha: 0.15),
+                    color.withValues(alpha: 0.05),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -105,8 +105,8 @@ class DuplicateWarningDialog extends StatelessWidget {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: color.withOpacity(0.15),
-                      border: Border.all(color: color.withOpacity(0.3)),
+                      color: color.withValues(alpha: 0.15),
+                      border: Border.all(color: color.withValues(alpha: 0.3)),
                     ),
                     child: Icon(_severityIcon(), color: color, size: 28),
                   ),
@@ -146,8 +146,8 @@ class DuplicateWarningDialog extends StatelessWidget {
                   constraints: const BoxConstraints(maxHeight: 160),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? Colors.white.withOpacity(0.04)
-                        : Colors.black.withOpacity(0.03),
+                        ? Colors.white.withValues(alpha: 0.04)
+                        : Colors.black.withValues(alpha: 0.03),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isDark ? Colors.white10 : Colors.black12,

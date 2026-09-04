@@ -48,14 +48,14 @@ class DraftPromptDialog extends StatelessWidget {
           color: isDark ? const Color(0xFF13233D) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark ? Colors.white.withOpacity(0.08) : Colors.black12,
+            color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black12,
             width: 1.2,
           ),
           boxShadow: [
             BoxShadow(
               color: isDark
-                  ? Colors.black.withOpacity(0.4)
-                  : Colors.black.withOpacity(0.1),
+                  ? Colors.black.withValues(alpha: 0.4)
+                  : Colors.black.withValues(alpha: 0.1),
               blurRadius: 24,
               offset: const Offset(0, 8),
             ),
@@ -71,8 +71,8 @@ class DraftPromptDialog extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AdminUiKit.amberOrange.withOpacity(0.12),
-                    AdminUiKit.amberOrange.withOpacity(0.04),
+                    AdminUiKit.amberOrange.withValues(alpha: 0.12),
+                    AdminUiKit.amberOrange.withValues(alpha: 0.04),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -85,9 +85,9 @@ class DraftPromptDialog extends StatelessWidget {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AdminUiKit.amberOrange.withOpacity(0.15),
+                      color: AdminUiKit.amberOrange.withValues(alpha: 0.15),
                       border: Border.all(
-                        color: AdminUiKit.amberOrange.withOpacity(0.3),
+                        color: AdminUiKit.amberOrange.withValues(alpha: 0.3),
                       ),
                     ),
                     child: const Icon(

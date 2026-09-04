@@ -10,6 +10,7 @@ import 'package:mahlete_semay_project/widgets/cached_image.dart';
 import 'song_detail_screen.dart';
 import '../../models/song_model.dart';
 import '../../providers/song_provider.dart';
+import '../../widgets/web_content_wrapper.dart';
 
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 
@@ -40,14 +41,14 @@ class HistoryScreen extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              theme.colorScheme.primary.withOpacity(0.5),
-              theme.colorScheme.secondary.withOpacity(0.5),
+              theme.colorScheme.primary.withValues(alpha: 0.5),
+              theme.colorScheme.secondary.withValues(alpha: 0.5),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
-        child: Icon(Icons.music_note, color: Colors.white.withOpacity(0.8)),
+        child: Icon(Icons.music_note, color: Colors.white.withValues(alpha: 0.8)),
       );
     }
   }
@@ -76,52 +77,55 @@ class HistoryScreen extends StatelessWidget {
                   ),
                 )
               else
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                      final historyEntry = history[index];
-                      final song = songProvider.allSongs.firstWhere(
-                            (s) => s.id == historyEntry.songId,
-                        orElse: () => Song(id: '', title: l10n.notFound, artistName: '', artistId: '', albumId: '', albumTitle: '', lyrics: '', viewCount: 0, createdAt: DateTime.now()),
-                      );
+                SliverWebContentWrapper(
+                  maxWidth: 850,
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                        final historyEntry = history[index];
+                        final song = songProvider.allSongs.firstWhere(
+                              (s) => s.id == historyEntry.songId,
+                          orElse: () => Song(id: '', title: l10n.notFound, artistName: '', artistId: '', albumId: '', albumTitle: '', lyrics: '', viewCount: 0, createdAt: DateTime.now()),
+                        );
 
-                      if (song.title == l10n.notFound) return const SizedBox.shrink();
+                        if (song.title == l10n.notFound) return const SizedBox.shrink();
 
-                      final coverUrl = _getCoverUrlForSong(song, songProvider);
-                      final heroTag = 'history-list-${song.id}';
+                        final coverUrl = _getCoverUrlForSong(song, songProvider);
+                        final heroTag = 'history-list-${song.id}';
 
-                      return OpenContainer(
-                        transitionType: ContainerTransitionType.fade,
-                        closedElevation: 0, openElevation: 0,
-                        closedColor: Colors.transparent, openColor: Colors.transparent,
-                        openBuilder: (context, _) => SongDetailScreen(song: song, heroTag: heroTag, albumCoverUrl: coverUrl),
-                        closedBuilder: (context, openContainer) {
-                          return ListTile(
-                            onTap: openContainer,
-                            leading: Hero(
-                              tag: heroTag,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: SizedBox(width: 50, height: 50, child: _getCoverForSong(context, song, songProvider)),
+                        return OpenContainer(
+                          transitionType: ContainerTransitionType.fade,
+                          closedElevation: 0, openElevation: 0,
+                          closedColor: Colors.transparent, openColor: Colors.transparent,
+                          openBuilder: (context, _) => SongDetailScreen(song: song, heroTag: heroTag, albumCoverUrl: coverUrl),
+                          closedBuilder: (context, openContainer) {
+                            return ListTile(
+                              onTap: openContainer,
+                              leading: Hero(
+                                tag: heroTag,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: SizedBox(width: 50, height: 50, child: _getCoverForSong(context, song, songProvider)),
+                                ),
                               ),
-                            ),
-                            title: Hero(
-                              tag: 'song-title-${song.id}',
-                              child: Material(
-                                color: Colors.transparent,
-                                child: Text(song.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              title: Hero(
+                                tag: 'song-title-${song.id}',
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: Text(song.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                ),
                               ),
-                            ),
-                            subtitle: _SongMetadataRow(song: song, fontSize: 13),
-                            trailing: Text(
-                              timeago.format(historyEntry.viewedAt, locale: Localizations.localeOf(context).languageCode),
-                              style: theme.textTheme.bodySmall,
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    childCount: history.length,
+                              subtitle: _SongMetadataRow(song: song, fontSize: 13),
+                              trailing: Text(
+                                timeago.format(historyEntry.viewedAt, locale: Localizations.localeOf(context).languageCode),
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      childCount: history.length,
+                    ),
                   ),
                 ),
             ],
@@ -155,7 +159,7 @@ class _SongMetadataRow extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: fontSize,
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
         if (song.viewCount > 0) ...[
@@ -163,16 +167,16 @@ class _SongMetadataRow extends StatelessWidget {
             ' • ',
             style: TextStyle(
               fontSize: fontSize,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
-          Icon(Icons.visibility_outlined, size: fontSize + 1, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+          Icon(Icons.visibility_outlined, size: fontSize + 1, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
           const SizedBox(width: 3),
           Text(
             compactFormat,
             style: TextStyle(
               fontSize: fontSize,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ]

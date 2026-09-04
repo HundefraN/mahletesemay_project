@@ -1,0 +1,35 @@
+{
+    "name": "Mahlete Semay",
+    "short_name": "Mahlete Semay",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0A1E3F",
+    "theme_color": "#0A1E3F",
+    "description": "Mahlete Semay - Ethiopian & International Worship, Songs, Vocal Training and Spiritual Lessons",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "assets/logo/logo.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "assets/logo/logo.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "assets/logo/logo.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "assets/logo/logo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

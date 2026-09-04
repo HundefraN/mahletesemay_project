@@ -121,7 +121,7 @@ class _RealAudioWaveformVisualizerState
     final primary = widget.primaryColor ?? theme.colorScheme.primary;
     final secondary = widget.secondaryColor ?? theme.colorScheme.secondary;
     final inactive = widget.inactiveColor ??
-        theme.colorScheme.onSurfaceVariant.withOpacity(0.2);
+        theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2);
 
     final double progress = (widget.totalDuration.inMilliseconds > 0)
         ? (widget.currentPosition.inMilliseconds /
@@ -134,8 +134,8 @@ class _RealAudioWaveformVisualizerState
         height: widget.height,
         width: double.infinity,
         child: Shimmer.fromColors(
-          baseColor: inactive.withOpacity(0.15),
-          highlightColor: primary.withOpacity(0.3),
+          baseColor: inactive.withValues(alpha: 0.15),
+          highlightColor: primary.withValues(alpha: 0.3),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: List.generate(widget.barCount, (index) {
@@ -274,7 +274,7 @@ class _RealWaveformPainter extends CustomPainter {
         // Draw active bar with slight neon glow if playing
         if (isActivePlayhead && isPlaying) {
           final Paint glowPaint = Paint()
-            ..color = primaryColor.withOpacity(0.5)
+            ..color = primaryColor.withValues(alpha: 0.5)
             ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
           canvas.drawRRect(barRRect, glowPaint);
         }
@@ -293,7 +293,7 @@ class _RealWaveformPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round;
 
       final Paint needleGlow = Paint()
-        ..color = (isPlaying ? secondaryColor : primaryColor).withOpacity(0.4)
+        ..color = (isPlaying ? secondaryColor : primaryColor).withValues(alpha: 0.4)
         ..strokeWidth = 4.0
         ..strokeCap = StrokeCap.round
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0);

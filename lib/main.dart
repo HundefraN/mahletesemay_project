@@ -30,36 +30,49 @@ import 'utils/constants.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter/foundation.dart';
 import 'utils/timeago_utils.dart';
+import 'services/web_init_service.dart';
+import 'utils/web_scroll_behavior.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 Future<void> main() async {
-  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  final WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
 
+  // Synchronous, instant — safe before any async work.
   setupTimeAgoLocales();
 
-  try {
-    await dotenv.load();
-  } catch (_) {
-    // .env file is optional
+  if (kIsWeb) {
+    // ── Web: skip all mobile-only overhead ───────────────────────────────────
+    // No FlutterNativeSplash, no NotificationService, no FcmService.
+    // Just initialize Supabase + Firebase (required by providers) and go.
+    await WebInitService.instance.initialize();
+    runApp(const MyApp());
+  } else {
+    // ── Mobile: keep the existing blocking flow ─────────────────────────────
+    FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+    try {
+      await dotenv.load();
+    } catch (_) {
+      // .env file is optional
+    }
+
+    // Initialize Supabase, Firebase, and NotificationService concurrently
+    await Future.wait([
+      Supabase.initialize(
+        url: SupabaseConfig.url,
+        anonKey: SupabaseConfig.anonKey,
+      ),
+      Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
+      NotificationService.initialize(),
+    ]);
+
+    // Non-blocking FCM background setup
+    FcmService.initialize();
+
+    runApp(const MyApp());
   }
-
-  // Initialize Supabase, Firebase, and NotificationService concurrently
-  await Future.wait([
-    Supabase.initialize(
-      url: SupabaseConfig.url,
-      anonKey: SupabaseConfig.anonKey,
-    ),
-    Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
-    NotificationService.initialize(),
-  ]);
-
-  // Non-blocking FCM background setup
-  FcmService.initialize();
-
-  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -96,7 +109,9 @@ class MyApp extends StatelessWidget {
       child: Consumer2<ThemeProvider, LanguageProvider>(
         builder: (context, themeProvider, languageProvider, child) {
           return NotificationCoordinator(
-            child: MaterialApp(
+            child: ScrollConfiguration(
+              behavior: kIsWeb ? WebScrollBehavior() : const MaterialScrollBehavior(),
+              child: MaterialApp(
               title: 'Mahlete Semay',
               navigatorKey: navigatorKey,
               scaffoldMessengerKey: scaffoldMessengerKey,
@@ -123,6 +138,7 @@ class MyApp extends StatelessWidget {
                   child: RepairModeWrapper(child: child!),
                 );
               },
+              ),
             ),
           );
         },
@@ -261,7 +277,7 @@ class RepairModeWrapper extends StatelessWidget {
                         'The Mahlete Semay app is currently in repair mode. We are working hard to bring it back online shortly. Thank you for your patience!',
                     style: TextStyle(
                       fontSize: 16,
-                      color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                      color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                     ),
                     textAlign: TextAlign.center,
                   ),

@@ -21,6 +21,7 @@ import '../../models/suggestion_model.dart';
 import '../../providers/auth_proveider.dart';
 import '../../services/firebase_service.dart';
 import '../../services/supabase_service.dart';
+import '../../utils/responsive_sizer.dart';
 import '../home_screen.dart';
 import 'manage_vocal_plans_screen.dart';
 import '../../widgets/custom_snackbar.dart';
@@ -94,7 +95,7 @@ class PortalHomeScreen extends StatelessWidget {
                         colors: [
                           const Color(0xFF0A1E3F),
                           const Color(0xFF132A52),
-                          AdminUiKit.goldAccent.withOpacity(0.35),
+                          AdminUiKit.goldAccent.withValues(alpha: 0.35),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -110,7 +111,7 @@ class PortalHomeScreen extends StatelessWidget {
                       height: 170,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AdminUiKit.goldAccent.withOpacity(0.12),
+                        color: AdminUiKit.goldAccent.withValues(alpha: 0.12),
                       ),
                     ),
                   ),
@@ -122,7 +123,7 @@ class PortalHomeScreen extends StatelessWidget {
                       height: 140,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.blueAccent.withOpacity(0.1),
+                        color: Colors.blueAccent.withValues(alpha: 0.1),
                       ),
                     ),
                   ),
@@ -145,7 +146,7 @@ class PortalHomeScreen extends StatelessWidget {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: AdminUiKit.goldAccent.withOpacity(0.3),
+                                color: AdminUiKit.goldAccent.withValues(alpha: 0.3),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -217,23 +218,23 @@ class PortalHomeScreen extends StatelessWidget {
 
           // Main Content
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AdminSectionHeader(
-                    title: AppLocalizations.of(context)?.quickActions ?? 'Quick Actions',
-                    icon: Icons.bolt_rounded,
-                  ),
-                  const SizedBox(height: 12),
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 1.6,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AdminSectionHeader(
+                      title: AppLocalizations.of(context)?.quickActions ?? 'Quick Actions',
+                      icon: Icons.bolt_rounded,
+                    ),
+                    const SizedBox(height: 12),
+                    GridView.count(
+                      crossAxisCount: context.isDesktop ? 4 : (context.isTablet ? 3 : 2),
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio: 1.6,
                     children: [
                       _buildQuickActionCard(
                         context,
@@ -428,8 +429,7 @@ class PortalHomeScreen extends StatelessWidget {
                           trailingWidget: Switch.adaptive(
                             value: isRepairMode,
                             onChanged: (val) => _showBeautifulRepairDialog(context, isRepairMode, moderator, authProvider),
-                            activeColor: AdminUiKit.roseRed,
-                            activeTrackColor: AdminUiKit.roseRed.withOpacity(0.35),
+                            activeTrackColor: AdminUiKit.roseRed,
                           ),
                         );
                       }
@@ -473,12 +473,12 @@ class PortalHomeScreen extends StatelessWidget {
               color: isDark ? const Color(0xFF0F1D33) : Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: (isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed).withOpacity(0.3),
+                color: (isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed).withValues(alpha: 0.3),
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: (isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed).withOpacity(0.15),
+                  color: (isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed).withValues(alpha: 0.15),
                   blurRadius: 24,
                   spreadRadius: 4,
                 ),
@@ -490,7 +490,7 @@ class PortalHomeScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: (isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed).withOpacity(0.1),
+                    color: (isRepairMode ? AdminUiKit.emeraldGreen : AdminUiKit.roseRed).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -621,12 +621,12 @@ class PortalHomeScreen extends StatelessWidget {
               color: isDark ? const Color(0xFF0F1D33) : Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AdminUiKit.royalBlue.withOpacity(0.3),
+                color: AdminUiKit.royalBlue.withValues(alpha: 0.3),
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AdminUiKit.royalBlue.withOpacity(0.15),
+                  color: AdminUiKit.royalBlue.withValues(alpha: 0.15),
                   blurRadius: 24,
                   spreadRadius: 4,
                 ),
@@ -638,7 +638,7 @@ class PortalHomeScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AdminUiKit.royalBlue.withOpacity(0.1),
+                    color: AdminUiKit.royalBlue.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -676,7 +676,7 @@ class PortalHomeScreen extends StatelessWidget {
                     hintText: 'Leave empty to disable',
                     prefixIcon: const Icon(Icons.tag_rounded, size: 20),
                     filled: true,
-                    fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+                    fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
@@ -777,10 +777,10 @@ class PortalHomeScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.12),
+                  color: accentColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: accentColor.withOpacity(0.2),
+                    color: accentColor.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),
@@ -830,7 +830,7 @@ class PortalHomeScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: AdminUiKit.roseRed.withOpacity(0.4),
+                          color: AdminUiKit.roseRed.withValues(alpha: 0.4),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
@@ -876,10 +876,10 @@ class PortalHomeScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.12),
+                color: accentColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: accentColor.withOpacity(0.2),
+                  color: accentColor.withValues(alpha: 0.2),
                   width: 1,
                 ),
               ),

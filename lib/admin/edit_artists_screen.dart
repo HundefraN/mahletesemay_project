@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -31,7 +31,7 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
   final _firebaseService = FirebaseService();
   bool _isSaving = false;
   double _uploadProgress = 0.0;
-  File? _pickedImage;
+  Uint8List? _pickedImageBytes;
 
   @override
   void initState() {
@@ -56,32 +56,43 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
       final pickedFile = await imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 80);
 
       if (pickedFile != null) {
-        CroppedFile? croppedFile;
-        try {
-          croppedFile = await ImageCropper().cropImage(
-            sourcePath: pickedFile.path,
-            aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-            uiSettings: [
-              AndroidUiSettings(
-                toolbarTitle: 'Crop Artist Photo',
-                toolbarColor: Theme.of(context).colorScheme.primary,
-                toolbarWidgetColor: Colors.white,
-                initAspectRatio: CropAspectRatioPreset.square,
-                lockAspectRatio: true,
-              ),
-              IOSUiSettings(
-                title: 'Crop Artist Photo',
-                aspectRatioLockEnabled: true,
-              ),
-            ],
-          );
-        } catch (e) {
-          debugPrint('Crop error: $e');
+        Uint8List? imageBytes;
+        if (!kIsWeb) {
+          CroppedFile? croppedFile;
+          try {
+            croppedFile = await ImageCropper().cropImage(
+              sourcePath: pickedFile.path,
+              aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+              uiSettings: [
+                AndroidUiSettings(
+                  toolbarTitle: 'Crop Artist Photo',
+                  toolbarColor: Theme.of(context).colorScheme.primary,
+                  toolbarWidgetColor: Colors.white,
+                  initAspectRatio: CropAspectRatioPreset.square,
+                  lockAspectRatio: true,
+                ),
+                IOSUiSettings(
+                  title: 'Crop Artist Photo',
+                  aspectRatioLockEnabled: true,
+                ),
+              ],
+            );
+          } catch (e) {
+            debugPrint('Crop error: $e');
+          }
+
+          if (croppedFile != null) {
+            imageBytes = await croppedFile.readAsBytes();
+          } else {
+            imageBytes = await pickedFile.readAsBytes();
+          }
+        } else {
+          imageBytes = await pickedFile.readAsBytes();
         }
 
         if (mounted) {
           setState(() {
-            _pickedImage = File(croppedFile?.path ?? pickedFile.path);
+            _pickedImageBytes = imageBytes;
             _uploadProgress = 0.0;
           });
         }
@@ -99,9 +110,9 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
       try {
         String finalImageUrl = _existingImageUrl;
 
-        if (_pickedImage != null) {
-          final uploadedUrl = await SupabaseStorageService.uploadImage(
-            _pickedImage!,
+        if (_pickedImageBytes != null) {
+          final uploadedUrl = await SupabaseStorageService.uploadImageBytes(
+            _pickedImageBytes!,
             onProgress: (count, total) => setState(() => _uploadProgress = count / total),
           );
           if (uploadedUrl != null) {
@@ -216,11 +227,11 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
         ],
       ),
       body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          physics: const BouncingScrollPhysics(),
-          children: [
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            physics: const BouncingScrollPhysics(),
+            children: [
             // Section 1: Info
             AdminSectionHeader(
               title: AppLocalizations.of(context)?.artistInfoSection ?? 'Artist Information',
@@ -239,7 +250,7 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
                   ),
                   const SizedBox(height: 10),
                   DropdownButtonFormField<String>(
-                    value: _region,
+                    initialValue: _region,
                     decoration: _inputDecoration('Geographical Region', Icons.public_rounded),
                     items: ['Ethiopian', 'Worldwide']
                         .map((label) => DropdownMenuItem(
@@ -286,7 +297,7 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
   Widget _buildAvatarPicker(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (_pickedImage != null || _existingImageUrl.isNotEmpty) {
+    if (_pickedImageBytes != null || _existingImageUrl.isNotEmpty) {
       return Column(
         children: [
           Container(
@@ -297,8 +308,8 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
               border: Border.all(color: AdminUiKit.goldAccent, width: 2),
             ),
             child: ClipOval(
-              child: _pickedImage != null
-                  ? Image.file(_pickedImage!, width: 100, height: 100, fit: BoxFit.cover)
+              child: _pickedImageBytes != null
+                  ? Image.memory(_pickedImageBytes!, width: 100, height: 100, fit: BoxFit.cover)
                   : Image.network(
                       _existingImageUrl,
                       width: 100,
@@ -320,10 +331,10 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
                 icon: const Icon(Icons.change_circle_rounded, size: 16),
                 label: Text(AppLocalizations.of(context)?.change ?? 'Change', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
               ),
-              if (_pickedImage != null) ...[
+              if (_pickedImageBytes != null) ...[
                 const SizedBox(width: 8),
                 TextButton.icon(
-                  onPressed: () => setState(() => _pickedImage = null),
+                  onPressed: () => setState(() => _pickedImageBytes = null),
                   icon: const Icon(Icons.undo_rounded, size: 16),
                   label: Text(AppLocalizations.of(context)?.revert ?? 'Revert', style: GoogleFonts.plusJakartaSans(fontSize: 12)),
                 ),
@@ -341,7 +352,7 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
         height: 110,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.02),
+          color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.02),
           border: Border.all(color: isDark ? Colors.white24 : Colors.black12, width: 1.2),
           borderRadius: BorderRadius.circular(12),
         ),
@@ -352,7 +363,7 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AdminUiKit.royalBlue.withOpacity(0.12),
+                color: AdminUiKit.royalBlue.withValues(alpha: 0.12),
               ),
               child: const Icon(Icons.add_a_photo_rounded, size: 24, color: AdminUiKit.royalBlue),
             ),

@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +12,7 @@ import 'song_detail_screen.dart';
 import '../../models/song_model.dart';
 import '../../providers/song_provider.dart';
 import '../../models/album_model.dart';
+import '../../widgets/web_content_wrapper.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -24,10 +24,6 @@ class FavoritesScreen extends StatefulWidget {
 class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProviderStateMixin {
 
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 
   String _getCoverUrlForSong(Song song, SongProvider songProvider) {
     if (song.albumId == singlesAlbumId) {
@@ -53,14 +49,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              theme.colorScheme.primary.withOpacity(0.5),
-              theme.colorScheme.secondary.withOpacity(0.5),
+              theme.colorScheme.primary.withValues(alpha: 0.5),
+              theme.colorScheme.secondary.withValues(alpha: 0.5),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
-        child: Icon(Icons.music_note, color: Colors.white.withOpacity(0.8)),
+        child: Icon(Icons.music_note, color: Colors.white.withValues(alpha: 0.8)),
       );
     }
   }
@@ -81,7 +77,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
                 expandedHeight: 250.0,
                 pinned: true,
                 stretch: true,
-                backgroundColor: theme.colorScheme.surface.withOpacity(0.8),
+                backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.8),
                 flexibleSpace: FlexibleSpaceBar(
                   title: Text(l10n.myFavorites, style: const TextStyle(fontWeight: FontWeight.bold)),
                   centerTitle: false,
@@ -90,9 +86,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          theme.colorScheme.primary.withOpacity(0.6),
+                          theme.colorScheme.primary.withValues(alpha: 0.6),
                           Colors.transparent,
-                          theme.colorScheme.surface.withOpacity(0.2),
+                          theme.colorScheme.surface.withValues(alpha: 0.2),
                           theme.colorScheme.surface,
                         ],
                         begin: Alignment.topCenter,
@@ -109,28 +105,31 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
                   child: _buildEmptyState(context),
                 )
               else
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 80),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                        final song = favoriteSongs[index];
-                        final coverUrl = _getCoverUrlForSong(song, songProvider);
-                        final heroTag = 'favorite-${song.id}';
+                SliverWebContentWrapper(
+                  maxWidth: 850,
+                  sliver: SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 80),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                          final song = favoriteSongs[index];
+                          final coverUrl = _getCoverUrlForSong(song, songProvider);
+                          final heroTag = 'favorite-${song.id}';
 
-                        return OpenContainer(
-                          transitionType: ContainerTransitionType.fadeThrough,
-                          closedElevation: 0,
-                          openElevation: 0,
-                          closedColor: Colors.transparent,
-                          openColor: Colors.transparent,
-                          openBuilder: (context, _) => SongDetailScreen(song: song, heroTag: heroTag, albumCoverUrl: coverUrl),
-                          closedBuilder: (context, openContainer) {
-                            return _buildSongCard(context, song, heroTag, coverUrl, openContainer);
-                          },
-                        ).animate().fadeIn(delay: (100 * index).ms).slideY(begin: 0.2);
-                      },
-                      childCount: favoriteSongs.length,
+                          return OpenContainer(
+                            transitionType: ContainerTransitionType.fadeThrough,
+                            closedElevation: 0,
+                            openElevation: 0,
+                            closedColor: Colors.transparent,
+                            openColor: Colors.transparent,
+                            openBuilder: (context, _) => SongDetailScreen(song: song, heroTag: heroTag, albumCoverUrl: coverUrl),
+                            closedBuilder: (context, openContainer) {
+                              return _buildSongCard(context, song, heroTag, coverUrl, openContainer);
+                            },
+                          ).animate().fadeIn(delay: (100 * index).ms).slideY(begin: 0.2);
+                        },
+                        childCount: favoriteSongs.length,
+                      ),
                     ),
                   ),
                 ),
@@ -156,8 +155,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
             height: 100,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              color: theme.colorScheme.surface.withOpacity(0.2),
-              border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.1)),
+              color: theme.colorScheme.surface.withValues(alpha: 0.2),
+              border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.1)),
             ),
             child: Material(
               color: Colors.transparent,
@@ -194,7 +193,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Icon(Icons.arrow_forward_ios_rounded, color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                      child: Icon(Icons.arrow_forward_ios_rounded, color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
                     ),
                   ],
                 ),
@@ -219,12 +218,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.primary.withOpacity(0.1),
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
               ),
               child: Icon(
                 Icons.favorite_border,
                 size: 80,
-                color: theme.colorScheme.primary.withOpacity(0.8),
+                color: theme.colorScheme.primary.withValues(alpha: 0.8),
               ),
             ),
             const SizedBox(height: 24),
@@ -237,7 +236,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> with SingleTickerProv
             Text(
               l10n.noFavoritesDesc,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -271,19 +270,19 @@ class _SongMetadataRow extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: fontSize,
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ),
         if (song.viewCount > 0) ...[
           const SizedBox(width: 8),
-          Icon(Icons.visibility_outlined, size: fontSize + 2, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+          Icon(Icons.visibility_outlined, size: fontSize + 2, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
           const SizedBox(width: 4),
           Text(
             compactFormat,
             style: TextStyle(
               fontSize: fontSize,
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ]

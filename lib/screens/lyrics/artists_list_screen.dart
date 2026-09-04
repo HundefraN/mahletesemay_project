@@ -149,9 +149,9 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
           child: Container(
             margin: EdgeInsets.all(context.w(16)),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardColor.withOpacity(0.9),
+              color: Theme.of(context).cardColor.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(context.w(24)),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
             child: Padding(
               padding: EdgeInsets.all(context.w(20)),
@@ -200,9 +200,9 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     String label = type;
-    if (type == 'All')
+    if (type == 'All') {
       label = l10n?.all ?? 'All';
-    else if (type == 'Songs')
+    } else if (type == 'Songs')
       label = l10n?.songs ?? 'Songs';
     else if (type == 'Artists')
       label = l10n?.artists ?? 'Artists';
@@ -225,7 +225,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
             vertical: context.w(12), horizontal: context.w(16)),
         decoration: BoxDecoration(
           color: isSelected
-              ? theme.colorScheme.primary.withOpacity(0.1)
+              ? theme.colorScheme.primary.withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(context.w(16)),
         ),
@@ -236,7 +236,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
               decoration: BoxDecoration(
                 color: isSelected
                     ? theme.colorScheme.primary
-                    : theme.colorScheme.surfaceVariant,
+                    : theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(context.w(10)),
               ),
               child: Icon(
@@ -294,7 +294,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                 boxShadow: [
                   BoxShadow(
                     color:
-                        Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+                        Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -338,7 +338,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                               color: Theme.of(context)
                                   .colorScheme
                                   .onPrimaryContainer
-                                  .withOpacity(0.8),
+                                  .withValues(alpha: 0.8),
                             ),
                           ),
                         ],
@@ -396,7 +396,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                 Icon(IconsaxPlusBold.user_search,
                     size: 80,
                     color:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.4)),
+                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)),
                 const SizedBox(height: 16),
                 Text(
                     AppLocalizations.of(context)?.selectArtistToSeeAlbums ??
@@ -407,7 +407,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
           );
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: MasterDetailScaffold(
         masterPane: masterPane,
         detailPane: detailPane,
@@ -451,9 +451,9 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            theme.colorScheme.primaryContainer.withOpacity(0.1),
-            theme.colorScheme.background,
-            theme.colorScheme.background,
+            theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
+            theme.colorScheme.surface,
+            theme.colorScheme.surface,
           ],
           stops: const [0.0, 0.3, 1.0],
         ),
@@ -477,8 +477,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            theme.colorScheme.primary.withOpacity(0.1),
-                            theme.colorScheme.secondary.withOpacity(0.05),
+                            theme.colorScheme.primary.withValues(alpha: 0.1),
+                            theme.colorScheme.secondary.withValues(alpha: 0.05),
                           ],
                         ),
                       ),
@@ -507,7 +507,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                               ?.copyWith(
                                             fontWeight: FontWeight.bold,
                                             color:
-                                                theme.colorScheme.onBackground,
+                                                theme.colorScheme.onSurface,
                                             fontSize: context.sp(28),
                                           ),
                                         ),
@@ -518,8 +518,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                           style: theme.textTheme.bodyMedium
                                               ?.copyWith(
                                             color: theme
-                                                .colorScheme.onBackground
-                                                .withOpacity(0.7),
+                                                .colorScheme.onSurface
+                                                .withValues(alpha: 0.7),
                                             fontSize: context.sp(14),
                                           ),
                                         ),
@@ -576,8 +576,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                 BoxShadow(
                                   color: _isSearchFocused
                                       ? theme.colorScheme.primary
-                                          .withOpacity(0.2)
-                                      : Colors.black.withOpacity(0.05),
+                                          .withValues(alpha: 0.2)
+                                      : Colors.black.withValues(alpha: 0.05),
                                   blurRadius: _isSearchFocused ? 20 : 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -596,7 +596,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                       hintText: l10n.searchHint,
                                       hintStyle: TextStyle(
                                         color: theme.colorScheme.onSurface
-                                            .withOpacity(0.6),
+                                            .withValues(alpha: 0.6),
                                         fontSize: context.sp(14),
                                       ),
                                       prefixIcon: Container(
@@ -606,7 +606,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                           color: _isSearchFocused
                                               ? theme.colorScheme.primary
                                               : theme
-                                                  .colorScheme.surfaceVariant,
+                                                  .colorScheme.surfaceContainerHighest,
                                           borderRadius: BorderRadius.circular(
                                               context.w(12)),
                                         ),
@@ -625,7 +625,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                                 Icons.close_rounded,
                                                 color: theme
                                                     .colorScheme.onSurface
-                                                    .withOpacity(0.7),
+                                                    .withValues(alpha: 0.7),
                                                 size: context.w(20),
                                               ),
                                               onPressed: () {
@@ -663,7 +663,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                         BorderRadius.circular(context.w(16)),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
+                                        color: Colors.black.withValues(alpha: 0.1),
                                         blurRadius: 8,
                                         offset: const Offset(0, 2),
                                       ),
@@ -738,7 +738,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                         : null,
                   ),
                   _buildArtistCarousel(
-                      context, recommendedEthiopian.take(7).toList()),
+                      context, recommendedEthiopian.take(7).toList(),
+                      tagPrefix: 'ethiopian'),
                   _buildSectionHeader(
                     context,
                     l10n.worldwideArtists,
@@ -761,7 +762,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                         : null,
                   ),
                   _buildArtistCarousel(
-                      context, recommendedWorldwide.take(7).toList()),
+                      context, recommendedWorldwide.take(7).toList(),
+                      tagPrefix: 'worldwide'),
                   if (hasSinglesSongs) ...[
                     _buildSectionHeader(
                       context,
@@ -815,7 +817,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
             Container(
               padding: EdgeInsets.all(context.w(20)),
               decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(context.w(20))),
               child: Icon(Icons.search_off_rounded,
                   size: context.w(40),
@@ -836,7 +838,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                       color: Theme.of(context)
                           .colorScheme
                           .onSurface
-                          .withOpacity(0.6),
+                          .withValues(alpha: 0.6),
                       fontSize: context.sp(14)),
                   textAlign: TextAlign.center),
             ),
@@ -880,7 +882,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
         borderRadius: BorderRadius.circular(context.w(14)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, 4))
         ],
@@ -908,15 +910,15 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              theme.colorScheme.primary.withOpacity(0.5),
-              theme.colorScheme.secondary.withOpacity(0.5),
+              theme.colorScheme.primary.withValues(alpha: 0.5),
+              theme.colorScheme.secondary.withValues(alpha: 0.5),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
         child: Icon(IconsaxPlusBold.musicnote,
-            color: Colors.white.withOpacity(0.8), size: context.w(26)),
+            color: Colors.white.withValues(alpha: 0.8), size: context.w(26)),
       );
     }
   }
@@ -957,7 +959,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
           borderRadius: BorderRadius.circular(context.w(16)),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2))
           ]),
@@ -985,7 +987,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                     borderRadius: BorderRadius.circular(context.w(12)),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 8,
                           offset: const Offset(0, 2))
                     ]),
@@ -995,7 +997,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
               ),
             ),
             title: Hero(
-              tag: 'song-title-${song.id}',
+              tag: 'search-title-${song.id}',
               child: Material(
                 color: Colors.transparent,
                 child: TextHighlighter(
@@ -1011,7 +1013,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                     query: _searchQuery,
                     style: theme.textTheme.bodySmall?.copyWith(
                         fontStyle: FontStyle.italic,
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         fontSize: context.sp(12)))
                 : _SongMetadataColumn(song: song, fontSize: context.sp(12)),
           );
@@ -1034,14 +1036,14 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
           borderRadius: BorderRadius.circular(context.w(16)),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2))
           ]),
       child: ListTile(
         onTap: () {
-          final isTablet = MediaQuery.of(context).size.width > 720;
-          if (isTablet) {
+          final isWide = !context.isPhone;
+          if (isWide) {
             setState(() => _selectedArtistForTablet = artist);
           } else {
             Navigator.push(
@@ -1061,11 +1063,11 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
             decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(context.w(24)),
                 border: Border.all(
-                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
                     width: 1.5),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 2))
                 ]),
@@ -1107,7 +1109,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
               padding: EdgeInsets.symmetric(
                   horizontal: context.w(6), vertical: context.w(2)),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(context.w(6)),
               ),
               child: Text(
@@ -1124,7 +1126,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
               Text(
                 '•',
                 style: TextStyle(
-                  color: theme.colorScheme.onSurface.withOpacity(0.4),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                   fontSize: context.sp(12),
                 ),
               ),
@@ -1133,7 +1135,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                 '${songs.length} Tracks',
                 style: TextStyle(
                   fontSize: context.sp(11),
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -1143,7 +1145,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
               Text(
                 '•',
                 style: TextStyle(
-                  color: theme.colorScheme.onSurface.withOpacity(0.4),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                   fontSize: context.sp(12),
                 ),
               ),
@@ -1152,7 +1154,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                 artist.region,
                 style: TextStyle(
                   fontSize: context.sp(11),
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -1164,7 +1166,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
           height: context.w(32),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: theme.colorScheme.primary.withOpacity(0.08),
+            color: theme.colorScheme.primary.withValues(alpha: 0.08),
           ),
           child: Icon(IconsaxPlusBold.arrow_right_3,
               color: theme.colorScheme.primary, size: context.w(16)),
@@ -1187,14 +1189,14 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
           borderRadius: BorderRadius.circular(context.w(16)),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2))
           ]),
       child: ListTile(
         onTap: () {
-          final isTablet = MediaQuery.of(context).size.width > 720;
-          if (isTablet) {
+          final isWide = !context.isPhone;
+          if (isWide) {
             Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -1219,7 +1221,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                 borderRadius: BorderRadius.circular(context.w(12)),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 2))
                 ]),
@@ -1244,7 +1246,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                 '${AppLocalizations.of(context)?.albumSingular ?? 'Album'} • $songCountText',
             query: _searchQuery,
             style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 fontSize: context.sp(12))),
         trailing: Icon(IconsaxPlusBold.music_playlist,
             color: theme.colorScheme.primary, size: context.w(24)),
@@ -1293,7 +1295,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
           crossAxisCount: 2,
           mainAxisSpacing: context.w(12),
           crossAxisSpacing: context.w(12),
-          childAspectRatio: 2.3,
+          childAspectRatio: 2.1,
         ),
         delegate: SliverChildBuilderDelegate(
           (context, index) {
@@ -1329,11 +1331,11 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                 end: Alignment.bottomRight,
                 colors: [
                   theme.colorScheme.surface,
-                  theme.colorScheme.surfaceVariant.withOpacity(0.3)
+                  theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
                 ]),
             boxShadow: [
               BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4))
             ],
@@ -1358,7 +1360,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Hero(
-                          tag: 'song-title-${song.id}',
+                          tag: 'rec-title-${song.id}',
                           child: Material(
                             color: Colors.transparent,
                             child: Text(song.title,
@@ -1370,13 +1372,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                           ),
                         ),
                         const SizedBox(height: 2),
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.bottomLeft,
-                            child: _SongMetadataColumn(
-                                song: song, fontSize: context.sp(10)),
-                          ),
-                        ),
+                        _SongMetadataColumn(
+                            song: song, fontSize: context.sp(10)),
                       ],
                     ),
                   ),
@@ -1389,9 +1386,10 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
     );
   }
 
-  Widget _buildArtistCarousel(BuildContext context, List<Artist> artists) {
+  Widget _buildArtistCarousel(BuildContext context, List<Artist> artists,
+      {String tagPrefix = 'artist'}) {
     final songProvider = Provider.of<SongProvider>(context, listen: false);
-    final isTablet = MediaQuery.of(context).size.width > 720;
+    final isWide = !context.isPhone;
 
     return SliverToBoxAdapter(
       child: SizedBox(
@@ -1406,7 +1404,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                         color: Theme.of(context)
                             .colorScheme
                             .onSurface
-                            .withOpacity(0.3)),
+                            .withValues(alpha: 0.3)),
                     SizedBox(height: context.w(8)),
                     Text(
                         AppLocalizations.of(context)?.noArtistsInCategory ??
@@ -1415,7 +1413,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurface
-                                .withOpacity(0.6),
+                                .withValues(alpha: 0.6),
                             fontSize: context.sp(13))),
                   ],
                 ),
@@ -1432,7 +1430,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
 
                   return GestureDetector(
                     onTap: () {
-                      if (isTablet) {
+                      if (isWide) {
                         setState(() => _selectedArtistForTablet = artist);
                       } else {
                         if (isSinglesCategory) {
@@ -1476,15 +1474,15 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                     Theme.of(context)
                                         .colorScheme
                                         .primary
-                                        .withOpacity(0.1),
+                                        .withValues(alpha: 0.1),
                                     Theme.of(context)
                                         .colorScheme
                                         .secondary
-                                        .withOpacity(0.1)
+                                        .withValues(alpha: 0.1)
                                   ]),
                               boxShadow: [
                                 BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 12,
                                     offset: const Offset(0, 4))
                               ],
@@ -1492,14 +1490,14 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                             child: Padding(
                               padding: EdgeInsets.all(context.w(2.5)),
                               child: Hero(
-                                tag: artist.id,
+                                tag: '$tagPrefix-image-${artist.id}',
                                 child: Container(
                                   decoration: BoxDecoration(
                                     borderRadius:
                                         BorderRadius.circular(context.w(40)),
                                     boxShadow: [
                                       BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
+                                          color: Colors.black.withValues(alpha: 0.1),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2))
                                     ],
@@ -1530,7 +1528,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                           ),
                           SizedBox(height: context.w(8)),
                           Hero(
-                            tag: 'artist-name-${artist.id}',
+                            tag: '$tagPrefix-name-${artist.id}',
                             flightShuttleBuilder: (flightContext,
                                 animation,
                                 flightDirection,
@@ -1651,7 +1649,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                             borderRadius: BorderRadius.circular(context.w(12)),
                             boxShadow: [
                               BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withValues(alpha: 0.1),
                                   blurRadius: 8,
                                   offset: const Offset(0, 3))
                             ]),
@@ -1664,7 +1662,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                       ),
                       SizedBox(height: context.w(6)),
                       Hero(
-                        tag: 'song-title-${song.id}',
+                        tag: 'singles-title-${song.id}',
                         child: Material(
                           color: Colors.transparent,
                           child: Text(song.title,
@@ -1714,7 +1712,7 @@ class _SongMetadataColumn extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: fontSize,
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
         if (song.viewCount > 0) ...[
@@ -1723,7 +1721,7 @@ class _SongMetadataColumn extends StatelessWidget {
             children: [
               Icon(Icons.visibility_outlined,
                   size: fontSize + 1,
-                  color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
               const SizedBox(width: 3),
               Expanded(
                 child: Text(
@@ -1732,7 +1730,7 @@ class _SongMetadataColumn extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: fontSize,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ),

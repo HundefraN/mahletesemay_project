@@ -9,6 +9,7 @@ import '../../models/suggestion_model.dart';
 import '../../providers/auth_proveider.dart';
 import '../../services/firebase_service.dart';
 import '../../widgets/custom_snackbar.dart';
+import '../../widgets/web_content_wrapper.dart';
 import 'widgets/admin_ui_kit.dart';
 
 class ReviewSuggestionsScreen extends StatefulWidget {
@@ -50,7 +51,7 @@ class _ReviewSuggestionsScreenState extends State<ReviewSuggestionsScreen> with 
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF13233D) : Colors.black.withOpacity(0.04),
+              color: isDark ? const Color(0xFF13233D) : Colors.black.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(16),
             ),
             padding: const EdgeInsets.all(4),
@@ -63,7 +64,7 @@ class _ReviewSuggestionsScreenState extends State<ReviewSuggestionsScreen> with 
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -134,14 +135,17 @@ class _SuggestionList extends StatelessWidget {
         description: emptyLabel,
       );
     }
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
-      physics: const BouncingScrollPhysics(),
-      itemCount: suggestions.length,
-      itemBuilder: (context, index) {
-        final suggestion = suggestions[index];
-        return _SuggestionCard(suggestion: suggestion, firebaseService: firebaseService);
-      },
+    return WebContentWrapper(
+      maxWidth: 850,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+        physics: const BouncingScrollPhysics(),
+        itemCount: suggestions.length,
+        itemBuilder: (context, index) {
+          final suggestion = suggestions[index];
+          return _SuggestionCard(suggestion: suggestion, firebaseService: firebaseService);
+        },
+      ),
     );
   }
 }
@@ -192,7 +196,7 @@ class _SuggestionCard extends StatelessWidget {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.15),
+                color: statusColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(Icons.music_note_rounded, color: statusColor, size: 20),
@@ -236,7 +240,7 @@ class _SuggestionCard extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03),
+                  color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.03),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
                 ),
@@ -310,7 +314,7 @@ class _SuggestionCard extends StatelessWidget {
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AdminUiKit.roseRed,
-                        side: BorderSide(color: AdminUiKit.roseRed.withOpacity(0.5)),
+                        side: BorderSide(color: AdminUiKit.roseRed.withValues(alpha: 0.5)),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       child: Text(AppLocalizations.of(context)?.rejectAction ?? 'Reject'),

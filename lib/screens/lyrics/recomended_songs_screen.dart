@@ -10,6 +10,7 @@ import 'package:mahlete_semay_project/widgets/cached_image.dart';
 import 'song_detail_screen.dart';
 import '../../models/song_model.dart';
 import '../../providers/song_provider.dart';
+import '../../widgets/web_content_wrapper.dart';
 
 enum SongSortType { popularity, title, artist, date }
 enum SortOrder { ascending, descending }
@@ -114,14 +115,14 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              theme.colorScheme.primary.withOpacity(0.5),
-              theme.colorScheme.secondary.withOpacity(0.5),
+              theme.colorScheme.primary.withValues(alpha: 0.5),
+              theme.colorScheme.secondary.withValues(alpha: 0.5),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
-        child: Icon(Icons.music_note, color: Colors.white.withOpacity(0.8)),
+        child: Icon(Icons.music_note, color: Colors.white.withValues(alpha: 0.8)),
       );
     }
   }
@@ -180,8 +181,8 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      theme.colorScheme.primaryContainer.withOpacity(0.3),
-                      theme.colorScheme.secondaryContainer.withOpacity(0.2),
+                      theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                      theme.colorScheme.secondaryContainer.withValues(alpha: 0.2),
                       theme.colorScheme.surface,
                     ],
                     stops: const [0.0, 0.5, 1.0],
@@ -190,30 +191,33 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
               ),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                  final song = _displayedSongs[index];
-                  final heroTag = 'recommended-list-${song.id}';
-                  final coverUrl = _getCoverUrlForSong(song, songProvider);
+          SliverWebContentWrapper(
+            maxWidth: 850,
+            sliver: SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                    final song = _displayedSongs[index];
+                    final heroTag = 'recommended-list-${song.id}';
+                    final coverUrl = _getCoverUrlForSong(song, songProvider);
 
-                  return SlideTransition(
-                    position: slideAnimation,
-                    child: FadeTransition(
-                      opacity: fadeAnimation,
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          bottom: 16,
-                          top: index == 0 ? 24 : 0,
+                    return SlideTransition(
+                      position: slideAnimation,
+                      child: FadeTransition(
+                        opacity: fadeAnimation,
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            bottom: 16,
+                            top: index == 0 ? 24 : 0,
+                          ),
+                          child: _buildSongCard(context, song, coverUrl, heroTag, index),
                         ),
-                        child: _buildSongCard(context, song, coverUrl, heroTag, index),
                       ),
-                    ),
-                  );
-                },
-                childCount: _displayedSongs.length,
+                    );
+                  },
+                  childCount: _displayedSongs.length,
+                ),
               ),
             ),
           ),
@@ -285,14 +289,14 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                theme.colorScheme.surfaceVariant.withOpacity(0.5),
-                theme.colorScheme.surfaceVariant.withOpacity(0.2),
+                theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
               ],
             ),
-            border: Border.all(color: theme.colorScheme.outline.withOpacity(0.1), width: 1),
+            border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1), width: 1),
             boxShadow: [
               BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.1),
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, 4),
               ),
@@ -303,8 +307,8 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
             child: InkWell(
               onTap: openContainer,
               borderRadius: BorderRadius.circular(20),
-              splashColor: theme.colorScheme.primary.withOpacity(0.1),
-              highlightColor: theme.colorScheme.primary.withOpacity(0.05),
+              splashColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+              highlightColor: theme.colorScheme.primary.withValues(alpha: 0.05),
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Row(
@@ -316,7 +320,7 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
                         height: 64,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 2))],
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 2))],
                         ),
                         child: ClipRRect(
                             borderRadius: BorderRadius.circular(16),
@@ -352,7 +356,7 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
                       height: 40,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+                        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
                       ),
                       child: Icon(
                         Icons.arrow_forward_ios_rounded,
@@ -395,19 +399,19 @@ class _SongMetadataRow extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: fontSize,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ),
         if (song.viewCount > 0) ...[
           const SizedBox(width: 8),
-          Icon(Icons.visibility_outlined, size: fontSize + 1, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+          Icon(Icons.visibility_outlined, size: fontSize + 1, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
           const SizedBox(width: 3),
           Text(
             compactFormat,
             style: TextStyle(
               fontSize: fontSize,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ]

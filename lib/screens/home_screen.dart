@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:animations/animations.dart';
@@ -6,7 +7,6 @@ import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:mahlete_semay_project/managers/download_manager.dart';
 import 'package:mahlete_semay_project/providers/setlist_provider.dart';
-import 'package:mahlete_semay_project/screens/lessons/lessons_screen.dart';
 import 'package:mahlete_semay_project/screens/lyrics/setlists_screen.dart';
 import 'package:mahlete_semay_project/utils/responsive_sizer.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
@@ -68,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _backgroundController.forward();
     });
 
-    _checkAndShowTutorial();
+    if (!kIsWeb) _checkAndShowTutorial();
   }
 
   @override
@@ -150,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _createTutorial() {
     tutorialCoachMark = TutorialCoachMark(
       targets: _createTargets(),
-      colorShadow: Theme.of(context).colorScheme.primary.withOpacity(0.85),
+      colorShadow: Theme.of(context).colorScheme.primary.withValues(alpha: 0.85),
       textSkip: "SKIP",
       pulseEnable: true,
       opacityShadow: 0.95,
@@ -240,10 +240,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Container(
           padding: EdgeInsets.all(context.w(20)),
           decoration: BoxDecoration(
-            color: theme.cardColor.withOpacity(0.8),
+            color: theme.cardColor.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(context.w(20)),
-            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, spreadRadius: 2)],
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.5),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, spreadRadius: 2)],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               Text(
                 description,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.95),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.95),
                     height: 1.5,
                     letterSpacing: 0.2,
                     fontSize: context.sp(14)),
@@ -290,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   void _onItemTapped(int index) {
     if (_selectedIndex == index) return;
-    HapticFeedback.lightImpact();
+    if (!kIsWeb) HapticFeedback.lightImpact();
     setState(() {
       _selectedIndex = index;
       _indicatorController.reset();
@@ -298,12 +298,184 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
   }
 
+  Widget _buildBody(ThemeData theme, bool isDark) {
+    return AnimatedBuilder(
+      animation: _backgroundAnim,
+      builder: (context, child) {
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark
+                  ? [const Color(0xFF0A0A0A), const Color(0xFF1A1A2E), const Color(0xFF16213E)]
+                  : [theme.colorScheme.surface, theme.colorScheme.primary.withValues(alpha: 0.05)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: -100,
+                right: -100,
+                child: Transform.scale(
+                  scale: _backgroundAnim.value,
+                  child: Container(
+                    width: 300,
+                    height: 300,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(colors: [theme.colorScheme.primary.withValues(alpha: 0.1), Colors.transparent]),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: -150,
+                left: -150,
+                child: Transform.scale(
+                  scale: _backgroundAnim.value * 0.8,
+                  child: Container(
+                    width: 400,
+                    height: 400,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(colors: [theme.colorScheme.secondary.withValues(alpha: 0.08), Colors.transparent]),
+                    ),
+                  ),
+                ),
+              ),
+              PageTransitionSwitcher(
+                duration: const Duration(milliseconds: 200),
+                transitionBuilder: (child, primary, secondary) =>
+                    FadeThroughTransition(animation: primary, secondaryAnimation: secondary, child: child),
+                child: _widgetOptions.elementAt(_selectedIndex),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final useRail = !context.isPhone;
 
+    final labels = [
+      l10n.lyrics,
+      l10n.mashup,
+      l10n.setlists,
+      l10n.exercises,
+      l10n.range,
+      l10n.settings,
+    ];
+
+    final icons = <IconData>[
+      IconsaxPlusBold.home_2,
+      IconsaxPlusBold.music_library_2,
+      IconsaxPlusBold.note_2,
+      Icons.fitness_center_outlined,
+      IconsaxPlusBold.microphone_2,
+      IconsaxPlusLinear.setting_2,
+    ];
+
+    final selectedIcons = <IconData>[
+      IconsaxPlusBold.home,
+      IconsaxPlusBold.music_dashboard,
+      IconsaxPlusBold.note,
+      Icons.fitness_center,
+      IconsaxPlusBold.microphone,
+      IconsaxPlusBold.setting_2,
+    ];
+
+    Widget body = _buildBody(theme, isDark);
+
+    // ── Desktop / Tablet: NavigationRail on the left ────────────────────────
+    if (useRail) {
+      return Scaffold(
+        body: Row(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.4)
+                    : Colors.white.withValues(alpha: 0.6),
+                border: Border(
+                  right: BorderSide(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : Colors.black.withValues(alpha: 0.06),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraint) {
+                  return SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: constraint.maxHeight),
+                      child: IntrinsicHeight(
+                        child: NavigationRail(
+                          selectedIndex: _selectedIndex,
+                          onDestinationSelected: _onItemTapped,
+                          backgroundColor: Colors.transparent,
+                          indicatorColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+                          labelType: NavigationRailLabelType.all,
+                          leading: Padding(
+                            padding: const EdgeInsets.only(top: 8, bottom: 16),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.asset(
+                                'assets/logo/logo.png',
+                                width: 40,
+                                height: 40,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          destinations: List.generate(labels.length, (i) {
+                            return NavigationRailDestination(
+                              icon: Icon(icons[i], size: 22),
+                              selectedIcon: Icon(selectedIcons[i], size: 22, color: theme.colorScheme.primary),
+                              label: Text(
+                                labels[i],
+                                style: TextStyle(fontSize: 11),
+                              ),
+                            );
+                          }),
+                          selectedIconTheme: IconThemeData(color: theme.colorScheme.primary),
+                          unselectedIconTheme: IconThemeData(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                          ),
+                          selectedLabelTextStyle: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: theme.colorScheme.primary,
+                          ),
+                          unselectedLabelTextStyle: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            Expanded(child: body),
+          ],
+        ),
+        floatingActionButton: _buildFloatingActionButton(),
+      );
+    }
+
+    // ── Phone: floating bottom nav bar ───────────────────────────────────────
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) {
@@ -322,62 +494,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       },
       child: Scaffold(
         extendBody: true,
-        body: AnimatedBuilder(
-          animation: _backgroundAnim,
-          builder: (context, child) {
-            return Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isDark
-                      ? [const Color(0xFF0A0A0A), const Color(0xFF1A1A2E), const Color(0xFF16213E)]
-                      : [theme.colorScheme.background, theme.colorScheme.primary.withOpacity(0.05)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: -100,
-                    right: -100,
-                    child: Transform.scale(
-                      scale: _backgroundAnim.value,
-                      child: Container(
-                        width: 300,
-                        height: 300,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(colors: [theme.colorScheme.primary.withOpacity(0.1), Colors.transparent]),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: -150,
-                    left: -150,
-                    child: Transform.scale(
-                      scale: _backgroundAnim.value * 0.8,
-                      child: Container(
-                        width: 400,
-                        height: 400,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(colors: [theme.colorScheme.secondary.withOpacity(0.08), Colors.transparent]),
-                        ),
-                      ),
-                    ),
-                  ),
-                  PageTransitionSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    transitionBuilder: (child, primary, secondary) =>
-                        FadeThroughTransition(animation: primary, secondaryAnimation: secondary, child: child),
-                    child: _widgetOptions.elementAt(_selectedIndex),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
+        body: body,
         bottomNavigationBar: _ModernNavBar(
           selectedIndex: _selectedIndex,
           onTap: _onItemTapped,
@@ -385,14 +502,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           lyricsTabKey: lyricsTabKey,
           exercisesTabKey: exercisesTabKey,
           mashupTabKey: mashupTabKey,
-          labels: [
-            l10n.lyrics,
-            l10n.mashup,
-            l10n.setlists,
-            l10n.exercises,
-            l10n.range,
-            l10n.settings,
-          ],
+          labels: labels,
         ),
         floatingActionButton: _buildFloatingActionButton(),
       ),
@@ -440,12 +550,12 @@ class _ModernNavBar extends StatelessWidget {
         child: Container(
           height: context.w(80),
           decoration: BoxDecoration(
-            color: isDark ? Colors.black.withOpacity(0.3) : Colors.white.withOpacity(0.3),
+            color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(context.w(28)),
-            border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1), width: 1.5),
+            border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.1), width: 1.5),
             boxShadow: [
-              BoxShadow(color: isDark ? Colors.black.withOpacity(0.5) : Colors.black.withOpacity(0.1), blurRadius: 30, spreadRadius: 0, offset: const Offset(0, 10)),
-              BoxShadow(color: Colors.white.withOpacity(isDark ? 0.05 : 0.8), blurRadius: 10, spreadRadius: -5, offset: const Offset(0, -5)),
+              BoxShadow(color: isDark ? Colors.black.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.1), blurRadius: 30, spreadRadius: 0, offset: const Offset(0, 10)),
+              BoxShadow(color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.8), blurRadius: 10, spreadRadius: -5, offset: const Offset(0, -5)),
             ],
           ),
           child: ClipRRect(
@@ -454,7 +564,7 @@ class _ModernNavBar extends StatelessWidget {
               filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.black.withOpacity(0.2) : Colors.white.withOpacity(0.2),
+                  color: isDark ? Colors.black.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(context.w(28)),
                 ),
                 child: Row(
@@ -471,7 +581,7 @@ class _ModernNavBar extends StatelessWidget {
                             onTap(i);
                           },
                           borderRadius: BorderRadius.circular(context.w(20)),
-                          splashColor: theme.colorScheme.primary.withOpacity(0.1),
+                          splashColor: theme.colorScheme.primary.withValues(alpha: 0.1),
                           highlightColor: Colors.transparent,
                           child: Container(
                             key: item.key,
@@ -489,9 +599,9 @@ class _ModernNavBar extends StatelessWidget {
                                           width: context.w(48),
                                           height: context.w(32),
                                           decoration: BoxDecoration(
-                                            gradient: LinearGradient(colors: [theme.colorScheme.primary, theme.colorScheme.secondary.withOpacity(0.7)]),
+                                            gradient: LinearGradient(colors: [theme.colorScheme.primary, theme.colorScheme.secondary.withValues(alpha: 0.7)]),
                                             borderRadius: BorderRadius.circular(context.w(16)),
-                                            border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3), width: 1),
+                                            border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.3), width: 1),
                                           ),
                                         ),
                                       ),
@@ -500,7 +610,7 @@ class _ModernNavBar extends StatelessWidget {
                                       child: Icon(
                                         selected ? item.selectedIcon : item.icon,
                                         key: ValueKey('$i-$selected'),
-                                        color: selected ? Colors.white : theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+                                        color: selected ? Colors.white : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                                         size: context.w(24),
                                       ),
                                     ),
@@ -512,7 +622,7 @@ class _ModernNavBar extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: context.sp(10),
                                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                                    color: selected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+                                    color: selected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                                     letterSpacing: 0.3,
                                   ),
                                   child: Text(item.label, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
@@ -584,7 +694,7 @@ class _UltraModernFab extends StatelessWidget {
                     },
                     borderRadius: BorderRadius.circular(context.w(32)),
                     child: Container(
-                      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withOpacity(0.2), width: 1)),
+                      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1)),
                       child: Icon(IconsaxPlusBold.music, color: Colors.white, size: context.w(28)),
                     ),
                   ),
@@ -636,7 +746,7 @@ class _CreateSetlistDialogState extends State<_CreateSetlistDialog> {
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: theme.cardColor.withOpacity(0.9),
+            color: theme.cardColor.withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(24),
           ),
           child: Form(

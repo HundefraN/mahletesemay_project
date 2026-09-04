@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
@@ -577,7 +576,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
   StreamSubscription<Uint8List>? _streamSub;
   final List<int> _audioBuffer = [];
   static const int _targetBufferBytes = 4096;
-  static const int _hopBufferBytes = 1024;
+  static const int _hopBufferBytes = 2048;
 
   final List<double> _pitchHistory = [];
   static const int _historyCapacity = 3;
@@ -637,8 +636,8 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
   }
 
   Future<void> _initMicAndStartTuner() async {
-    final status = await Permission.microphone.request();
-    if (status.isGranted) {
+    final hasPermission = await _audioRecorder.hasPermission();
+    if (hasPermission) {
       _startListening();
     } else {
       if (mounted) {
@@ -674,6 +673,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
       );
 
       _isListening = true;
+      if (mounted) setState(() {});
       _streamSub = stream.listen((data) {
         _audioBuffer.addAll(data);
 
@@ -683,10 +683,9 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
           _audioBuffer.removeRange(0, excess);
         }
 
-        while (_audioBuffer.length >= _targetBufferBytes) {
+        if (_audioBuffer.length >= _targetBufferBytes) {
           final chunk =
               Uint8List.fromList(_audioBuffer.sublist(0, _targetBufferBytes));
-          // Hop forward with 75% overlap for ultra-responsive ~11.6ms updates
           _audioBuffer.removeRange(0, _hopBufferBytes);
 
           // Fast RMS signal energy calculation
@@ -715,7 +714,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                 });
               }
             }
-            continue;
+            return;
           }
 
           try {
@@ -828,6 +827,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
       await _audioRecorder.stop();
     }
     _isListening = false;
+    if (mounted) setState(() {});
   }
 
   void _selectString(int index) {
@@ -894,6 +894,23 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
           ),
         ),
         actions: [
+          IconButton(
+            tooltip: _isListening ? 'Microphone Active' : 'Enable Microphone',
+            icon: Icon(
+              _isListening ? Icons.mic_rounded : Icons.mic_off_rounded,
+              color: _isListening
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.error,
+              size: 22,
+            ),
+            onPressed: () {
+              if (_isListening) {
+                _stopListening();
+              } else {
+                _initMicAndStartTuner();
+              }
+            },
+          ),
           Container(
             margin: EdgeInsets.only(right: context.w(16)),
             decoration: BoxDecoration(
@@ -901,8 +918,8 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
               gradient: _isAutoMode
                   ? LinearGradient(
                       colors: [
-                        theme.colorScheme.primary.withOpacity(0.25),
-                        theme.colorScheme.primary.withOpacity(0.08),
+                        theme.colorScheme.primary.withValues(alpha: 0.25),
+                        theme.colorScheme.primary.withValues(alpha: 0.08),
                       ],
                     )
                   : null,
@@ -951,7 +968,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
       ),
       body: SafeArea(
         child: Column(
-          children: [
+            children: [
             // Preset Selector
             Padding(
               padding: EdgeInsets.symmetric(
@@ -961,17 +978,17 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                     horizontal: context.w(16), vertical: context.w(2)),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF131722).withOpacity(0.9)
-                      : Colors.white.withOpacity(0.9),
+                      ? const Color(0xFF131722).withValues(alpha: 0.9)
+                      : Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(context.w(16)),
                   border: Border.all(
                     color: isDark
-                        ? Colors.white.withOpacity(0.08)
-                        : Colors.black.withOpacity(0.06),
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.black.withValues(alpha: 0.06),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 15,
                       offset: const Offset(0, 6),
                     ),
@@ -1045,7 +1062,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                             boxShadow: [
                               BoxShadow(
                                 color:
-                                    const Color(0xFF00E676).withOpacity(0.35),
+                                    const Color(0xFF00E676).withValues(alpha: 0.35),
                                 blurRadius: 60,
                                 spreadRadius: 15,
                               ),
@@ -1084,7 +1101,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                               style: GoogleFonts.outfit(
                                 fontSize: context.sp(20),
                                 fontWeight: FontWeight.w800,
-                                color: statusColor.withOpacity(0.8),
+                                color: statusColor.withValues(alpha: 0.8),
                               ),
                             ),
                           ],
@@ -1096,10 +1113,10 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                               horizontal: context.w(14),
                               vertical: context.w(4)),
                           decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.12),
+                            color: statusColor.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(context.w(20)),
                             border: Border.all(
-                                color: statusColor.withOpacity(0.4),
+                                color: statusColor.withValues(alpha: 0.4),
                                 width: 1.2),
                           ),
                           child: Text(
@@ -1127,7 +1144,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                             fontSize: context.sp(11),
                             fontWeight: FontWeight.w600,
                             color: theme.colorScheme.onSurfaceVariant
-                                .withOpacity(0.8),
+                                .withValues(alpha: 0.8),
                           ),
                         ),
                       ],
@@ -1308,7 +1325,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isSelected
-                ? Theme.of(context).colorScheme.primary.withOpacity(0.18)
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.18)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
@@ -1502,7 +1519,7 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
     canvas.drawPath(
       headstockPath,
       Paint()
-        ..color = Colors.black.withOpacity(0.5)
+        ..color = Colors.black.withValues(alpha: 0.5)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14),
     );
 
@@ -1532,7 +1549,7 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
     final Paint grainPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8
-      ..color = Colors.black.withOpacity(0.12);
+      ..color = Colors.black.withValues(alpha: 0.12);
 
     for (double y = h * 0.10; y < h * 0.80; y += h * 0.045) {
       final Path grainLine = Path();
@@ -1561,8 +1578,8 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          Colors.white.withOpacity(0.22),
-          Colors.white.withOpacity(0.03),
+          Colors.white.withValues(alpha: 0.22),
+          Colors.white.withValues(alpha: 0.03),
           Colors.transparent,
         ],
       ).createShader(headstockRect);
@@ -1719,9 +1736,9 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
           end: Alignment.bottomCenter,
           colors: isSelected
               ? [
-                  statusColor.withOpacity(0.9),
+                  statusColor.withValues(alpha: 0.9),
                   statusColor,
-                  statusColor.withOpacity(0.7),
+                  statusColor.withValues(alpha: 0.7),
                 ]
               : [
                   const Color(0xFFFFF9E6),
@@ -1761,7 +1778,7 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
           16,
           Paint()
             ..style = PaintingStyle.stroke
-            ..color = statusColor.withOpacity(0.8)
+            ..color = statusColor.withValues(alpha: 0.8)
             ..strokeWidth = 2.0
             ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
         );
@@ -1783,7 +1800,7 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
 
       // Drop shadow from string onto headstock face
       final Paint shadowPaint = Paint()
-        ..color = Colors.black.withOpacity(0.38)
+        ..color = Colors.black.withValues(alpha: 0.38)
         ..strokeWidth = gauge + 0.8
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
       canvas.drawLine(
@@ -1813,7 +1830,7 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
           nutPos,
           pegPos,
           Paint()
-            ..color = statusColor.withOpacity(0.6)
+            ..color = statusColor.withValues(alpha: 0.6)
             ..strokeWidth = gauge + 6.0
             ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
         );
@@ -1845,7 +1862,7 @@ class UltraRealisticHeadstockPainter extends CustomPainter {
 
       // Coiled wire loops wrapped around peg post
       final Paint coilPaint = Paint()
-        ..color = coreColor.withOpacity(0.85)
+        ..color = coreColor.withValues(alpha: 0.85)
         ..strokeWidth = math.max(1.0, gauge * 0.6)
         ..style = PaintingStyle.stroke;
       canvas.drawCircle(pegPos, 8.5, coilPaint);

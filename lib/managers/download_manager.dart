@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,7 +16,7 @@ class DownloadManager with ChangeNotifier {
   Set<String> _downloadedFileNames = {};
 
   DownloadStatus _status = DownloadStatus.notDownloaded;
-  DownloadStatus get status => _status;
+  DownloadStatus get status => kIsWeb ? DownloadStatus.downloaded : _status;
 
   double _totalProgress = 0.0;
   double get totalProgress => _totalProgress;
@@ -63,6 +63,7 @@ class DownloadManager with ChangeNotifier {
   }
 
   Future<void> startDownloadAll() async {
+    if (kIsWeb) return;
     if (_status == DownloadStatus.downloading) return;
 
     _status = DownloadStatus.downloading;
@@ -108,6 +109,7 @@ class DownloadManager with ChangeNotifier {
   }
 
   Future<void> deleteAllFiles() async {
+    if (kIsWeb) return;
     _status = DownloadStatus.downloading;
     _totalProgress = 0.0;
     notifyListeners();
@@ -131,6 +133,7 @@ class DownloadManager with ChangeNotifier {
   }
 
   Future<String?> getLocalPath(String audioUrl) async {
+    if (kIsWeb) return null;
     final fileName = _getFileNameFromUrl(audioUrl);
     if (_downloadedFileNames.contains(fileName)) {
       final directory = await getApplicationDocumentsDirectory();

@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:mahlete_semay_project/screens/pitch_trainer/pitch_trainer_screen.dart';
 import 'package:mahlete_semay_project/services/pitch_service.dart';
-import 'package:mahlete_semay_project/utils/constants.dart';
 import 'package:mahlete_semay_project/widgets/audio_waveform_visualizer.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
 import 'package:mahlete_semay_project/widgets/vocal_piano_roll.dart';
@@ -15,8 +14,9 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:confetti/confetti.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:mahlete_semay_project/widgets/web_content_wrapper.dart';
 
-enum GuidedStep { intro, lowNote, highNote, results }
+enum GuidedStep { intro, lowNote, lowNoteConfirmed, highNote, results }
 
 class VocalRangeFinderScreen extends StatefulWidget {
   const VocalRangeFinderScreen({super.key});
@@ -41,8 +41,8 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
   String _candidateNote = '';
   double _candidatePitch = 0.0;
   int _stableFrames = 0;
-  // ~350ms of steady vocal sustain
-  static const int _requiredStableFrames = 7;
+  // ~450ms of steady vocal sustain
+  static const int _requiredStableFrames = 9;
   double _stabilityProgress = 0.0;
 
   @override
@@ -63,7 +63,9 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
   void _onPitchChanged() {
     if (!mounted) return;
     if (_currentStep != GuidedStep.lowNote &&
-        _currentStep != GuidedStep.highNote) return;
+        _currentStep != GuidedStep.highNote) {
+      return;
+    }
 
     final pitchData = _pitchService.pitchData;
     if (pitchData.pitch <= 0.0 || pitchData.note.isEmpty) {
@@ -118,7 +120,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
       _stabilityProgress = progress;
     });
 
-    // Auto-lock when sustained steadily for 1.2 seconds
+    // Auto-lock when sustained steadily
     if (_stableFrames >= _requiredStableFrames) {
       _lockNote(_candidateNote, _candidatePitch);
     }
@@ -128,7 +130,8 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
     if (note.isEmpty || pitch <= 0) return;
 
     if (_currentStep == GuidedStep.lowNote) {
-      _pitchService.playPitchBeep(pitch);
+      _pitchService.playLockNoteBeep();
+      _pitchService.stopListening();
       setState(() {
         _lowestNoteFound = note;
         _lowestPitchFound = pitch;
@@ -136,11 +139,11 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
         _candidatePitch = 0.0;
         _stableFrames = 0;
         _stabilityProgress = 0.0;
-        _currentStep = GuidedStep.highNote;
+        _currentStep = GuidedStep.lowNoteConfirmed;
       });
       CustomSnackbar.show(
         context,
-        'Lowest note locked: $note! Now glide to your highest note.',
+        'Lowest note captured: $note! Confirm to proceed to the high note test.',
         isError: false,
       );
     } else if (_currentStep == GuidedStep.highNote) {
@@ -162,6 +165,49 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
         'Highest note locked: $note! Vocal Range Analysis Complete.',
         isError: false,
       );
+    }
+  }
+
+  Future<void> _startHighNoteTest() async {
+    _candidateNote = '';
+    _candidatePitch = 0.0;
+    _stableFrames = 0;
+    _stabilityProgress = 0.0;
+    final started = await _pitchService.startListening();
+    if (started) {
+      setState(() {
+        _currentStep = GuidedStep.highNote;
+      });
+      if (mounted) {
+        CustomSnackbar.show(
+          context,
+          'Now glide upwards to your highest comfortable note and hold steady!',
+          isError: false,
+        );
+      }
+    } else {
+      if (mounted) {
+        CustomSnackbar.show(
+          context,
+          'Could not access audio recording input.',
+          isError: true,
+        );
+      }
+    }
+  }
+
+  Future<void> _retestLowestNote() async {
+    _candidateNote = '';
+    _candidatePitch = 0.0;
+    _stableFrames = 0;
+    _stabilityProgress = 0.0;
+    _lowestNoteFound = '';
+    _lowestPitchFound = null;
+    final started = await _pitchService.startListening();
+    if (started) {
+      setState(() {
+        _currentStep = GuidedStep.lowNote;
+      });
     }
   }
 
@@ -217,12 +263,12 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
     final span =
         _pitchService.getVocalRangeSpan(_lowestNoteFound, _highestNoteFound);
 
-    Share.share(
-      '🎤 My Vocal Range: $_lowestNoteFound - $_highestNoteFound ($span)\n'
+    SharePlus.instance.share(ShareParams(text: 
+      '🎤 My Vocal Range: $_lowestNoteFound - $_highestNoteFound ($span))\n'
       '🎼 Voice Type: $voiceType\n'
       'Analyzed with Mahletesemay App!',
       subject: 'My Vocal Range Test Results',
-    );
+    ));
   }
 
   @override
@@ -266,7 +312,10 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
             },
             child: KeyedSubtree(
               key: ValueKey(_currentStep),
-              child: _buildCurrentStepView(theme),
+              child: WebContentWrapper(
+                maxWidth: 720,
+                child: _buildCurrentStepView(theme),
+              ),
             ),
           ),
           Align(
@@ -321,6 +370,8 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
             }
           },
         );
+      case GuidedStep.lowNoteConfirmed:
+        return _buildLowNoteConfirmedView(theme);
       case GuidedStep.highNote:
         return _buildStepCaptureView(
           theme: theme,
@@ -376,7 +427,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   )
@@ -405,18 +456,18 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
               l10n.voiceTypeDisclaimer,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 height: 1.5,
               ),
             ).animate().fadeIn(delay: 150.ms),
             const SizedBox(height: 32),
             Card(
               elevation: 0,
-              color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
-                  color: theme.colorScheme.outline.withOpacity(0.1),
+                  color: theme.colorScheme.outline.withValues(alpha: 0.1),
                 ),
               ),
               child: Padding(
@@ -496,7 +547,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withOpacity(0.8),
+                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: Text(
@@ -512,7 +563,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                 stepInstruction,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
               const SizedBox(height: 24),
@@ -586,7 +637,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                           minHeight: 10,
                           backgroundColor: theme
                               .colorScheme.surfaceContainerHighest
-                              .withOpacity(0.5),
+                              .withValues(alpha: 0.5),
                           valueColor: AlwaysStoppedAnimation<Color>(
                             value >= 1.0
                                 ? Colors.greenAccent.shade700
@@ -657,6 +708,204 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
     );
   }
 
+  Widget _buildLowNoteConfirmedView(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Center(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 28.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Celebratory Check Badge
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF00C853), Color(0xFF009688)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF00C853).withValues(alpha: 0.35),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.check_rounded, color: Colors.white, size: 48),
+            ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
+
+            const SizedBox(height: 20),
+
+            Text(
+              "Lowest Note Confirmed!",
+              style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : const Color(0xFF0A1E3F),
+              ),
+              textAlign: TextAlign.center,
+            ).animate().fadeIn().slideY(begin: 0.2),
+
+            const SizedBox(height: 8),
+
+            Text(
+              "Your lowest vocal note has been recorded and verified.",
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+              textAlign: TextAlign.center,
+            ).animate().fadeIn(delay: 100.ms),
+
+            const SizedBox(height: 24),
+
+            // Note Card with Pitch and Tone Playback
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.blueAccent.withValues(alpha: 0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _lowestNoteFound,
+                        style: GoogleFonts.poppins(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueAccent,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          "${_lowestPitchFound?.toStringAsFixed(1) ?? '0.0'} Hz",
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blueAccent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      if (_lowestPitchFound != null) {
+                        _pitchService.playPitchBeep(_lowestPitchFound!);
+                      }
+                    },
+                    icon: const Icon(Icons.volume_up_rounded, size: 20),
+                    label: const Text("Listen to Note"),
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+            ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.15),
+
+            const SizedBox(height: 20),
+
+            // Live Piano Roll highlight for lowest note
+            VocalPianoRoll(
+              lowestNote: _lowestNoteFound,
+              highestNote: null,
+              currentNote: _lowestNoteFound,
+            ).animate().fadeIn(delay: 200.ms),
+
+            const SizedBox(height: 24),
+
+            // Next step instruction prompt
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, color: theme.colorScheme.primary),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "Step 1 Complete! Click continue when you are ready to find your highest note. Take a breath and get ready to glide upwards.",
+                      style: theme.textTheme.bodySmall?.copyWith(height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ).animate().fadeIn(delay: 250.ms),
+
+            const SizedBox(height: 28),
+
+            // Actions: Retest or Continue to High Note
+            Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: OutlinedButton.icon(
+                    onPressed: _retestLowestNote,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text("Retest"),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: _startHighNoteTest,
+                    icon: const Icon(Icons.arrow_forward_rounded),
+                    label: const Text(
+                      "Continue to High Note",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: theme.colorScheme.onPrimary,
+                      elevation: 3,
+                    ),
+                  ),
+                ),
+              ],
+            ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildResultsView(ThemeData theme) {
     final l10n = AppLocalizations.of(context)!;
     final voiceRangeInfo = _pitchService.getVoiceTypeRange(
@@ -676,7 +925,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
         children: [
           Card(
             elevation: 4,
-            shadowColor: theme.colorScheme.primary.withOpacity(0.2),
+            shadowColor: theme.colorScheme.primary.withValues(alpha: 0.2),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
             ),
@@ -689,7 +938,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                     style: theme.textTheme.labelMedium?.copyWith(
                       letterSpacing: 1.5,
                       fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -707,7 +956,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
-                          color: theme.colorScheme.primary.withOpacity(0.3),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -751,7 +1000,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                   Text(
                     rangeSpan,
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -764,7 +1013,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
                       style: theme.textTheme.bodyMedium?.copyWith(
                         height: 1.4,
                         fontStyle: FontStyle.italic,
-                        color: theme.colorScheme.onSurface.withOpacity(0.8),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                       ),
                     ),
                     if (voiceRangeInfo.famousExamples.isNotEmpty) ...[
@@ -794,11 +1043,11 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
           // Training Recommendation Card
           Card(
             elevation: 1,
-            color: theme.colorScheme.primaryContainer.withOpacity(0.4),
+            color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: BorderSide(
-                color: theme.colorScheme.primary.withOpacity(0.2),
+                color: theme.colorScheme.primary.withValues(alpha: 0.2),
               ),
             ),
             child: ListTile(
@@ -894,17 +1143,17 @@ class _ModernEqualizerCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isActive
-              ? theme.colorScheme.primary.withOpacity(0.4)
-              : theme.colorScheme.outline.withOpacity(0.1),
+              ? theme.colorScheme.primary.withValues(alpha: 0.4)
+              : theme.colorScheme.outline.withValues(alpha: 0.1),
         ),
         boxShadow: isActive
             ? [
                 BoxShadow(
-                  color: theme.colorScheme.primary.withOpacity(0.15),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.15),
                   blurRadius: 20,
                   spreadRadius: 2,
                 )
@@ -929,7 +1178,7 @@ class _ModernEqualizerCard extends StatelessWidget {
                 height: 1.0,
                 color: isActive
                     ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface.withOpacity(0.3),
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.3),
               ),
             ),
           ),
@@ -942,7 +1191,7 @@ class _ModernEqualizerCard extends StatelessWidget {
                 value > 0 ? '${value.toStringAsFixed(1)} Hz' : '0.0 Hz',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface.withOpacity(0.55),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               );
@@ -985,7 +1234,7 @@ class _StepInfoRow extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 18,
-          backgroundColor: color.withOpacity(0.15),
+          backgroundColor: color.withValues(alpha: 0.15),
           child: Text(
             number,
             style: TextStyle(
@@ -1010,7 +1259,7 @@ class _StepInfoRow extends StatelessWidget {
                 subtitle,
                 style: TextStyle(
                   color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   fontSize: 13,
                 ),
               ),
@@ -1038,9 +1287,9 @@ class _CapturedNoteCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Column(
         children: [

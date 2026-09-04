@@ -3,6 +3,8 @@ import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:mahlete_semay_project/providers/vocal_progress_provider.dart';
 
+import 'package:mahlete_semay_project/widgets/web_content_wrapper.dart';
+
 class GenderSelectionScreen extends StatelessWidget {
   const GenderSelectionScreen({super.key});
 
@@ -13,7 +15,8 @@ class GenderSelectionScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
-        child: Center(
+        child: WebContentWrapper(
+          maxWidth: 600,
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.all(24.0),

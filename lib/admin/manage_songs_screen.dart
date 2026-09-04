@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/artist_model.dart';
@@ -109,7 +108,7 @@ class _ManageSongsScreenState extends State<ManageSongsScreen> with SingleTicker
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF13233D) : Colors.black.withOpacity(0.04),
+              color: isDark ? const Color(0xFF13233D) : Colors.black.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(16),
             ),
             padding: const EdgeInsets.all(4),
@@ -122,7 +121,7 @@ class _ManageSongsScreenState extends State<ManageSongsScreen> with SingleTicker
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -358,7 +357,7 @@ class _SongListTabState extends State<_SongListTab> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
-      children: [
+        children: [
         // Selection Bar or Search Field
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -366,9 +365,9 @@ class _SongListTabState extends State<_SongListTab> {
               ? Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: AdminUiKit.roseRed.withOpacity(0.12),
+                    color: AdminUiKit.roseRed.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AdminUiKit.roseRed.withOpacity(0.3)),
+                    border: Border.all(color: AdminUiKit.roseRed.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -447,8 +446,8 @@ class _SongListTabState extends State<_SongListTab> {
                           borderColor: isSelected ? AdminUiKit.goldAccent : null,
                           customColor: isSelected
                               ? (isDark
-                                  ? AdminUiKit.goldAccent.withOpacity(0.15)
-                                  : AdminUiKit.primaryNavy.withOpacity(0.08))
+                                  ? AdminUiKit.goldAccent.withValues(alpha: 0.15)
+                                  : AdminUiKit.primaryNavy.withValues(alpha: 0.08))
                               : null,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           borderRadius: 16,
@@ -463,8 +462,8 @@ class _SongListTabState extends State<_SongListTab> {
                                     colors: isSelected
                                         ? [AdminUiKit.goldAccent, AdminUiKit.goldHighlight]
                                         : [
-                                            AdminUiKit.primaryNavy.withOpacity(0.15),
-                                            AdminUiKit.goldAccent.withOpacity(0.15),
+                                            AdminUiKit.primaryNavy.withValues(alpha: 0.15),
+                                            AdminUiKit.goldAccent.withValues(alpha: 0.15),
                                           ],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
@@ -514,7 +513,7 @@ class _SongListTabState extends State<_SongListTab> {
                                               margin: const EdgeInsets.only(right: 6),
                                               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                               decoration: BoxDecoration(
-                                                color: AdminUiKit.royalBlue.withOpacity(0.12),
+                                                color: AdminUiKit.royalBlue.withValues(alpha: 0.12),
                                                 borderRadius: BorderRadius.circular(6),
                                               ),
                                               child: Text(
@@ -530,7 +529,7 @@ class _SongListTabState extends State<_SongListTab> {
                                             Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                               decoration: BoxDecoration(
-                                                color: AdminUiKit.amberOrange.withOpacity(0.12),
+                                                color: AdminUiKit.amberOrange.withValues(alpha: 0.12),
                                                 borderRadius: BorderRadius.circular(6),
                                               ),
                                               child: Text(
@@ -562,7 +561,7 @@ class _SongListTabState extends State<_SongListTab> {
                                 Container(
                                   padding: const EdgeInsets.all(7),
                                   decoration: BoxDecoration(
-                                    color: isDark ? Colors.white10 : Colors.black.withOpacity(0.04),
+                                    color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Icon(

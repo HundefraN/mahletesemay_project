@@ -155,7 +155,7 @@ class ForceUpdateDialog {
 
   /// Opens the correct store listing based on the current platform.
   static Future<void> _openStore() async {
-    final url = Platform.isIOS ? _appStoreUrl : _playStoreUrl;
+    final url = (!kIsWeb && Platform.isIOS) ? _appStoreUrl : _playStoreUrl;
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);

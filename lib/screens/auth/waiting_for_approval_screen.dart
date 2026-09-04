@@ -75,14 +75,14 @@ class _WaitingForApprovalScreenState extends State<WaitingForApprovalScreen> {
                 end: Alignment.bottomCenter,
                 colors: isDark
                     ? [const Color(0xFF0A1E3F), const Color(0xFF070E1B)]
-                    : [AdminUiKit.primaryNavy.withOpacity(0.08), const Color(0xFFF5F7FB)],
+                    : [AdminUiKit.primaryNavy.withValues(alpha: 0.08), const Color(0xFFF5F7FB)],
               ),
             ),
             child: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
-                  child: Column(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+                    child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // Animated Shield Icon with Pulse
@@ -96,7 +96,7 @@ class _WaitingForApprovalScreenState extends State<WaitingForApprovalScreen> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AdminUiKit.amberOrange.withOpacity(0.35),
+                              color: AdminUiKit.amberOrange.withValues(alpha: 0.35),
                               blurRadius: 30,
                               spreadRadius: 4,
                             ),
@@ -140,7 +140,7 @@ class _WaitingForApprovalScreenState extends State<WaitingForApprovalScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+                          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: isDark ? Colors.white12 : Colors.black12,
@@ -204,7 +204,7 @@ class _WaitingForApprovalScreenState extends State<WaitingForApprovalScreen> {
                           label: Text(AppLocalizations.of(context)?.signOutAndReturn ?? 'Sign Out & Return'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AdminUiKit.roseRed,
-                            side: BorderSide(color: AdminUiKit.roseRed.withOpacity(0.4)),
+                            side: BorderSide(color: AdminUiKit.roseRed.withValues(alpha: 0.4)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),

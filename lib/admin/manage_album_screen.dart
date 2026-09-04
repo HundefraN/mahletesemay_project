@@ -107,7 +107,7 @@ class _ManageAlbumsScreenState extends State<ManageAlbumsScreen> with SingleTick
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF13233D) : Colors.black.withOpacity(0.04),
+              color: isDark ? const Color(0xFF13233D) : Colors.black.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(16),
             ),
             padding: const EdgeInsets.all(4),
@@ -120,7 +120,7 @@ class _ManageAlbumsScreenState extends State<ManageAlbumsScreen> with SingleTick
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -353,16 +353,16 @@ class _AlbumListTabState extends State<_AlbumListTab> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
-      children: [
+        children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: _isSelectionMode
               ? Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: AdminUiKit.roseRed.withOpacity(0.12),
+                    color: AdminUiKit.roseRed.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AdminUiKit.roseRed.withOpacity(0.3)),
+                    border: Border.all(color: AdminUiKit.roseRed.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -440,8 +440,8 @@ class _AlbumListTabState extends State<_AlbumListTab> {
                           borderColor: isSelected ? AdminUiKit.goldAccent : null,
                           customColor: isSelected
                               ? (isDark
-                                  ? AdminUiKit.goldAccent.withOpacity(0.15)
-                                  : AdminUiKit.primaryNavy.withOpacity(0.08))
+                                  ? AdminUiKit.goldAccent.withValues(alpha: 0.15)
+                                  : AdminUiKit.primaryNavy.withValues(alpha: 0.08))
                               : null,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           borderRadius: 16,
@@ -453,7 +453,7 @@ class _AlbumListTabState extends State<_AlbumListTab> {
                                 child: Container(
                                   width: 52,
                                   height: 52,
-                                  color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                                  color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
                                   child: album.coverImageUrl.isNotEmpty
                                       ? Image.network(
                                           album.coverImageUrl,
@@ -508,7 +508,7 @@ class _AlbumListTabState extends State<_AlbumListTab> {
                                               margin: const EdgeInsets.only(right: 6),
                                               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                               decoration: BoxDecoration(
-                                                color: AdminUiKit.royalBlue.withOpacity(0.12),
+                                                color: AdminUiKit.royalBlue.withValues(alpha: 0.12),
                                                 borderRadius: BorderRadius.circular(6),
                                               ),
                                               child: Text(
@@ -524,7 +524,7 @@ class _AlbumListTabState extends State<_AlbumListTab> {
                                             Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                               decoration: BoxDecoration(
-                                                color: AdminUiKit.goldAccent.withOpacity(0.15),
+                                                color: AdminUiKit.goldAccent.withValues(alpha: 0.15),
                                                 borderRadius: BorderRadius.circular(6),
                                               ),
                                               child: Text(
@@ -555,7 +555,7 @@ class _AlbumListTabState extends State<_AlbumListTab> {
                                 Container(
                                   padding: const EdgeInsets.all(7),
                                   decoration: BoxDecoration(
-                                    color: isDark ? Colors.white10 : Colors.black.withOpacity(0.04),
+                                    color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Icon(

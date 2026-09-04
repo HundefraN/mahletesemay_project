@@ -17,7 +17,7 @@ import 'package:mahlete_semay_project/providers/vocal_progress_provider.dart';
 import 'package:mahlete_semay_project/services/firebase_service.dart';
 import 'package:mahlete_semay_project/widgets/loading_placeholders.dart';
 import 'package:mahlete_semay_project/widgets/real_audio_waveform_visualizer.dart';
-import '../../utils/constants.dart';
+import '../../widgets/web_content_wrapper.dart';
 import 'gender_selection_screen.dart';
 
 class VocalExerciseListScreen extends StatelessWidget {
@@ -79,7 +79,7 @@ class VocalExerciseListScreen extends StatelessWidget {
             stretch: true,
             elevation: 0,
             scrolledUnderElevation: 0,
-            backgroundColor: theme.colorScheme.surface.withOpacity(0.75),
+            backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.75),
             flexibleSpace: ClipRect(
               child: BackdropFilter(
                 filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
@@ -100,11 +100,11 @@ class VocalExerciseListScreen extends StatelessWidget {
                             radius: 1.2,
                             colors: isDark
                                 ? [
-                                    theme.colorScheme.primary.withOpacity(0.35),
+                                    theme.colorScheme.primary.withValues(alpha: 0.35),
                                     theme.colorScheme.surface,
                                   ]
                                 : [
-                                    theme.colorScheme.primary.withOpacity(0.18),
+                                    theme.colorScheme.primary.withValues(alpha: 0.18),
                                     theme.colorScheme.surface,
                                   ],
                           ),
@@ -119,7 +119,7 @@ class VocalExerciseListScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color:
-                                theme.colorScheme.secondary.withOpacity(0.15),
+                                theme.colorScheme.secondary.withValues(alpha: 0.15),
                           ),
                         ),
                       ),
@@ -139,12 +139,12 @@ class VocalExerciseListScreen extends StatelessWidget {
                                 ),
                                 decoration: BoxDecoration(
                                   color: theme.colorScheme.primary
-                                      .withOpacity(0.12),
+                                      .withValues(alpha: 0.12),
                                   borderRadius:
                                       BorderRadius.circular(context.w(20)),
                                   border: Border.all(
                                     color: theme.colorScheme.primary
-                                        .withOpacity(0.2),
+                                        .withValues(alpha: 0.2),
                                   ),
                                 ),
                                 child: Text(
@@ -164,7 +164,7 @@ class VocalExerciseListScreen extends StatelessWidget {
                                   fontWeight: FontWeight.w400,
                                   fontSize: context.sp(20),
                                   color: theme.colorScheme.onSurface
-                                      .withOpacity(0.8),
+                                      .withValues(alpha: 0.8),
                                 ),
                               ),
                               Text(
@@ -194,7 +194,7 @@ class VocalExerciseListScreen extends StatelessWidget {
                   tooltip: l10n.pitchTrainer,
                   style: IconButton.styleFrom(
                     backgroundColor:
-                        theme.colorScheme.surfaceContainerHigh.withOpacity(0.8),
+                        theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.8),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(context.w(14))),
                   ),
@@ -212,75 +212,110 @@ class VocalExerciseListScreen extends StatelessWidget {
           ),
 
           // Section Title: Structured Plans
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                  context.w(20), context.w(24), context.w(20), context.w(14)),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    l10n.structuredPlans,
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w800,
-                      fontSize: context.sp(19),
-                      letterSpacing: -0.3,
-                      color: theme.colorScheme.onSurface,
+          SliverWebContentWrapper(
+            maxWidth: 1000,
+            sliver: SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                    context.w(20), context.w(24), context.w(20), context.w(14)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      l10n.structuredPlans,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w800,
+                        fontSize: context.sp(19),
+                        letterSpacing: -0.3,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.all(context.w(6)),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.1),
-                      shape: BoxShape.circle,
+                    Container(
+                      padding: EdgeInsets.all(context.w(6)),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.auto_awesome_rounded,
+                          size: context.w(16), color: theme.colorScheme.primary),
                     ),
-                    child: Icon(Icons.auto_awesome_rounded,
-                        size: context.w(16), color: theme.colorScheme.primary),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Vocal Plans Grid / List
-          SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: context.w(20)),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final plan = planData[index];
-                  final colors = plan['gradient'] as List<Color>;
-                  return _ModernPlanCard(
-                    title: plan['title'] as String,
-                    subtitle: plan['subtitle'] as String,
-                    planId: plan['planId'] as String,
-                    icon: plan['icon'] as IconData,
-                    colors: colors,
-                  );
-                },
-                childCount: planData.length,
-              ),
-            ),
-          ),
-
-          // Section Title: General Exercises
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                  context.w(20), context.w(28), context.w(20), context.w(14)),
-              child: Text(
-                l10n.generalExercises,
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w800,
-                  fontSize: context.sp(19),
-                  letterSpacing: -0.3,
-                  color: theme.colorScheme.onSurface,
+                  ],
                 ),
               ),
             ),
           ),
 
-          _buildGeneralExercisesList(context, firebaseService),
+          // Vocal Plans Grid / List
+          SliverWebContentWrapper(
+            maxWidth: 1000,
+            sliver: SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: context.w(20)),
+              sliver: !context.isPhone
+                  ? SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: context.isDesktop ? 3 : 2,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: 1.6,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final plan = planData[index];
+                          final colors = plan['gradient'] as List<Color>;
+                          return _ModernPlanCard(
+                            title: plan['title'] as String,
+                            subtitle: plan['subtitle'] as String,
+                            planId: plan['planId'] as String,
+                            icon: plan['icon'] as IconData,
+                            colors: colors,
+                          );
+                        },
+                        childCount: planData.length,
+                      ),
+                    )
+                  : SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final plan = planData[index];
+                          final colors = plan['gradient'] as List<Color>;
+                          return _ModernPlanCard(
+                            title: plan['title'] as String,
+                            subtitle: plan['subtitle'] as String,
+                            planId: plan['planId'] as String,
+                            icon: plan['icon'] as IconData,
+                            colors: colors,
+                          );
+                        },
+                        childCount: planData.length,
+                      ),
+                    ),
+            ),
+          ),
+
+          // Section Title: General Exercises
+          SliverWebContentWrapper(
+            maxWidth: 1000,
+            sliver: SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                    context.w(20), context.w(28), context.w(20), context.w(14)),
+                child: Text(
+                  l10n.generalExercises,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w800,
+                    fontSize: context.sp(19),
+                    letterSpacing: -0.3,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          SliverWebContentWrapper(
+            maxWidth: 1000,
+            sliver: _buildGeneralExercisesList(context, firebaseService),
+          ),
           SliverToBoxAdapter(child: SizedBox(height: context.w(120))),
         ],
       ),
@@ -296,7 +331,7 @@ class VocalExerciseListScreen extends StatelessWidget {
         tooltip: AppLocalizations.of(context)?.lessonsAndTutorials ?? 'Lessons & Tutorials',
         style: IconButton.styleFrom(
           backgroundColor:
-              theme.colorScheme.surfaceContainerHigh.withOpacity(0.8),
+              theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.8),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(context.w(14))),
         ),
@@ -360,15 +395,15 @@ class VocalExerciseListScreen extends StatelessWidget {
                       margin: EdgeInsets.only(bottom: context.w(12)),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surfaceContainerHigh
-                            .withOpacity(0.65),
+                            .withValues(alpha: 0.65),
                         borderRadius: BorderRadius.circular(context.w(20)),
                         border: Border.all(
                           color:
-                              theme.colorScheme.outlineVariant.withOpacity(0.3),
+                              theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.03),
+                            color: Colors.black.withValues(alpha: 0.03),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           )
@@ -397,7 +432,7 @@ class VocalExerciseListScreen extends StatelessWidget {
                                       colors: [
                                         theme.colorScheme.primaryContainer,
                                         theme.colorScheme.primary
-                                            .withOpacity(0.2),
+                                            .withValues(alpha: 0.2),
                                       ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
@@ -429,7 +464,7 @@ class VocalExerciseListScreen extends StatelessWidget {
                                     color: theme.colorScheme.surface,
                                     border: Border.all(
                                       color: theme.colorScheme.outlineVariant
-                                          .withOpacity(0.3),
+                                          .withValues(alpha: 0.3),
                                     ),
                                   ),
                                   child: Icon(
@@ -480,7 +515,6 @@ class _ModernPlanCardState extends State<_ModernPlanCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final firebaseService = FirebaseService();
 
     return OpenContainer(
@@ -518,7 +552,7 @@ class _ModernPlanCardState extends State<_ModernPlanCard> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: widget.colors.first.withOpacity(0.35),
+                    color: widget.colors.first.withValues(alpha: 0.35),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -532,10 +566,10 @@ class _ModernPlanCardState extends State<_ModernPlanCard> {
                       Container(
                         padding: EdgeInsets.all(context.w(10)),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.22),
+                          color: Colors.white.withValues(alpha: 0.22),
                           borderRadius: BorderRadius.circular(context.w(16)),
                           border: Border.all(
-                              color: Colors.white.withOpacity(0.35),
+                              color: Colors.white.withValues(alpha: 0.35),
                               width: 1.5),
                         ),
                         child: Icon(widget.icon,
@@ -556,7 +590,7 @@ class _ModernPlanCardState extends State<_ModernPlanCard> {
                         padding: EdgeInsets.all(context.w(6)),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                         ),
                         child: Icon(
                           Icons.north_east_rounded,
@@ -570,7 +604,7 @@ class _ModernPlanCardState extends State<_ModernPlanCard> {
                   Text(
                     widget.subtitle,
                     style: GoogleFonts.poppins(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: context.sp(12.5),
                       height: 1.4,
                       fontWeight: FontWeight.w400,
@@ -586,7 +620,7 @@ class _ModernPlanCardState extends State<_ModernPlanCard> {
                           borderRadius: BorderRadius.circular(10),
                           child: LinearProgressIndicator(
                             minHeight: context.w(6),
-                            backgroundColor: Colors.white.withOpacity(0.2),
+                            backgroundColor: Colors.white.withValues(alpha: 0.2),
                             valueColor: const AlwaysStoppedAnimation<Color>(
                                 Colors.white),
                           ),
@@ -608,7 +642,7 @@ class _ModernPlanCardState extends State<_ModernPlanCard> {
                                 Container(
                                   height: context.w(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.25),
+                                    color: Colors.white.withValues(alpha: 0.25),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                 ),
@@ -623,7 +657,7 @@ class _ModernPlanCardState extends State<_ModernPlanCard> {
                                       borderRadius: BorderRadius.circular(20),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.white.withOpacity(0.6),
+                                          color: Colors.white.withValues(alpha: 0.6),
                                           blurRadius: 8,
                                         ),
                                       ],
@@ -677,7 +711,7 @@ class _ExerciseDetailSheet extends StatelessWidget {
               child: IconButton.filledTonal(
                 icon: const Icon(Icons.arrow_back_rounded),
                 style: IconButton.styleFrom(
-                  backgroundColor: theme.colorScheme.surface.withOpacity(0.7),
+                  backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.7),
                 ),
                 onPressed: () {
                   HapticFeedback.lightImpact();
@@ -715,7 +749,7 @@ class _ExerciseDetailSheet extends StatelessWidget {
                     child: Icon(
                       Icons.graphic_eq_rounded,
                       size: context.w(110),
-                      color: theme.colorScheme.primary.withOpacity(0.12),
+                      color: theme.colorScheme.primary.withValues(alpha: 0.12),
                     ),
                   ),
                 ],
@@ -742,7 +776,7 @@ class _ExerciseDetailSheet extends StatelessWidget {
                     style: theme.textTheme.bodyLarge?.copyWith(
                       height: 1.6,
                       fontSize: context.sp(14.5),
-                      color: theme.colorScheme.onSurface.withOpacity(0.85),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
                     ),
                   ),
                   SizedBox(height: context.w(32)),
@@ -847,13 +881,13 @@ class __ModernAudioPlayerState extends State<_ModernAudioPlayer>
     return Container(
       padding: EdgeInsets.all(context.w(18)),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh.withOpacity(0.8),
+        color: theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(context.w(24)),
         border: Border.all(
-            color: theme.colorScheme.outlineVariant.withOpacity(0.3)),
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -891,7 +925,7 @@ class __ModernAudioPlayerState extends State<_ModernAudioPlayer>
               overlayShape:
                   RoundSliderOverlayShape(overlayRadius: context.w(12)),
               activeTrackColor: theme.colorScheme.primary,
-              inactiveTrackColor: theme.colorScheme.primary.withOpacity(0.15),
+              inactiveTrackColor: theme.colorScheme.primary.withValues(alpha: 0.15),
               thumbColor: theme.colorScheme.primary,
             ),
             child: Slider(
@@ -995,7 +1029,7 @@ class __ModernAudioPlayerState extends State<_ModernAudioPlayer>
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.35),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.35),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -1030,7 +1064,7 @@ class __ModernAudioPlayerState extends State<_ModernAudioPlayer>
                 size: context.w(20),
                 color: _localPath != null
                     ? const Color(0xFF10B981)
-                    : theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
               ),
             ],
           ),

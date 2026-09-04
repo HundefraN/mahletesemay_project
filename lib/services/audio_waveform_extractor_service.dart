@@ -57,7 +57,7 @@ class AudioWaveformExtractorService {
     // Load raw audio bytes
     Uint8List? audioBytes;
     try {
-      if (localFilePath != null && await File(localFilePath).exists()) {
+      if (!kIsWeb && localFilePath != null && await File(localFilePath).exists()) {
         audioBytes = await File(localFilePath).readAsBytes();
       } else if (audioSource.startsWith('http://') ||
           audioSource.startsWith('https://')) {
@@ -65,7 +65,7 @@ class AudioWaveformExtractorService {
         if (response.data != null) {
           audioBytes = Uint8List.fromList(response.data!);
         }
-      } else {
+      } else if (!kIsWeb) {
         final file = File(audioSource);
         if (await file.exists()) {
           audioBytes = await file.readAsBytes();
@@ -501,6 +501,7 @@ class AudioWaveformExtractorService {
   }
 
   Future<List<double>?> _loadFromDiskCache(String cacheKey) async {
+    if (kIsWeb) return null;
     try {
       final path = await _getCacheFilePath(cacheKey);
       final file = File(path);
@@ -515,6 +516,7 @@ class AudioWaveformExtractorService {
 
   Future<void> _saveToDiskCache(
       String cacheKey, List<double> waveform) async {
+    if (kIsWeb) return;
     try {
       final path = await _getCacheFilePath(cacheKey);
       final file = File(path);

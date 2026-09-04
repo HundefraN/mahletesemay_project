@@ -9,6 +9,8 @@ import 'package:mahlete_semay_project/services/firebase_service.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:mahlete_semay_project/widgets/web_content_wrapper.dart';
+
 class SuggestLyricsScreen extends StatefulWidget {
   final String? initialTitle;
   final String? initialArtist;
@@ -116,24 +118,27 @@ class _SuggestLyricsScreenState extends State<SuggestLyricsScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(controller: _titleController, decoration: _inputDecoration('${l10n.title} *', Icons.music_note), validator: (v) => v!.isEmpty ? l10n.pleaseEnterEmail : null),
-            const SizedBox(height: 16),
-            TextFormField(controller: _artistController, decoration: _inputDecoration('${l10n.artist} *', Icons.person), validator: (v) => v!.isEmpty ? l10n.pleaseEnterEmail : null),
-            const SizedBox(height: 16),
-            TextFormField(controller: _lyricsController, decoration: _inputDecoration('${l10n.lyrics} *', Icons.text_fields, alignLabel: true), minLines: 10, maxLines: 20, validator: (v) => v!.isEmpty ? l10n.pleaseEnterEmail : null),
-            const SizedBox(height: 24),
-            ElevatedButton(
-                onPressed: _isOffline ? null : _submit,
-                child: Text(l10n.submitForReview),
+          : WebContentWrapper(
+              maxWidth: 700,
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    TextFormField(controller: _titleController, decoration: _inputDecoration('${l10n.title} *', Icons.music_note), validator: (v) => v!.isEmpty ? l10n.pleaseEnterEmail : null),
+                    const SizedBox(height: 16),
+                    TextFormField(controller: _artistController, decoration: _inputDecoration('${l10n.artist} *', Icons.person), validator: (v) => v!.isEmpty ? l10n.pleaseEnterEmail : null),
+                    const SizedBox(height: 16),
+                    TextFormField(controller: _lyricsController, decoration: _inputDecoration('${l10n.lyrics} *', Icons.text_fields, alignLabel: true), minLines: 10, maxLines: 20, validator: (v) => v!.isEmpty ? l10n.pleaseEnterEmail : null),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                        onPressed: _isOffline ? null : _submit,
+                        child: Text(l10n.submitForReview),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
-      ),
     );
   }
 

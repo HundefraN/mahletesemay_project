@@ -163,8 +163,8 @@ class _WaveformCustomPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          primaryColor.withOpacity(hasPitch ? 0.35 : 0.15),
-          primaryColor.withOpacity(0.0),
+          primaryColor.withValues(alpha: hasPitch ? 0.35 : 0.15),
+          primaryColor.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromLTWH(0, 0, w, h))
       ..style = PaintingStyle.fill;
@@ -172,7 +172,7 @@ class _WaveformCustomPainter extends CustomPainter {
 
     // 2. Glowing Ambient Neon Blur behind line
     final Paint glowPaint = Paint()
-      ..color = (hasPitch ? secondaryColor : primaryColor).withOpacity(0.6)
+      ..color = (hasPitch ? secondaryColor : primaryColor).withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
       ..strokeWidth = hasPitch ? 4.0 : 2.5
       ..strokeCap = StrokeCap.round
@@ -195,7 +195,7 @@ class _WaveformCustomPainter extends CustomPainter {
 
     // 4. Subtle Centerline Baseline
     final Paint centerLinePaint = Paint()
-      ..color = primaryColor.withOpacity(0.12)
+      ..color = primaryColor.withValues(alpha: 0.12)
       ..strokeWidth = 1.0;
     canvas.drawLine(Offset(0, midY), Offset(w, midY), centerLinePaint);
   }

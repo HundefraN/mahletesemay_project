@@ -220,11 +220,11 @@ class _EditSongScreenState extends State<EditSongScreen> {
         ],
       ),
       body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          physics: const BouncingScrollPhysics(),
-          children: [
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            physics: const BouncingScrollPhysics(),
+            children: [
             // Section 1: Association
             AdminSectionHeader(
               title: AppLocalizations.of(context)?.songAssociationSection ?? 'Song Association',
@@ -238,11 +238,11 @@ class _EditSongScreenState extends State<EditSongScreen> {
                   Container(
                     decoration: BoxDecoration(
                       color: _isSingle
-                          ? AdminUiKit.goldAccent.withOpacity(0.12)
-                          : (isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03)),
+                          ? AdminUiKit.goldAccent.withValues(alpha: 0.12)
+                          : (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.03)),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _isSingle ? AdminUiKit.goldAccent.withOpacity(0.3) : Colors.transparent,
+                        color: _isSingle ? AdminUiKit.goldAccent.withValues(alpha: 0.3) : Colors.transparent,
                       ),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -258,7 +258,7 @@ class _EditSongScreenState extends State<EditSongScreen> {
                         style: GoogleFonts.plusJakartaSans(fontSize: 11),
                       ),
                       value: _isSingle,
-                      activeColor: AdminUiKit.goldAccent,
+                      activeThumbColor: AdminUiKit.goldAccent,
                       onChanged: (value) {
                         AdminUiKit.hapticLight();
                         setState(() => _isSingle = value);
@@ -370,7 +370,7 @@ class _EditSongScreenState extends State<EditSongScreen> {
                   const SizedBox(height: 10),
 
                   DropdownButtonFormField<String>(
-                    value: _selectedScale,
+                    initialValue: _selectedScale,
                     decoration: _inputDecoration('Musical Scale (Optional)', Icons.graphic_eq_rounded),
                     items: scaleMenuItems.map((scale) => DropdownMenuItem(value: scale, child: Text(scale, style: GoogleFonts.plusJakartaSans(fontSize: 13)))).toList(),
                     onChanged: (value) => setState(() => _selectedScale = value),
@@ -387,7 +387,7 @@ class _EditSongScreenState extends State<EditSongScreen> {
                   const SizedBox(height: 10),
 
                   DropdownButtonFormField<String>(
-                    value: _selectedRhythm,
+                    initialValue: _selectedRhythm,
                     decoration: _inputDecoration('Rhythm Pattern (Optional)', Icons.speed_rounded),
                     items: rhythmMenuItems.map((rhythm) => DropdownMenuItem(value: rhythm, child: Text(rhythm, style: GoogleFonts.plusJakartaSans(fontSize: 13)))).toList(),
                     onChanged: (value) => setState(() => _selectedRhythm = value),

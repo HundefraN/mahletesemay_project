@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +14,7 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../models/song_model.dart';
 import '../../providers/song_provider.dart';
 import '../../services/search_service.dart';
+import '../../widgets/web_content_wrapper.dart';
 import '../lyrics/song_detail_screen.dart';
 
 final GlobalKey<_MashupCategoryListState> mashupTab1Key =
@@ -49,6 +51,7 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
   }
 
   void _checkAndShowTutorial() async {
+    if (kIsWeb) return;
     final prefs = await SharedPreferences.getInstance();
     final bool hasSeenTour =
         prefs.getBool('mashup_helper_tour_completed_v2') ?? false;
@@ -66,7 +69,7 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
     final l10n = AppLocalizations.of(context);
     tutorialCoachMark = TutorialCoachMark(
       targets: _createTargets(),
-      colorShadow: Theme.of(context).colorScheme.primary.withOpacity(0.9),
+      colorShadow: Theme.of(context).colorScheme.primary.withValues(alpha: 0.9),
       textSkip: l10n?.skip.toUpperCase() ?? "SKIP",
       onFinish: () {
         _completeTutorial();
@@ -145,7 +148,7 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 10,
             spreadRadius: 1,
             offset: const Offset(0, 4),
@@ -274,8 +277,8 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      theme.colorScheme.primary.withOpacity(0.12),
-                      theme.colorScheme.secondary.withOpacity(0.06),
+                      theme.colorScheme.primary.withValues(alpha: 0.12),
+                      theme.colorScheme.secondary.withValues(alpha: 0.06),
                       theme.colorScheme.surface,
                     ],
                   ),
@@ -324,7 +327,7 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest
-                      .withOpacity(0.5),
+                      .withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: TabBar(
@@ -339,7 +342,7 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.3),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.3),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -348,7 +351,7 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
                   dividerColor: Colors.transparent,
                   labelColor: Colors.white,
                   unselectedLabelColor:
-                      theme.colorScheme.onSurface.withOpacity(0.7),
+                      theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   labelStyle: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
@@ -557,8 +560,8 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              theme.colorScheme.primary.withOpacity(0.6),
-              theme.colorScheme.secondary.withOpacity(0.6)
+              theme.colorScheme.primary.withValues(alpha: 0.6),
+              theme.colorScheme.secondary.withValues(alpha: 0.6)
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -576,45 +579,48 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
     return RefreshIndicator(
       onRefresh: () => songProvider.refreshData(),
       color: Theme.of(context).colorScheme.primary,
-      child: Column(
-        children: [
-          AnimatedBuilder(
-            animation: _searchSlideAnimation,
-            builder: (context, child) {
-              return ClipRect(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  heightFactor: _searchSlideAnimation.value,
-                  child: _isSearching
-                      ? _buildSearchBar()
-                      : const SizedBox.shrink(),
-                ),
-              );
-            },
-          ),
-          Expanded(
-            child: _sortedScales.isEmpty && !_isSearching
-                ? _buildEmptyState(songProvider)
-                : AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    transitionBuilder: (child, animation) {
-                      return FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0.0, 0.05),
-                            end: Offset.zero,
-                          ).animate(animation),
-                          child: child,
-                        ),
-                      );
-                    },
+      child: WebContentWrapper(
+        maxWidth: 1000,
+        child: Column(
+          children: [
+            AnimatedBuilder(
+              animation: _searchSlideAnimation,
+              builder: (context, child) {
+                return ClipRect(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    heightFactor: _searchSlideAnimation.value,
                     child: _isSearching
-                        ? _buildSearchResultsView()
-                        : _buildBrowserView(),
+                        ? _buildSearchBar()
+                        : const SizedBox.shrink(),
                   ),
-          ),
-        ],
+                );
+              },
+            ),
+            Expanded(
+              child: _sortedScales.isEmpty && !_isSearching
+                  ? _buildEmptyState(songProvider)
+                  : AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0.0, 0.05),
+                              end: Offset.zero,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: _isSearching
+                          ? _buildSearchResultsView()
+                          : _buildBrowserView(),
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -629,7 +635,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -653,7 +659,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
               'Songs with assigned scale and rhythm information will appear here automatically when fetched from the server.',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
         const SizedBox(height: 24),
@@ -694,11 +700,11 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.3),
+          color: theme.colorScheme.primary.withValues(alpha: 0.3),
         ),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.08),
+            color: theme.colorScheme.primary.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -713,7 +719,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
           hintText: AppLocalizations.of(context)?.searchHint ?? 'Search songs, artists, lyrics...',
           hintStyle: TextStyle(
             fontSize: 13,
-            color: theme.colorScheme.onSurface.withOpacity(0.5),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
           ),
           prefixIcon: Icon(
             Icons.search_rounded,
@@ -724,7 +730,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
             iconSize: 18,
             icon: Icon(
               Icons.close_rounded,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             onPressed: () {
               if (_searchController.text.isNotEmpty) {
@@ -812,7 +818,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: theme.colorScheme.secondary.withOpacity(0.12),
+                color: theme.colorScheme.secondary.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -834,7 +840,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
                   'Pick a rhythm beat pattern above to display matching mashup songs.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -893,7 +899,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: theme.colorScheme.error.withOpacity(0.1),
+              color: theme.colorScheme.error.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -914,7 +920,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
             AppLocalizations.of(context)?.noMatchingSongsDesc ??
                 'Try searching with different song titles or lyric keywords',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -998,8 +1004,8 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
                                   horizontal: 5, vertical: 1),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? Colors.white.withOpacity(0.25)
-                                    : activeColor.withOpacity(0.12),
+                                    ? Colors.white.withValues(alpha: 0.25)
+                                    : activeColor.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
@@ -1026,12 +1032,12 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
                         side: BorderSide(
                           color: isSelected
                               ? activeColor
-                              : theme.colorScheme.outline.withOpacity(0.2),
+                              : theme.colorScheme.outline.withValues(alpha: 0.2),
                           width: isSelected ? 1.5 : 1.0,
                         ),
                       ),
                       elevation: isSelected ? 3 : 0,
-                      shadowColor: activeColor.withOpacity(0.4),
+                      shadowColor: activeColor.withValues(alpha: 0.4),
                     ),
                   ),
                 );
@@ -1056,11 +1062,11 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 6,
             offset: const Offset(0, 3),
           )
@@ -1092,7 +1098,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: theme.colorScheme.primary.withOpacity(0.2),
+                            color: theme.colorScheme.primary.withValues(alpha: 0.2),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           )
@@ -1134,7 +1140,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
                                   fontSize: 11,
                                   fontStyle: FontStyle.italic,
                                   color: theme.colorScheme.onSurface
-                                      .withOpacity(0.7),
+                                      .withValues(alpha: 0.7),
                                 ),
                                 maxLines: 2,
                               )
@@ -1143,7 +1149,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   fontSize: 11,
                                   color: theme.colorScheme.onSurface
-                                      .withOpacity(0.7),
+                                      .withValues(alpha: 0.7),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1175,7 +1181,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.08),
+                      color: theme.colorScheme.primary.withValues(alpha: 0.08),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -1206,10 +1212,10 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha: 0.2),
           width: 0.8,
         ),
       ),

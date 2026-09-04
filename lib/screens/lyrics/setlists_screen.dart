@@ -11,6 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
+import 'package:mahlete_semay_project/widgets/web_content_wrapper.dart';
 
 class SetlistsScreen extends StatelessWidget {
   const SetlistsScreen({super.key});
@@ -22,7 +23,7 @@ class SetlistsScreen extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         SliverAppBar(
-          backgroundColor: theme.scaffoldBackgroundColor.withOpacity(0.8),
+          backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.8),
           elevation: 0,
           pinned: true,
           flexibleSpace: ClipRect(
@@ -42,38 +43,41 @@ class SetlistsScreen extends StatelessWidget {
             ),
           ),
         ),
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(context.w(16), context.w(16), context.w(16), context.w(120)),
-          sliver: Consumer<SetlistProvider>(
-            builder: (context, provider, child) {
-              if (provider.isLoading) {
-                return const SliverFillRemaining(child: Center(child: CircularProgressIndicator()));
-              }
+        SliverWebContentWrapper(
+          maxWidth: 850,
+          sliver: SliverPadding(
+            padding: EdgeInsets.fromLTRB(context.w(16), context.w(16), context.w(16), context.w(120)),
+            sliver: Consumer<SetlistProvider>(
+              builder: (context, provider, child) {
+                if (provider.isLoading) {
+                  return const SliverFillRemaining(child: Center(child: CircularProgressIndicator()));
+                }
 
-              if (provider.setlists.isEmpty) {
-                return SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: _EmptyState(
-                    icon: Icons.queue_music_rounded,
-                    title: l10n.noSetlistsYet,
-                    message: l10n.noSetlistsDesc,
+                if (provider.setlists.isEmpty) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _EmptyState(
+                      icon: Icons.queue_music_rounded,
+                      title: l10n.noSetlistsYet,
+                      message: l10n.noSetlistsDesc,
+                    ),
+                  );
+                }
+
+                return SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                      final setlist = provider.setlists[index];
+                      return _SetlistCard(setlist: setlist)
+                          .animate()
+                          .fadeIn(delay: (100 * index).ms, duration: 500.ms)
+                          .slideY(begin: 0.2, curve: Curves.easeOutCubic);
+                    },
+                    childCount: provider.setlists.length,
                   ),
                 );
-              }
-
-              return SliverList(
-                delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                    final setlist = provider.setlists[index];
-                    return _SetlistCard(setlist: setlist)
-                        .animate()
-                        .fadeIn(delay: (100 * index).ms, duration: 500.ms)
-                        .slideY(begin: 0.2, curve: Curves.easeOutCubic);
-                  },
-                  childCount: provider.setlists.length,
-                ),
-              );
-            },
+              },
+            ),
           ),
         ),
       ],
@@ -110,15 +114,15 @@ class _SetlistCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(context.w(20)),
               gradient: LinearGradient(
                 colors: [
-                  theme.colorScheme.primary.withOpacity(0.1),
-                  theme.colorScheme.secondary.withOpacity(0.05),
+                  theme.colorScheme.primary.withValues(alpha: 0.1),
+                  theme.colorScheme.secondary.withValues(alpha: 0.05),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 20,
                   spreadRadius: -5,
                   offset: const Offset(0, 8),
@@ -133,8 +137,8 @@ class _SetlistCard extends StatelessWidget {
                   padding: EdgeInsets.all(context.w(20)),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(context.w(20)),
-                    border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05)),
-                    color: theme.cardColor.withOpacity(0.4),
+                    border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)),
+                    color: theme.cardColor.withValues(alpha: 0.4),
                   ),
                   child: Row(
                     children: [
@@ -167,13 +171,13 @@ class _SetlistCard extends StatelessWidget {
                               '$songCount song${songCount == 1 ? '' : 's'} • Created ${DateFormat.yMMMd().format(setlist.createdAt)}',
                               style: TextStyle(
                                 fontSize: context.sp(12),
-                                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      Icon(Icons.arrow_forward_ios_rounded, size: context.w(18), color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                      Icon(Icons.arrow_forward_ios_rounded, size: context.w(18), color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                     ],
                   ),
                 ),
@@ -210,9 +214,9 @@ class _EmptyState extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.primary.withOpacity(0.05),
+                color: theme.colorScheme.primary.withValues(alpha: 0.05),
               ),
-              child: Icon(icon, size: 80, color: theme.colorScheme.primary.withOpacity(0.6)),
+              child: Icon(icon, size: 80, color: theme.colorScheme.primary.withValues(alpha: 0.6)),
             ),
             const SizedBox(height: 24),
             Text(
@@ -223,7 +227,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               message,
-              style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+              style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
               textAlign: TextAlign.center,
             ),
           ],
