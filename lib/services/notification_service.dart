@@ -16,6 +16,7 @@ import 'fcm_service.dart';
 enum NotificationKind {
   dailyPractice('vocal_exercises'),
   serviceReminder('service_reminder'),
+  serviceAlarmOverlay('service_alarm_overlay'),
   practiceContinuation('practice_continuation'),
   newContent('new_content'),
   test('test');
@@ -132,6 +133,19 @@ class NotificationService {
     vibrationPattern: Int64List.fromList(_serviceVibrationPattern),
   );
 
+  static final AndroidNotificationChannel _alarmChannel =
+      AndroidNotificationChannel(
+    'service_alarms_$_channelVersion',
+    'Service Alarms & Urgent Reminders',
+    description: 'Critical full-screen alerts and alarms for worship services.',
+    importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
+    sound: const RawResourceAndroidNotificationSound('reminder_sound'),
+    audioAttributesUsage: AudioAttributesUsage.alarm,
+    vibrationPattern: Int64List.fromList(<int>[0, 600, 200, 600, 200, 1000]),
+  );
+
   static const AndroidNotificationChannel _practiceChannel =
       AndroidNotificationChannel(
     'practice_continuation_$_channelVersion',
@@ -243,6 +257,7 @@ class NotificationService {
       ...[
         _dailyChannel,
         _serviceChannel,
+        _alarmChannel,
         _practiceChannel,
         _contentChannel,
       ].map((channel) => android.createNotificationChannel(channel)),
@@ -369,38 +384,41 @@ class NotificationService {
     required String body,
     bool isAlarm = false,
   }) {
+    final effectiveChannel = isAlarm ? _alarmChannel : channel;
     return NotificationDetails(
       android: AndroidNotificationDetails(
-        channel.id,
-        channel.name,
-        channelDescription: channel.description,
-        importance: channel.importance,
-        priority: channel.importance == Importance.max
+        effectiveChannel.id,
+        effectiveChannel.name,
+        channelDescription: effectiveChannel.description,
+        importance: effectiveChannel.importance,
+        priority: effectiveChannel.importance == Importance.max
             ? Priority.max
             : Priority.defaultPriority,
-        color: const Color(0xFF1E88E5),
+        color: isAlarm ? const Color(0xFFDC2626) : const Color(0xFF1E88E5),
         // Expands long reminder text instead of truncating it to one line.
         styleInformation: BigTextStyleInformation(
           body,
           contentTitle: title,
-          summaryText: channel.name,
+          summaryText: isAlarm ? 'Worship Service Alarm' : effectiveChannel.name,
         ),
         largeIcon: const DrawableResourceAndroidBitmap(_largeIcon),
         category: isAlarm
             ? AndroidNotificationCategory.alarm
             : AndroidNotificationCategory.reminder,
         visibility: NotificationVisibility.public,
-        playSound: channel.playSound,
-        enableVibration: channel.enableVibration,
-        vibrationPattern: channel == _serviceChannel
-            ? Int64List.fromList(_serviceVibrationPattern)
-            : null,
+        playSound: effectiveChannel.playSound,
+        enableVibration: effectiveChannel.enableVibration,
+        sound: isAlarm ? const RawResourceAndroidNotificationSound('reminder_sound') : effectiveChannel.sound,
+        audioAttributesUsage: isAlarm
+            ? AudioAttributesUsage.alarm
+            : AudioAttributesUsage.notification,
+        vibrationPattern: effectiveChannel.vibrationPattern,
         ticker: title,
         // Full-screen intent wakes the device and shows an alarm-style overlay
         // on the lock screen for critical alerts (morning-of & starting-soon).
         fullScreenIntent: isAlarm,
         ongoing: isAlarm,
-        autoCancel: true,
+        autoCancel: !isAlarm,
       ),
       iOS: DarwinNotificationDetails(
         presentAlert: true,
@@ -408,7 +426,7 @@ class NotificationService {
         presentSound: true,
         interruptionLevel: isAlarm
             ? InterruptionLevel.critical
-            : (channel.importance == Importance.max
+            : (effectiveChannel.importance == Importance.max
                 ? InterruptionLevel.timeSensitive
                 : InterruptionLevel.active),
       ),
@@ -456,9 +474,6 @@ class NotificationService {
       body: body,
       isAlarm: isAlarm,
     );
-    final mode = await canScheduleExactAlarms()
-        ? AndroidScheduleMode.exactAllowWhileIdle
-        : AndroidScheduleMode.inexactAllowWhileIdle;
 
     Future<void> attempt(AndroidScheduleMode scheduleMode) => _plugin.zonedSchedule(
           id,
@@ -470,6 +485,20 @@ class NotificationService {
           androidScheduleMode: scheduleMode,
           matchDateTimeComponents: repeatOn,
         );
+
+    if (isAlarm) {
+      // AlarmClock is the highest OS priority: exempt from Doze, wakes screen, shows system alarm clock icon
+      try {
+        await attempt(AndroidScheduleMode.alarmClock);
+        return true;
+      } catch (error) {
+        debugPrint('NotificationService: alarmClock schedule($id) failed, attempting exactAllowWhileIdle ($error)');
+      }
+    }
+
+    final mode = await canScheduleExactAlarms()
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.inexactAllowWhileIdle;
 
     try {
       await attempt(mode);
@@ -524,11 +553,45 @@ class NotificationService {
       body: body,
       when: tz.TZDateTime.from(when, tz.local),
       payload: NotificationPayload(
-        NotificationKind.serviceReminder,
+        isAlarm
+            ? NotificationKind.serviceAlarmOverlay
+            : NotificationKind.serviceReminder,
         reference: reminderId,
       ),
       isAlarm: isAlarm,
     );
+  }
+
+  /// Posts an immediate full-screen alarm notification with max urgency, alarm sound,
+  /// and lock-screen overlay intent.
+  static Future<void> showFullScreenAlarmNotification({
+    required int id,
+    required String reminderId,
+    required String title,
+    required String body,
+    required DateTime serviceDateTime,
+  }) async {
+    final details = _details(
+      channel: _alarmChannel,
+      title: title,
+      body: body,
+      isAlarm: true,
+    );
+
+    try {
+      await _plugin.show(
+        id,
+        title,
+        body,
+        details,
+        payload: NotificationPayload(
+          NotificationKind.serviceAlarmOverlay,
+          reference: reminderId,
+        ).encode(),
+      );
+    } catch (error) {
+      debugPrint('NotificationService: showFullScreenAlarmNotification($id) failed ($error)');
+    }
   }
 
   static Future<bool> schedulePracticeContinuation({

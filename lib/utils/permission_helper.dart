@@ -5,6 +5,23 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+class AlarmPermissionStatus {
+  final bool notificationsGranted;
+  final bool exactAlarmGranted;
+  final bool batteryOptimizationsIgnored;
+  final bool systemAlertWindowGranted;
+
+  const AlarmPermissionStatus({
+    required this.notificationsGranted,
+    required this.exactAlarmGranted,
+    required this.batteryOptimizationsIgnored,
+    required this.systemAlertWindowGranted,
+  });
+
+  bool get isReliable =>
+      notificationsGranted && exactAlarmGranted && batteryOptimizationsIgnored;
+}
+
 class PermissionHelper {
   /// Request Microphone permission with a clear rationale dialog when permanently denied.
   static Future<bool> requestMicrophone(BuildContext context) async {
@@ -60,6 +77,66 @@ class PermissionHelper {
       );
     }
     return false;
+  }
+
+  /// Checks all permissions needed for 100% reliable, offline, full-screen alarm delivery.
+  static Future<AlarmPermissionStatus> checkAlarmPermissions() async {
+    if (kIsWeb) {
+      return const AlarmPermissionStatus(
+        notificationsGranted: true,
+        exactAlarmGranted: true,
+        batteryOptimizationsIgnored: true,
+        systemAlertWindowGranted: true,
+      );
+    }
+
+    bool notifs = true;
+    bool exact = true;
+    bool battery = true;
+    bool overlay = true;
+
+    if (Platform.isAndroid) {
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+
+      if (androidInfo.version.sdkInt >= 33) {
+        notifs = await Permission.notification.isGranted;
+      }
+      if (androidInfo.version.sdkInt >= 31) {
+        exact = await Permission.scheduleExactAlarm.isGranted;
+      }
+      battery = await Permission.ignoreBatteryOptimizations.isGranted;
+      overlay = await Permission.systemAlertWindow.isGranted;
+    } else if (Platform.isIOS) {
+      notifs = await Permission.notification.isGranted;
+    }
+
+    return AlarmPermissionStatus(
+      notificationsGranted: notifs,
+      exactAlarmGranted: exact,
+      batteryOptimizationsIgnored: battery,
+      systemAlertWindowGranted: overlay,
+    );
+  }
+
+  /// Requests exact alarm scheduling capability (Android 12+).
+  static Future<bool> requestExactAlarm() async {
+    if (kIsWeb || !Platform.isAndroid) return true;
+    final status = await Permission.scheduleExactAlarm.request();
+    return status.isGranted;
+  }
+
+  /// Requests exemption from aggressive OS battery saver killer.
+  static Future<bool> requestIgnoreBatteryOptimizations() async {
+    if (kIsWeb || !Platform.isAndroid) return true;
+    final status = await Permission.ignoreBatteryOptimizations.request();
+    return status.isGranted;
+  }
+
+  /// Requests SYSTEM_ALERT_WINDOW to allow full-screen overlays over lock/apps.
+  static Future<bool> requestSystemAlertWindow() async {
+    if (kIsWeb || !Platform.isAndroid) return true;
+    final status = await Permission.systemAlertWindow.request();
+    return status.isGranted;
   }
 
   /// Request Photo/Gallery permission depending on platform and Android version.

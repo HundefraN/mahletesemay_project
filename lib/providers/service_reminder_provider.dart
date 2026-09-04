@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mahlete_semay_project/models/service_reminder_model.dart';
+import 'package:mahlete_semay_project/services/alarm_service.dart';
 import 'package:mahlete_semay_project/services/notification_service.dart';
 import 'package:mahlete_semay_project/utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,6 +52,9 @@ class ServiceReminderProvider with ChangeNotifier {
   /// Slot used for the final "starting soon" alert. Kept distinct from the
   /// day offsets so notification ids stay unique.
   static const int startingSoonSlot = 6;
+
+  /// Slot used for the exact service start time alert.
+  static const int serviceStartTimeSlot = 7;
 
   static const Duration startingSoonLeadTime = Duration(hours: 2);
 
@@ -262,8 +266,8 @@ class ServiceReminderProvider with ChangeNotifier {
       // The morning-of alert is pointless once the service has begun.
       if (daysBefore == 0 && !when.isBefore(reminder.serviceDateTime)) continue;
 
-      // Day-of alert is alarm-class (full-screen intent).
       final bool isAlarmSlot = daysBefore == 0;
+      final id = NotificationService.serviceNotificationId(reminder.id, daysBefore);
 
       final String title;
       final String body;
@@ -279,27 +283,77 @@ class ServiceReminderProvider with ChangeNotifier {
       }
 
       await NotificationService.scheduleServiceReminder(
-        id: NotificationService.serviceNotificationId(reminder.id, daysBefore),
+        id: id,
         reminderId: reminder.id,
         title: title,
         body: body,
         when: when,
         isAlarm: isAlarmSlot,
       );
+
+      if (isAlarmSlot) {
+        await AlarmService.scheduleExactAlarm(
+          id: id,
+          reminderId: reminder.id,
+          title: title,
+          body: body,
+          when: when,
+          notes: reminder.notes,
+        );
+      }
     }
 
     // "Starting soon" is also alarm-class (full-screen intent).
+    final startingSoonTime = reminder.serviceDateTime.subtract(startingSoonLeadTime);
+    final startingSoonId = NotificationService.serviceNotificationId(
+      reminder.id,
+      startingSoonSlot,
+    );
+    final startingSoonTitle = '🚨 ${reminder.title} starts in 2 hours!';
+    final startingSoonBody = 'Starting at $serviceTime. '
+        '${_notesSuffix(reminder) ?? 'Run through your warm-ups now.'}';
+
     await NotificationService.scheduleServiceReminder(
-      id: NotificationService.serviceNotificationId(
-        reminder.id,
-        startingSoonSlot,
-      ),
+      id: startingSoonId,
       reminderId: reminder.id,
-      title: '🚨 ${reminder.title} starts in 2 hours!',
-      body: 'Starting at $serviceTime. '
-          '${_notesSuffix(reminder) ?? 'Run through your warm-ups now.'}',
-      when: reminder.serviceDateTime.subtract(startingSoonLeadTime),
+      title: startingSoonTitle,
+      body: startingSoonBody,
+      when: startingSoonTime,
       isAlarm: true,
+    );
+    await AlarmService.scheduleExactAlarm(
+      id: startingSoonId,
+      reminderId: reminder.id,
+      title: startingSoonTitle,
+      body: startingSoonBody,
+      when: startingSoonTime,
+      notes: reminder.notes,
+    );
+
+    // Exact Service Start Time alarm
+    final serviceStartId = NotificationService.serviceNotificationId(
+      reminder.id,
+      serviceStartTimeSlot,
+    );
+    final serviceStartTitle = '🔔 ${reminder.title} is starting now!';
+    final serviceStartBody = 'It\'s time for ${reminder.title} ($serviceTime). '
+        '${_notesSuffix(reminder) ?? 'May your worship be blessed!'}';
+
+    await NotificationService.scheduleServiceReminder(
+      id: serviceStartId,
+      reminderId: reminder.id,
+      title: serviceStartTitle,
+      body: serviceStartBody,
+      when: reminder.serviceDateTime,
+      isAlarm: true,
+    );
+    await AlarmService.scheduleExactAlarm(
+      id: serviceStartId,
+      reminderId: reminder.id,
+      title: serviceStartTitle,
+      body: serviceStartBody,
+      when: reminder.serviceDateTime,
+      notes: reminder.notes,
     );
   }
 
@@ -309,10 +363,10 @@ class ServiceReminderProvider with ChangeNotifier {
   }
 
   Future<void> _cancelNotifications(ServiceReminder reminder) async {
-    for (final slot in <int>[...countdownDays, startingSoonSlot]) {
-      await NotificationService.cancel(
-        NotificationService.serviceNotificationId(reminder.id, slot),
-      );
+    for (final slot in <int>[...countdownDays, startingSoonSlot, serviceStartTimeSlot]) {
+      final id = NotificationService.serviceNotificationId(reminder.id, slot);
+      await NotificationService.cancel(id);
+      await AlarmService.cancelAlarm(id);
     }
   }
 }

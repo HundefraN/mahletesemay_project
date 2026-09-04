@@ -27,8 +27,12 @@ import 'services/pitch_service.dart';
 import 'services/supabase_service.dart';
 import 'utils/app_themes.dart';
 import 'utils/constants.dart';
+import 'dart:async';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter/foundation.dart';
+import 'screens/reminders/alarm_overlay_screen.dart';
+import 'services/alarm_service.dart';
+import 'services/background_sync_service.dart';
 import 'utils/timeago_utils.dart';
 import 'services/web_init_service.dart';
 import 'utils/web_scroll_behavior.dart';
@@ -66,6 +70,8 @@ Future<void> main() async {
       ),
       Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
       NotificationService.initialize(),
+      AlarmService.initialize(),
+      BackgroundSyncService.initialize(),
     ]);
 
     // Non-blocking FCM background setup
@@ -162,20 +168,36 @@ class NotificationCoordinator extends StatefulWidget {
 
 class _NotificationCoordinatorState extends State<NotificationCoordinator>
     with WidgetsBindingObserver {
+  StreamSubscription<ServiceAlarmMetadata>? _alarmSubscription;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // Routing needs a mounted navigator, so taps are only handled from the
-    // first frame onwards. A tap that cold-started the app is replayed by
+    // first frame onwards. A tap that cold-starts the app is replayed by
     // NotificationService as soon as the handler is registered.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationService.setTapHandler(_handleNotificationTap);
     });
+
+    if (!kIsWeb) {
+      _alarmSubscription = AlarmService.onAlarmRinging.listen((meta) {
+        final navigator = navigatorKey.currentState;
+        if (navigator != null && navigator.mounted) {
+          navigator.push(
+            MaterialPageRoute(
+              builder: (_) => AlarmOverlayScreen(metadata: meta),
+            ),
+          );
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
+    _alarmSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -220,6 +242,20 @@ class _NotificationCoordinatorState extends State<NotificationCoordinator>
         );
         navigator.push(
           MaterialPageRoute(builder: (_) => const ServiceReminderScreen()),
+        );
+      case NotificationKind.serviceAlarmOverlay:
+        final reminderId = payload.reference ?? 'reminder';
+        final meta = ServiceAlarmMetadata(
+          id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          reminderId: reminderId,
+          title: 'Worship Service Alarm',
+          body: 'Your scheduled worship service is starting now.',
+          serviceDateTime: DateTime.now(),
+        );
+        navigator.push(
+          MaterialPageRoute(
+            builder: (_) => AlarmOverlayScreen(metadata: meta),
+          ),
         );
     }
   }

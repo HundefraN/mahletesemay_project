@@ -11,6 +11,9 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import 'package:mahlete_semay_project/widgets/web_content_wrapper.dart';
+import '../../services/alarm_service.dart';
+import '../../utils/permission_helper.dart';
+import '../reminders/alarm_overlay_screen.dart';
 
 class ServiceReminderScreen extends StatelessWidget {
   const ServiceReminderScreen({super.key});
@@ -39,6 +42,12 @@ class ServiceReminderScreen extends StatelessWidget {
               physics: const BouncingScrollPhysics(),
               slivers: [
                 _buildSliverAppBar(theme, isDark, provider, l10n),
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    child: _AlarmReliabilityCard(),
+                  ),
+                ),
                 provider.reminders.isEmpty
                     ? SliverFillRemaining(
                         hasScrollBody: false,
@@ -1610,4 +1619,207 @@ void _showConfirmationSheet(
       );
     },
   );
+}
+
+/// Status card showing system alarm readiness and battery optimization bypass.
+class _AlarmReliabilityCard extends StatefulWidget {
+  const _AlarmReliabilityCard();
+
+  @override
+  State<_AlarmReliabilityCard> createState() => _AlarmReliabilityCardState();
+}
+
+class _AlarmReliabilityCardState extends State<_AlarmReliabilityCard> {
+  AlarmPermissionStatus? _status;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshStatus();
+  }
+
+  Future<void> _refreshStatus() async {
+    final status = await PermissionHelper.checkAlarmPermissions();
+    if (mounted) {
+      setState(() {
+        _status = status;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _optimizePermissions() async {
+    if (_status == null) return;
+    if (!_status!.exactAlarmGranted) {
+      await PermissionHelper.requestExactAlarm();
+    }
+    if (!_status!.batteryOptimizationsIgnored) {
+      await PermissionHelper.requestIgnoreBatteryOptimizations();
+    }
+    await _refreshStatus();
+  }
+
+  Future<void> _triggerTestAlarm() async {
+    final now = DateTime.now();
+    final testTime = now.add(const Duration(seconds: 5));
+    const testId = 88888;
+
+    final meta = ServiceAlarmMetadata(
+      id: testId,
+      reminderId: 'test_alarm',
+      title: '🔔 Rehearsal Test Alarm',
+      body: 'Exact full-screen alarm fired precisely on time!',
+      serviceDateTime: testTime,
+      notes: 'Testing lock-screen wakeup, ringing audio, and haptic feedback.',
+    );
+
+    await AlarmService.scheduleExactAlarm(
+      id: testId,
+      reminderId: 'test_alarm',
+      title: meta.title,
+      body: meta.body,
+      when: testTime,
+      notes: meta.notes,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Test alarm scheduled for 5 seconds from now! Lock your device or exit the app to test wakeup.',
+          ),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Preview Now',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => AlarmOverlayScreen(metadata: meta),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading || _status == null) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final isFullyReliable = _status!.isReliable;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark
+            ? (isFullyReliable
+                ? const Color(0xFF132238)
+                : const Color(0xFF261D13))
+            : (isFullyReliable
+                ? const Color(0xFFEFF6FF)
+                : const Color(0xFFFFFBEB)),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isFullyReliable
+              ? const Color(0xFF3B82F6).withValues(alpha: 0.3)
+              : const Color(0xFFF59E0B).withValues(alpha: 0.4),
+        ),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isFullyReliable
+                    ? Icons.verified_user_rounded
+                    : Icons.battery_alert_rounded,
+                size: 20,
+                color: isFullyReliable
+                    ? const Color(0xFF3B82F6)
+                    : const Color(0xFFF59E0B),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  isFullyReliable
+                      ? 'Alarm Reliability: 100% Protected'
+                      : 'Ensure On-Time Alarm Delivery',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                onPressed: _refreshStatus,
+                tooltip: 'Re-check status',
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            isFullyReliable
+                ? 'Your device allows exact alarms and is exempt from OS battery killing. Service reminders will wake the screen and ring offline.'
+                : 'Battery saving features on your device may delay or silence alarms when the app is closed. Grant exact alarm and battery permissions for on-time delivery.',
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.4,
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              if (!isFullyReliable) ...[
+                FilledButton.icon(
+                  onPressed: _optimizePermissions,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFF59E0B),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                  ),
+                  icon: const Icon(Icons.security_update_good_rounded,
+                      size: 16),
+                  label: Text(
+                    'Fix Permissions',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ],
+              OutlinedButton.icon(
+                onPressed: _triggerTestAlarm,
+                style: OutlinedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                icon: const Icon(Icons.alarm_on_rounded, size: 16),
+                label: Text(
+                  'Test Alarm (5s)',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
