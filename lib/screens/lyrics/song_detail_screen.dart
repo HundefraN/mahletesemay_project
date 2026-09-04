@@ -78,7 +78,6 @@ class _SongDetailScreenState extends State<SongDetailScreen>
   double _lineHeight = 1.6;
 
   late List<String> _rawLines;
-  late List<String> _displayLines;
   List<_LyricsStanza> _stanzas = [];
 
   // Regex patterns for Ethiopic & International lyric processing
@@ -148,7 +147,6 @@ class _SongDetailScreenState extends State<SongDetailScreen>
 
   void _parseLyrics() {
     _rawLines = widget.song.lyrics.split('\n');
-    _displayLines = _rawLines;
     _stanzas = [];
     _lineKeys.clear();
 
@@ -501,35 +499,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     });
   }
 
-  void _selectStanzaLines(_LyricsStanza stanza) {
-    HapticFeedback.mediumImpact();
-    setState(() {
-      _isShareSelectionMode = true;
-      _selectedLineIndices.clear();
-      for (final idx in stanza.lineIndices) {
-        if (_selectedLineIndices.length < _maxSelectableLines) {
-          _selectedLineIndices.add(idx);
-        }
-      }
-      if (stanza.lineIndices.isNotEmpty) {
-        _lastSelectedLineIndex = stanza.lineIndices.last;
-      }
-    });
-    CustomSnackbar.show(
-      context,
-      'Selected ${stanza.cleanHeader ?? "stanza"} (${_selectedLineIndices.length} lines)',
-    );
-  }
 
-  void _copyStanzaDirectly(_LyricsStanza stanza) {
-    HapticFeedback.mediumImpact();
-    final text = stanza.lineIndices.map((i) => _rawLines[i].trim()).join('\n');
-    final stanzaName = stanza.cleanHeader ?? 'Lyrics';
-    final shareContent =
-        '“$text”\n\n— "${widget.song.title}" ($stanzaName) by ${widget.song.artistName}\n#MahleteSemay #Mezmur';
-    Clipboard.setData(ClipboardData(text: shareContent));
-    CustomSnackbar.show(context, 'Copied $stanzaName to clipboard!');
-  }
 
   String _getSelectedLinesText() {
     final sortedIndices = _selectedLineIndices.toList()..sort();

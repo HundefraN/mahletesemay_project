@@ -72,7 +72,6 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
           comparison = a.createdAt.compareTo(b.createdAt);
           break;
         case SongSortType.popularity:
-        default:
           comparison = a.viewCount.compareTo(b.viewCount);
           break;
       }

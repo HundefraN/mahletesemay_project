@@ -478,7 +478,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     // ── Phone: floating bottom nav bar ───────────────────────────────────────
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         final now = DateTime.now();
         final backButtonHasNotBeenPressedOrSnackBarHasBeenClosed =

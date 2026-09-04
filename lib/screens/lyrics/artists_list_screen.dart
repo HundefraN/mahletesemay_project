@@ -202,15 +202,17 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
     String label = type;
     if (type == 'All') {
       label = l10n?.all ?? 'All';
-    } else if (type == 'Songs')
+    } else if (type == 'Songs') {
       label = l10n?.songs ?? 'Songs';
-    else if (type == 'Artists')
+    } else if (type == 'Artists') {
       label = l10n?.artists ?? 'Artists';
-    else if (type == 'Albums')
+    } else if (type == 'Albums') {
       label = l10n?.albums ?? 'Albums';
-    else if (type == 'Lyrics')
+    } else if (type == 'Lyrics') {
       label = l10n?.lyrics ?? 'Lyrics';
-    else if (type == 'Exercises') label = l10n?.exercises ?? 'Exercises';
+    } else if (type == 'Exercises') {
+      label = l10n?.exercises ?? 'Exercises';
+    }
 
     return InkWell(
       onTap: () {
@@ -348,7 +350,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                       onPressed: () async {
                         CustomSnackbar.show(context, 'Syncing new content...');
                         await songProvider.forceSyncOnMobileData();
-                        if (mounted) {
+                        if (context.mounted) {
                           CustomSnackbar.show(context, 'Content updated!');
                         }
                       },
@@ -513,8 +515,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                                         ),
                                         SizedBox(height: context.w(4)),
                                         Text(
-                                          l10n.discoverAmazingMusic ??
-                                              'Discover amazing music',
+                                          l10n.discoverAmazingMusic,
                                           style: theme.textTheme.bodyMedium
                                               ?.copyWith(
                                             color: theme

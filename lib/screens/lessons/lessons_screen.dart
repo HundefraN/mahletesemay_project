@@ -186,7 +186,7 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
       case SortOption.oldest: lessonsToShow.sort((a,b) => (a.publishedDate ?? DateTime(0)).compareTo(b.publishedDate ?? DateTime(0))); break;
       case SortOption.popular: lessonsToShow.sort((a,b) => b.viewCount.compareTo(a.viewCount)); break;
       case SortOption.newest:
-      default: lessonsToShow.sort((a,b) => (b.publishedDate ?? DateTime(0)).compareTo(a.publishedDate ?? DateTime(0))); break;
+        lessonsToShow.sort((a,b) => (b.publishedDate ?? DateTime(0)).compareTo(a.publishedDate ?? DateTime(0))); break;
     }
     return lessonsToShow;
   }
@@ -200,13 +200,12 @@ class _LessonsScreenState extends State<LessonsScreen> with TickerProviderStateM
       builder: (dialogContext) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: EdgeInsets.zero,
-        child: WillPopScope(
-          onWillPop: () async {
-            if (_isPlayerFullscreen) {
+        child: PopScope(
+          canPop: !_isPlayerFullscreen,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop) {
               _youtubePlayerController?.toggleFullScreenMode();
-              return false;
             }
-            return true;
           },
           child: YoutubePlayer(controller: _youtubePlayerController!),
         ),

@@ -176,7 +176,6 @@ class _SuggestionCard extends StatelessWidget {
         statusText = 'Rejected';
         break;
       case SuggestionStatus.pending:
-      default:
         statusColor = AdminUiKit.amberOrange;
         statusText = 'Pending Review';
         break;
@@ -277,6 +276,7 @@ class _SuggestionCard extends StatelessWidget {
                         ),
                       );
                       if (confirm == true) {
+                        if (!context.mounted) return;
                         final authProvider = Provider.of<AuthProvider>(context, listen: false);
                         if (authProvider.currentUser != null) {
                           firebaseService.logActivity(
@@ -321,6 +321,7 @@ class _SuggestionCard extends StatelessWidget {
                       onPressed: () async {
                         try {
                           await firebaseService.updateSuggestionStatus(suggestion.id, SuggestionStatus.rejected);
+                          if (!context.mounted) return;
                           final authProvider = Provider.of<AuthProvider>(context, listen: false);
                           if (authProvider.currentModerator != null) {
                             firebaseService.logActivity(
@@ -353,6 +354,7 @@ class _SuggestionCard extends StatelessWidget {
                       onPressed: () async {
                         try {
                           await firebaseService.updateSuggestionStatus(suggestion.id, SuggestionStatus.approved);
+                          if (!context.mounted) return;
                           final authProvider = Provider.of<AuthProvider>(context, listen: false);
                           if (authProvider.currentModerator != null) {
                             firebaseService.logActivity(

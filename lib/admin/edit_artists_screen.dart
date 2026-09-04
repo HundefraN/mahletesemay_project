@@ -30,7 +30,6 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
 
   final _firebaseService = FirebaseService();
   bool _isSaving = false;
-  double _uploadProgress = 0.0;
   Uint8List? _pickedImageBytes;
 
   @override
@@ -56,6 +55,7 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
       final pickedFile = await imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 80);
 
       if (pickedFile != null) {
+        if (!mounted) return;
         Uint8List? imageBytes;
         if (!kIsWeb) {
           CroppedFile? croppedFile;
@@ -93,7 +93,6 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
         if (mounted) {
           setState(() {
             _pickedImageBytes = imageBytes;
-            _uploadProgress = 0.0;
           });
         }
       }
@@ -113,7 +112,6 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
         if (_pickedImageBytes != null) {
           final uploadedUrl = await SupabaseStorageService.uploadImageBytes(
             _pickedImageBytes!,
-            onProgress: (count, total) => setState(() => _uploadProgress = count / total),
           );
           if (uploadedUrl != null) {
             finalImageUrl = uploadedUrl;
@@ -133,6 +131,7 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
         };
 
         await _firebaseService.updateArtist(widget.artist.id, updatedData);
+        if (!mounted) return;
 
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         if (authProvider.currentModerator != null) {
@@ -183,6 +182,8 @@ class _EditArtistScreenState extends State<EditArtistScreen> {
       setState(() => _isSaving = true);
       try {
         await _firebaseService.deleteArtists([widget.artist.id]);
+        if (!mounted) return;
+
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         if (authProvider.currentUser != null) {
           _firebaseService.logActivity(

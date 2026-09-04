@@ -305,6 +305,7 @@ class _SongListTabState extends State<_SongListTab> {
     );
 
     if (shouldDelete == true) {
+      if (!mounted) return;
       try {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final songsToDelete = widget.songs

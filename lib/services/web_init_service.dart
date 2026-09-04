@@ -38,7 +38,7 @@ class WebInitService {
       await Future.wait([
         Supabase.initialize(
           url: SupabaseConfig.url,
-          anonKey: SupabaseConfig.anonKey,
+          publishableKey: SupabaseConfig.publishableKey,
         ),
         Firebase.initializeApp(
           options: DefaultFirebaseOptions.currentPlatform,

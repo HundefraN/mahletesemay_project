@@ -160,6 +160,7 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
           isRestDay: widget.isGeneralExercise ? false : _isRestDay,
           audioUrl: finalAudioUrl,
         );
+        if (!mounted) return;
 
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
 

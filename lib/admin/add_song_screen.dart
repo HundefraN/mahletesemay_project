@@ -273,6 +273,7 @@ class _AddSongScreenState extends State<AddSongScreen> {
 
         // Clear any saved draft on successful submission
         await DraftService.clearSongDraft();
+        if (!mounted) return;
 
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         if (authProvider.currentModerator != null) {
@@ -309,7 +310,7 @@ class _AddSongScreenState extends State<AddSongScreen> {
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         final shouldPop = await _onWillPop();
-        if (shouldPop && mounted) {
+        if (shouldPop && context.mounted) {
           Navigator.pop(context);
         }
       },

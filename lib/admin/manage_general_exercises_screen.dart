@@ -39,6 +39,7 @@ class ManageGeneralExercisesScreen extends StatelessWidget {
       try {
         final firebaseService = FirebaseService();
         await firebaseService.deleteGeneralExercises([exercise.id]);
+        if (!context.mounted) return;
 
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         if (authProvider.currentModerator != null) {

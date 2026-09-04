@@ -33,7 +33,6 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
   GuidedStep _currentStep = GuidedStep.intro;
 
   double? _lowestPitchFound;
-  double? _highestPitchFound;
   String _lowestNoteFound = '';
   String _highestNoteFound = '';
 
@@ -150,7 +149,6 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
       _pitchService.playPitchBeep(pitch);
       setState(() {
         _highestNoteFound = note;
-        _highestPitchFound = pitch;
         _candidateNote = '';
         _candidatePitch = 0.0;
         _stableFrames = 0;
@@ -246,7 +244,6 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen> {
     setState(() {
       if (keepIntro) _currentStep = GuidedStep.intro;
       _lowestPitchFound = null;
-      _highestPitchFound = null;
       _lowestNoteFound = '';
       _highestNoteFound = '';
       _candidateNote = '';

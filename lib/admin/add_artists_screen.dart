@@ -135,6 +135,7 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
       final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
 
       if (pickedFile != null) {
+        if (!mounted) return;
         Uint8List? imageBytes;
         if (!kIsWeb) {
           CroppedFile? croppedFile;
@@ -239,6 +240,7 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
 
         // Clear any saved draft on successful submission
         await DraftService.clearArtistDraft();
+        if (!mounted) return;
 
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         if (authProvider.currentModerator != null) {
@@ -274,7 +276,7 @@ class _AddArtistScreenState extends State<AddArtistScreen> {
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         final shouldPop = await _onWillPop();
-        if (shouldPop && mounted) {
+        if (shouldPop && context.mounted) {
           Navigator.pop(context);
         }
       },

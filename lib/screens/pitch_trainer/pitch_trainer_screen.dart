@@ -49,7 +49,6 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
 
   bool _autoTransposeOctaves = true;
   double _centsDifference = 0.0;
-  String _effectiveSungNote = '';
   int _detectedOctaveOffset = 0;
 
   Timer? _inTuneTimer;
@@ -111,7 +110,6 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
       if (_centsDifference != 0.0) {
         setState(() {
           _centsDifference = 0.0;
-          _effectiveSungNote = '';
           _detectedOctaveOffset = 0;
         });
       }
@@ -137,7 +135,6 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
 
     setState(() {
       _centsDifference = cents;
-      _effectiveSungNote = pitchData.note;
       _detectedOctaveOffset = octaveOffset;
     });
 
@@ -266,7 +263,6 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
         if (!keepState) _state = TrainerState.idle;
         _centsDifference = 0;
         _inTuneProgress = 0;
-        _effectiveSungNote = '';
         _detectedOctaveOffset = 0;
       });
     }
@@ -457,7 +453,6 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
         accentColor = const Color(0xFF10B981);
         break;
       case TrainerState.idle:
-      default:
         text = 'Pitch Match Trainer';
         subtext = 'Select a note, tap Start, and match reference pitch';
         icon = Icons.graphic_eq_rounded;

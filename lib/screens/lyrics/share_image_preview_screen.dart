@@ -727,7 +727,6 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
       case ShareTemplate.monochromeLuxury:
         return _buildMonochromeLuxuryTemplate();
       case ShareTemplate.spotifyGlass:
-      default:
         return _buildSpotifyGlassTemplate();
     }
   }
@@ -1712,7 +1711,7 @@ class _ShareImagePreviewScreenState extends State<ShareImagePreviewScreen> {
       physics: const BouncingScrollPhysics(),
       child: Row(
         children: _colorPalette.map((color) {
-          final isSelected = _selectedTextColor.value == color.value;
+          final isSelected = _selectedTextColor == color;
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6),
             child: InkWell(

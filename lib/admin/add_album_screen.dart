@@ -195,6 +195,7 @@ class _AddAlbumScreenState extends State<AddAlbumScreen> {
     try {
       final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
       if (pickedFile != null) {
+        if (!mounted) return;
         Uint8List? imageBytes;
         if (!kIsWeb) {
           CroppedFile? croppedFile;
@@ -302,6 +303,7 @@ class _AddAlbumScreenState extends State<AddAlbumScreen> {
 
         // Clear any saved draft on successful submission
         await DraftService.clearAlbumDraft();
+        if (!mounted) return;
 
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         if (authProvider.currentModerator != null) {
@@ -338,7 +340,7 @@ class _AddAlbumScreenState extends State<AddAlbumScreen> {
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         final shouldPop = await _onWillPop();
-        if (shouldPop && mounted) {
+        if (shouldPop && context.mounted) {
           Navigator.pop(context);
         }
       },

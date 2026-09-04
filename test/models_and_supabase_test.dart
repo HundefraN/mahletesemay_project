@@ -131,7 +131,14 @@ void main() {
           imageUrl: 'http://img.jpg',
           region: 'Ethiopian');
       final artistMap = artist.toLocalDbMap();
-      expect(artistMap.keys.toSet(), {'id', 'name', 'imageUrl', 'region'});
+      expect(artistMap.keys.toSet(), {
+        'id',
+        'name',
+        'englishName',
+        'imageUrl',
+        'region',
+        'search_keywords',
+      });
 
       final album = Album(
           id: 'al1',
@@ -145,11 +152,13 @@ void main() {
       expect(albumMap.keys.toSet(), {
         'id',
         'title',
+        'englishTitle',
         'artistId',
         'artistName',
         'coverImageUrl',
         'year',
-        'volume'
+        'volume',
+        'search_keywords',
       });
 
       final song = Song(
@@ -168,6 +177,7 @@ void main() {
       expect(songMap.keys.toSet(), {
         'id',
         'title',
+        'englishTitle',
         'artistName',
         'artistId',
         'albumId',
@@ -176,7 +186,8 @@ void main() {
         'scale',
         'rhythm',
         'viewCount',
-        'createdAt'
+        'createdAt',
+        'search_keywords',
       });
       expect(songMap['createdAt'], isA<int>());
     });

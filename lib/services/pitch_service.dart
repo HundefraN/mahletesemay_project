@@ -349,29 +349,7 @@ class PitchService with ChangeNotifier {
       chosenTau = peakPositions.first;
     }
 
-    // Step 4: Subharmonic / Octave Error Disambiguation
-    // Guitars and deep vocal tones have strong 2nd and 3rd harmonics.
-    // If chosenTau is around half of a true fundamental peak (~2*tau), check if a 2*tau peak exists.
-    final int doubleTau = chosenTau * 2;
-    if (doubleTau <= maxTau) {
-      int bestSubPos = -1;
-      double bestSubVal = 0.0;
-      for (final pos in peakPositions) {
-        if ((pos - doubleTau).abs() <= 6) {
-          if (nsdf[pos] > bestSubVal) {
-            bestSubVal = nsdf[pos];
-            bestSubPos = pos;
-          }
-        }
-      }
-
-      // If a valid peak exists at ~2*tau with substantial clarity (>= 0.65 of max peak)
-      if (bestSubPos != -1 && bestSubVal >= maxPeakValue * 0.65 && bestSubVal >= 0.40) {
-        chosenTau = bestSubPos;
-      }
-    }
-
-    // Step 5: Sub-sample Parabolic Interpolation on chosen peak
+    // Step 4: Sub-sample Parabolic Interpolation on chosen peak
     final int x0 = (chosenTau > 0) ? chosenTau - 1 : chosenTau;
     final int x2 = (chosenTau + 1 < windowSize) ? chosenTau + 1 : chosenTau;
 

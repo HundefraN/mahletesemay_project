@@ -47,6 +47,7 @@ class ManagePlanDaysScreen extends StatelessWidget {
       try {
         final firebaseService = FirebaseService();
         await firebaseService.deleteVocalExerciseDay(planId, day.id);
+        if (!context.mounted) return;
 
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         if (authProvider.currentModerator != null) {

@@ -119,7 +119,7 @@ class SyncService {
 
       return SyncResult.synced;
     } catch (e, stackTrace) {
-      print("Sync error: $e\n$stackTrace");
+      debugPrint("Sync error: $e\n$stackTrace");
       return SyncResult.error;
     } finally {
       _isSyncing = false;
@@ -138,7 +138,7 @@ class SyncService {
       final hasNewSongs = await _firebaseService.hasNewSongsSince(lastSyncDate);
       return hasNewSongs;
     } catch (e) {
-      print("Error checking for new data: $e");
+      debugPrint("Error checking for new data: $e");
       return false;
     }
   }

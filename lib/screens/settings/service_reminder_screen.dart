@@ -1193,12 +1193,12 @@ class _AddEditReminderDialogState extends State<_AddEditReminderDialog> {
     );
     if (pickedDate == null) return;
 
-    if (!context.mounted) return;
+    if (!mounted) return;
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(_selectedDateTime ?? now),
     );
-    if (!context.mounted) return;
+    if (!mounted) return;
     if (pickedTime == null) return;
 
     setState(() {

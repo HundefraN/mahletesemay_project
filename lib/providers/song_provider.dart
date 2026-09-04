@@ -42,19 +42,6 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
   bool get isSyncing => _isSyncing;
   bool get hasNewDataOnMobile => _hasNewDataOnMobile;
 
-  static const int _recommendationHistoryThreshold = 3;
-
-  final Map<String, double> _scoringWeights = {
-    'favoriteArtist': 15.0,
-    'viewedArtist': 8.0,
-    'favoriteAlbum': 10.0,
-    'viewedAlbum': 5.0,
-    'favoriteScale': 12.0,
-    'viewedScale': 6.0,
-    'favoriteRhythm': 10.0,
-    'viewedRhythm': 4.0,
-    'seenPenalty': -20.0,
-  };
 
   List<Song> get favoriteSongs {
     if (_songs.isEmpty || _favoriteSongIds.isEmpty) return [];

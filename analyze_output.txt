@@ -1,0 +1,38 @@
+Analyzing mahletesemay_project...                               
+
+   info • Don't use 'BuildContext's across async gaps • lib/admin/add_album_screen.dart:208:42 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/add_album_screen.dart:306:56 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/admin/add_album_screen.dart:342:25 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/add_artists_screen.dart:148:42 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/add_artists_screen.dart:243:56 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/admin/add_artists_screen.dart:278:25 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/add_song_screen.dart:277:56 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/admin/add_song_screen.dart:313:25 • use_build_context_synchronously
+warning • The value of the field '_uploadProgress' isn't used • lib/admin/edit_album_screen.dart:35:10 • unused_field
+   info • Don't use 'BuildContext's across async gaps • lib/admin/edit_album_screen.dart:72:42 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/edit_album_screen.dart:137:56 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/edit_album_screen.dart:186:56 • use_build_context_synchronously
+warning • The value of the field '_uploadProgress' isn't used • lib/admin/edit_artists_screen.dart:33:10 • unused_field
+   info • Don't use 'BuildContext's across async gaps • lib/admin/edit_artists_screen.dart:69:42 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/edit_artists_screen.dart:137:56 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/edit_artists_screen.dart:186:56 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/edit_songs_screen.dart:126:56 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/edit_songs_screen.dart:178:56 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/manage_album_screen.dart:305:56 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/manage_artists_screen.dart:128:56 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/manage_general_exercises_screen.dart:43:56 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/manage_songs_screen.dart:309:56 • use_build_context_synchronously
+warning • This default clause is covered by the previous cases • lib/admin/review_suggestion_screen.dart:179:7 • unreachable_switch_default
+   info • Don't use 'BuildContext's across async gaps • lib/admin/review_suggestion_screen.dart:280:72 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/review_suggestion_screen.dart:324:74 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/admin/review_suggestion_screen.dart:356:74 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/screens/admin/add_edit_vocal_day_screen.dart:164:56 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/screens/admin/manage_plan_days_screen.dart:51:56 • use_build_context_synchronously
+   info • Statements in an if should be enclosed in a block • lib/screens/lyrics/artists_list_screen.dart:206:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/screens/lyrics/artists_list_screen.dart:208:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/screens/lyrics/artists_list_screen.dart:210:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/screens/lyrics/artists_list_screen.dart:212:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/screens/lyrics/artists_list_screen.dart:213:35 • curly_braces_in_flow_control_structures
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/screens/lyrics/artists_list_screen.dart:352:47 • use_build_context_synchronously
+warning • The left operand can't be null, so the right operand is never executed • lib/screens/lyrics/artists_list_screen.dart:517:47 • dead_null_aware_expression
+

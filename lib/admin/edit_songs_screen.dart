@@ -122,6 +122,7 @@ class _EditSongScreenState extends State<EditSongScreen> {
         };
 
         await _firebaseService.updateSong(widget.song.id, updatedData);
+        if (!mounted) return;
 
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         if (authProvider.currentModerator != null) {
@@ -175,6 +176,7 @@ class _EditSongScreenState extends State<EditSongScreen> {
       setState(() => _isLoading = true);
       try {
         await _firebaseService.deleteSongs([widget.song.id]);
+        if (!mounted) return;
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         if (authProvider.currentUser != null) {
           _firebaseService.logActivity(

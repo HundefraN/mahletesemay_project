@@ -124,6 +124,7 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen> with SingleTi
     );
 
     if (shouldDelete == true) {
+      if (!mounted) return;
       try {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final artistsToDelete = _allArtists

@@ -301,6 +301,7 @@ class _AlbumListTabState extends State<_AlbumListTab> {
     );
 
     if (shouldDelete == true) {
+      if (!mounted) return;
       try {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final albumsToDelete = widget.albums

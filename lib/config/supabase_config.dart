@@ -11,8 +11,8 @@ class SupabaseConfig {
         defaultValue: 'https://onsvnudakxkrqazrufar.supabase.co');
   }
 
-  /// Supabase Anon/Public Key (reads from .env SUPABASE_ANON_KEY or compile-time env or fallback)
-  static String get anonKey {
+  /// Supabase Publishable Key (reads from .env SUPABASE_ANON_KEY or compile-time env or fallback)
+  static String get publishableKey {
     if (dotenv.isInitialized) {
       final envKey = dotenv.env['SUPABASE_ANON_KEY'];
       if (envKey != null && envKey.isNotEmpty) return envKey;

@@ -17,9 +17,9 @@ import '../../services/search_service.dart';
 import '../../widgets/web_content_wrapper.dart';
 import '../lyrics/song_detail_screen.dart';
 
-final GlobalKey<_MashupCategoryListState> mashupTab1Key =
+final GlobalKey<_MashupCategoryListState> _mashupTab1Key =
     GlobalKey<_MashupCategoryListState>();
-final GlobalKey<_MashupCategoryListState> mashupTab2Key =
+final GlobalKey<_MashupCategoryListState> _mashupTab2Key =
     GlobalKey<_MashupCategoryListState>();
 
 class MashupHelperScreen extends StatefulWidget {
@@ -185,9 +185,9 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
 
   void _toggleSearch() {
     if (_tabController.index == 0) {
-      mashupTab1Key.currentState?.toggleSearch();
+      _mashupTab1Key.currentState?.toggleSearch();
     } else {
-      mashupTab2Key.currentState?.toggleSearch();
+      _mashupTab2Key.currentState?.toggleSearch();
     }
   }
 
@@ -387,14 +387,14 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
           controller: _tabController,
           children: [
             _MashupCategoryList(
-              key: mashupTab1Key,
+              key: _mashupTab1Key,
               regionalSongs: sortedEthiopian,
               groupedSongs: groupedEthiopian,
               scaleFilterKey: scaleFilterKey,
               rhythmFilterKey: rhythmFilterKey,
             ),
             _MashupCategoryList(
-              key: mashupTab2Key,
+              key: _mashupTab2Key,
               regionalSongs: sortedWorldwide,
               groupedSongs: groupedWorldwide,
               scaleFilterKey: GlobalKey(),
