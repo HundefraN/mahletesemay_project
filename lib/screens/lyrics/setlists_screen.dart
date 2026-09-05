@@ -44,9 +44,9 @@ class SetlistsScreen extends StatelessWidget {
           ),
         ),
         SliverWebContentWrapper(
-          maxWidth: 850,
+          maxWidth: 1100,
           sliver: SliverPadding(
-            padding: EdgeInsets.fromLTRB(context.w(16), context.w(16), context.w(16), context.w(120)),
+            padding: EdgeInsets.fromLTRB(context.w(16), context.w(16), context.w(16), context.bottomNavClearance),
             sliver: Consumer<SetlistProvider>(
               builder: (context, provider, child) {
                 if (provider.isLoading) {
@@ -64,17 +64,32 @@ class SetlistsScreen extends StatelessWidget {
                   );
                 }
 
-                return SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                      final setlist = provider.setlists[index];
-                      return _SetlistCard(setlist: setlist)
-                          .animate()
-                          .fadeIn(delay: (100 * index).ms, duration: 500.ms)
-                          .slideY(begin: 0.2, curve: Curves.easeOutCubic);
-                    },
-                    childCount: provider.setlists.length,
-                  ),
+                return SliverLayoutBuilder(
+                  builder: (context, constraints) {
+                    final cols = context.listColumnsForWidth(constraints.crossAxisExtent);
+                    final delegate = SliverChildBuilderDelegate(
+                      (context, index) {
+                        final setlist = provider.setlists[index];
+                        return _SetlistCard(setlist: setlist)
+                            .animate()
+                            .fadeIn(delay: (100 * index).ms, duration: 500.ms)
+                            .slideY(begin: 0.2, curve: Curves.easeOutCubic);
+                      },
+                      childCount: provider.setlists.length,
+                    );
+                    if (cols == 1) {
+                      return SliverList(delegate: delegate);
+                    }
+                    return SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisExtent: 124,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 4,
+                      ),
+                      delegate: delegate,
+                    );
+                  },
                 );
               },
             ),

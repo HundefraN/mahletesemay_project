@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -69,18 +70,19 @@ class _SplashWrapperState extends State<SplashWrapper> {
       return AppStatus.ready;
     }
 
-    // ── Mobile path (unchanged) ─────────────────────────────────────────────
+    // ── Mobile path ─────────────────────────────────────────────────────────
 
-    // ── 1. Force update check ───────────────────────────────────────────────
-    // This runs before anything else: if an update is required the user is
-    // blocked immediately. The check is intentionally fail-open — if the
-    // backend is unreachable or the column doesn't exist, the app proceeds.
-    final isUpdateRequired = await AppUpdateService.instance.checkForUpdate();
-    if (isUpdateRequired) {
+    // Trigger update check asynchronously in background so splash is never delayed.
+    // AppUpdateWrapper mounted at MaterialApp root will immediately show AppUpdateLockScreen
+    // if an update is found to be required.
+    unawaited(AppUpdateService.instance.checkForUpdate());
+
+    // If a mandatory update is already marked as required, block immediately
+    if (AppUpdateService.instance.isUpdateRequired) {
       return AppStatus.needsUpdate;
     }
 
-    // ── 2. Local preferences (language / permissions / onboarding) ──────────
+    // ── Local preferences (language / permissions / onboarding) ──────────
     final prefs = await SharedPreferences.getInstance();
     final bool hasSelectedLanguage =
         prefs.getBool(prefLanguageSelected) ?? false;

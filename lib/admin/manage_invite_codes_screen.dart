@@ -141,7 +141,8 @@ This code is single-use and linked to your email.
             return queryMatch && statusMatch;
           }).toList();
 
-          return Column(
+          return AdminPageBody(
+            child: Column(
               children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -152,7 +153,8 @@ This code is single-use and linked to your email.
               ),
 
               // Filter Chips
-              Padding(
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: Row(
                   children: [
@@ -177,7 +179,7 @@ This code is single-use and linked to your email.
                           MaterialPageRoute(builder: (_) => const CreateInvitationScreen()),
                         ),
                       )
-                    : ListView.builder(
+                    : AdminResponsiveItemList(
                         padding: const EdgeInsets.fromLTRB(16, 10, 16, 80),
                         physics: const BouncingScrollPhysics(),
                         itemCount: filteredInvites.length,
@@ -188,6 +190,7 @@ This code is single-use and linked to your email.
                       ),
               ),
             ],
+          ),
           );
         },
       ),

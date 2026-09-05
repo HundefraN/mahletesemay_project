@@ -273,7 +273,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get allArtists => 'ሁሉም ዘማሪያን';
 
   @override
-  String get searchArtistsHint => 'አርቲስቶችን በስም ፈልግ...';
+  String get searchArtistsHint => 'ዘማሪያንን በስም ፈልግ...';
 
   @override
   String get artists => 'ዘማሪያን';
@@ -288,7 +288,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get all => 'ሁሉም';
 
   @override
-  String get noArtistsFound => 'ምንም አርቲስቶች አልተገኙም';
+  String get noArtistsFound => 'ምንም ዘማሪያን አልተገኙም';
 
   @override
   String get noSongsFound => 'ምንም ዝማሬ አልተገኘም';
@@ -910,8 +910,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get organizeAlbumsSubtitle => 'አልበሞችን፣ ሽፋኖችን እና የዝርዝር መዝሙራትን ያደራጁ';
 
   @override
-  String get updateArtistBioSubtitle =>
-      'የአርቲስት ፎቶዎችን፣ የህይወት ታሪክን እና ክልሎችን ያዘምኑ';
+  String get updateArtistBioSubtitle => 'የዘማሪ ፎቶዎችን፣ የህይወት ታሪክን እና ክልሎችን ያዘምኑ';
 
   @override
   String get vocalRoutinesSubtitle => 'የዕለት፣ የሳምንት፣ የወር እና የ3 ወር ልምምዶች';
@@ -1018,13 +1017,13 @@ class AppLocalizationsAm extends AppLocalizations {
   String get cropCoverImage => 'የሽፋን ምስል አስተካክል';
 
   @override
-  String get cropArtistPhoto => 'የአርቲስት ፎቶ አስተካክል';
+  String get cropArtistPhoto => 'የዘማሪ ፎቶ አስተካክል';
 
   @override
-  String get albumArtistSection => 'የአልበም አርቲስት';
+  String get albumArtistSection => 'የአልበሙ ዘማሪ';
 
   @override
-  String get selectArtistPrompt => 'አርቲስት ይምረጡ *';
+  String get selectArtistPrompt => 'ዘማሪ ይምረጡ *';
 
   @override
   String get albumDetailsSection => 'የአልበም ዝርዝሮች';
@@ -1039,16 +1038,16 @@ class AppLocalizationsAm extends AppLocalizations {
   String get changeCover => 'ሽፋን ቀይር';
 
   @override
-  String get artistInfoSection => 'የአርቲስት መረጃ';
+  String get artistInfoSection => 'የዘማሪ መረጃ';
 
   @override
-  String get artistPhotoOptional => 'የአርቲስት ፎቶ (አማራጭ)';
+  String get artistPhotoOptional => 'የዘማሪ ፎቶ (አማራጭ)';
 
   @override
-  String get artistPhoto => 'የአርቲስት ፎቶ';
+  String get artistPhoto => 'የዘማሪ ፎቶ';
 
   @override
-  String get saveArtistChanges => 'የአርቲስት ለውጦችን አስቀምጥ';
+  String get saveArtistChanges => 'የዘማሪ ለውጦችን አስቀምጥ';
 
   @override
   String get saveAlbumChanges => 'የአልበም ለውጦችን አስቀምጥ';
@@ -1185,7 +1184,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get searchYouTubeForAudioRef => 'ድምጹን ለማመሳከር YouTube ላይ ይፈልጉ';
 
   @override
-  String get selectArtistToSeeAlbums => 'አልበሞቻቸውን ለማየት አርቲስት ይምረጡ';
+  String get selectArtistToSeeAlbums => 'አልበሞቻቸውን ለማየት ዘማሪ ይምረጡ';
 
   @override
   String get noArtistsInCategory => 'በዚህ ምድብ ውስጥ ምንም አርቲስቶች የሉም።';
@@ -1239,7 +1238,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get shareStudioAppLogoOption => 'የመተግበሪያ አርማ';
 
   @override
-  String get shareStudioArtistNameOption => 'የአርቲስት ስም';
+  String get shareStudioArtistNameOption => 'የዘማሪ ስም';
 
   @override
   String get shareStudioWavesOption => 'ሞገዶች / ዳራ';
@@ -1254,7 +1253,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get copyQuoteTitle => 'ጥቅስ ገልብጥ';
 
   @override
-  String get copyQuoteSubtitle => 'ከአርቲስት ስም ጋር';
+  String get copyQuoteSubtitle => 'ከዘማሪ ስም ጋር';
 
   @override
   String get cleanLyricsTitle => 'ንጹህ ግጥም';
@@ -1531,7 +1530,7 @@ class AppLocalizationsAm extends AppLocalizations {
 
   @override
   String deleteSelectedArtistsTitle(Object count) {
-    return '$count አርቲስት(ቶች) ይሰረዝ?';
+    return '$count ዘማሪ(ያን) ይሰረዝ?';
   }
 
   @override
@@ -1599,16 +1598,16 @@ class AppLocalizationsAm extends AppLocalizations {
   String get deleteAction => 'ሰርዝ';
 
   @override
-  String get searchAlbumsHint => 'በአልበም ርዕስ ወይም በአርቲስት ፈልግ...';
+  String get searchAlbumsHint => 'በአልበም ርዕስ ወይም በዘማሪ ፈልግ...';
 
   @override
   String get noAlbumsFound => 'ምንም አልበሞች አልተገኙም';
 
   @override
-  String get searchSongsHint => 'በርዕስ፣ በአርቲስት ወይም በግጥም ፈልግ...';
+  String get searchSongsHint => 'በርዕስ፣ በዘማሪ ወይም በግጥም ፈልግ...';
 
   @override
-  String get discoverAmazingMusic => 'አስደናቂ ሙዚቃዎችን ያግኙ';
+  String get discoverAmazingMusic => 'የሚወዷቸውን ዝማሬዎች ያግኙ';
 
   @override
   String get filterSearch => 'ፍለጋን አጣራ';

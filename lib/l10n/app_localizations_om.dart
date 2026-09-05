@@ -61,10 +61,10 @@ class AppLocalizationsOm extends AppLocalizations {
   String get viewAll => 'Hunda Ilaali';
 
   @override
-  String get ethiopianArtists => 'Faarfattoota Itoophiyaa';
+  String get ethiopianArtists => 'Itoophiyaa';
 
   @override
-  String get worldwideArtists => 'Faarfattoota Addunyaa';
+  String get worldwideArtists => 'Addunyaa';
 
   @override
   String get history => 'Seenaa';

@@ -125,4 +125,30 @@ class Album {
       'search_keywords': effectiveKeywords,
     };
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Album &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          title == other.title &&
+          englishTitle == other.englishTitle &&
+          artistId == other.artistId &&
+          artistName == other.artistName &&
+          coverImageUrl == other.coverImageUrl &&
+          year == other.year &&
+          volume == other.volume;
+
+  @override
+  int get hashCode => Object.hash(
+        id,
+        title,
+        englishTitle,
+        artistId,
+        artistName,
+        coverImageUrl,
+        year,
+        volume,
+      );
 }

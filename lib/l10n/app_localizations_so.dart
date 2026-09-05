@@ -60,10 +60,10 @@ class AppLocalizationsSo extends AppLocalizations {
   String get viewAll => 'Eeg Dhammaan';
 
   @override
-  String get ethiopianArtists => 'Fannaaniinta Itoobiya';
+  String get ethiopianArtists => 'Itoobiya';
 
   @override
-  String get worldwideArtists => 'Fannaaniinta Caalamka';
+  String get worldwideArtists => 'Caalamka';
 
   @override
   String get history => 'Taariikhda';

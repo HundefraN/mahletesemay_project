@@ -77,4 +77,10 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.confirm_user_email(UUID) FROM anon;
 GRANT EXECUTE ON FUNCTION public.confirm_user_email(UUID) TO authenticated, service_role;
 
+-- Anonymous claimers must still be able to validate a single code and claim it.
+GRANT EXECUTE ON FUNCTION public.claim_moderator_account(TEXT, TEXT, TEXT, JSONB, UUID) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.lookup_invitation_for_claim(TEXT, TEXT) TO anon, authenticated, service_role;
+-- Login happens before a session exists, so repair must stay callable by anon.
+GRANT EXECUTE ON FUNCTION public.repair_auth_users_schema() TO anon, authenticated, service_role;
+
 COMMIT;

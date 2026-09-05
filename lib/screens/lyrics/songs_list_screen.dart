@@ -94,7 +94,6 @@ class _SongsListScreenState extends State<SongsListScreen> {
   Widget build(BuildContext context) {
     final songProvider = Provider.of<SongProvider>(context);
     final theme = Theme.of(context);
-    final isWide = !context.isPhone;
     final isDark = theme.brightness == Brightness.dark;
 
     final allSongs = _getSongs(songProvider);
@@ -112,12 +111,12 @@ class _SongsListScreenState extends State<SongsListScreen> {
         slivers: [
           _buildSliverAppBar(theme, isDark, allSongs),
           SliverWebContentWrapper(
-            maxWidth: 900,
+            maxWidth: 1100,
             sliver: _buildSearchBar(theme, isDark),
           ),
           SliverWebContentWrapper(
-            maxWidth: 900,
-            sliver: _buildSongList(filteredSongs, songProvider, theme, isDark, isWide),
+            maxWidth: 1100,
+            sliver: _buildSongList(filteredSongs, songProvider, theme, isDark),
           ),
         ],
       ),
@@ -210,16 +209,21 @@ class _SongsListScreenState extends State<SongsListScreen> {
 
             // Artwork & Info Center
             Positioned(
-              top: 60,
-              left: 20,
-              right: 20,
-              child: Row(
+              top: context.isPhone ? 60 : 72,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: context.maxContentWidth),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
                 children: [
                   Hero(
                     tag: widget.albumHeroTag,
                     child: Container(
-                      width: 120,
-                      height: 120,
+                      width: context.isPhone ? 120 : 148,
+                      height: context.isPhone ? 120 : 148,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
@@ -305,6 +309,9 @@ class _SongsListScreenState extends State<SongsListScreen> {
                   ),
                 ],
               ),
+                    ),
+                  ),
+                ),
             ),
           ],
         ),
@@ -362,7 +369,6 @@ class _SongsListScreenState extends State<SongsListScreen> {
     SongProvider songProvider,
     ThemeData theme,
     bool isDark,
-    bool isWide,
   ) {
     if (songs.isEmpty) {
       return SliverFillRemaining(
@@ -395,28 +401,47 @@ class _SongsListScreenState extends State<SongsListScreen> {
 
     return SliverLayoutBuilder(
       builder: (context, constraints) {
-        final maxW = MediaQuery.of(context).size.width >= 600 ? 800.0 : double.infinity;
-        final hPad = ((constraints.crossAxisExtent - maxW) / 2).clamp(0.0, double.infinity);
+        final cols = context.listColumnsForWidth(constraints.crossAxisExtent);
         return SliverPadding(
-          padding: EdgeInsets.fromLTRB(16 + hPad, 0, 16 + hPad, 100),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final song = songs[index];
-                final songHeroTag = 'song-${song.id}';
-                final coverUrl = _getCoverUrlForSong(song, songProvider);
-
-                return _SongTile(
-                  song: song,
-                  index: index + 1,
-                  coverUrl: coverUrl,
-                  heroTag: songHeroTag,
-                  isDark: isDark,
-                );
-              },
-              childCount: songs.length,
-            ),
-          ),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+          sliver: cols == 1
+              ? SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final song = songs[index];
+                      return _SongTile(
+                        song: song,
+                        index: index + 1,
+                        coverUrl: _getCoverUrlForSong(song, songProvider),
+                        heroTag: 'song-${song.id}',
+                        isDark: isDark,
+                      );
+                    },
+                    childCount: songs.length,
+                  ),
+                )
+              : SliverGrid(
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisExtent: 82,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 4,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final song = songs[index];
+                      return _SongTile(
+                        song: song,
+                        index: index + 1,
+                        coverUrl: _getCoverUrlForSong(song, songProvider),
+                        heroTag: 'song-${song.id}',
+                        isDark: isDark,
+                      );
+                    },
+                    childCount: songs.length,
+                  ),
+                ),
         );
       },
     );

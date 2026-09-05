@@ -169,8 +169,8 @@ class Song {
       'title': title,
       'english_title': englishTitle,
       'artist_name': artistName,
-      'artist_id': artistId,
-      'album_id': albumId,
+      'artist_id': artistId.isEmpty ? null : artistId,
+      'album_id': albumId.isEmpty ? null : albumId,
       'album_title': albumTitle,
       'lyrics': lyrics,
       'scale': scale,
@@ -180,4 +180,38 @@ class Song {
       'search_keywords': effectiveKeywords,
     };
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Song &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          title == other.title &&
+          englishTitle == other.englishTitle &&
+          artistName == other.artistName &&
+          artistId == other.artistId &&
+          albumId == other.albumId &&
+          albumTitle == other.albumTitle &&
+          lyrics == other.lyrics &&
+          scale == other.scale &&
+          rhythm == other.rhythm &&
+          viewCount == other.viewCount &&
+          createdAt == other.createdAt;
+
+  @override
+  int get hashCode => Object.hash(
+        id,
+        title,
+        englishTitle,
+        artistName,
+        artistId,
+        albumId,
+        albumTitle,
+        lyrics,
+        scale,
+        rhythm,
+        viewCount,
+        createdAt,
+      );
 }

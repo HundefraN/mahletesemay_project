@@ -24,11 +24,8 @@ class RecommendedSongsScreen extends StatefulWidget {
 
 class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
     with TickerProviderStateMixin {
-  late List<Song> _allRecommendedSongs;
-  late List<Song> _displayedSongs;
   SongSortType _sortType = SongSortType.popularity;
   SortOrder _sortOrder = SortOrder.descending;
-  bool _isInitialized = false;
 
   late AnimationController _fadeController;
   late AnimationController _slideController;
@@ -38,26 +35,12 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
     super.initState();
     _fadeController = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
     _slideController = AnimationController(duration: const Duration(milliseconds: 600), vsync: this);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_isInitialized) {
-      _initializeAndSortSongs();
-      _isInitialized = true;
-    }
-  }
-
-  void _initializeAndSortSongs() {
-    _allRecommendedSongs = Provider.of<SongProvider>(context, listen: false).getPersonalizedRecommendations();
-    _sortSongs();
     _fadeController.forward();
     _slideController.forward();
   }
 
-  void _sortSongs() {
-    List<Song> sorted = List.from(_allRecommendedSongs);
+  List<Song> _computeSortedSongs(List<Song> songs) {
+    final sorted = List<Song>.from(songs);
 
     sorted.sort((a, b) {
       int comparison;
@@ -78,9 +61,7 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
       return _sortOrder == SortOrder.ascending ? comparison : -comparison;
     });
 
-    setState(() {
-      _displayedSongs = sorted;
-    });
+    return sorted;
   }
 
   @override
@@ -129,14 +110,9 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
   @override
   Widget build(BuildContext context) {
     final songProvider = Provider.of<SongProvider>(context);
-    _allRecommendedSongs = songProvider.getPersonalizedRecommendations();
-    _sortSongs();
+    final recommendedSongs = songProvider.getPersonalizedRecommendations();
+    final displayedSongs = _computeSortedSongs(recommendedSongs);
     final theme = Theme.of(context);
-    if (!_isInitialized) {
-      _fadeController.forward();
-      _slideController.forward();
-      _isInitialized = true;
-    }
 
     final fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOutQuart));
     final slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
@@ -191,32 +167,49 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
             ),
           ),
           SliverWebContentWrapper(
-            maxWidth: 850,
+            maxWidth: 1100,
             sliver: SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                    final song = _displayedSongs[index];
-                    final heroTag = 'recommended-list-${song.id}';
-                    final coverUrl = _getCoverUrlForSong(song, songProvider);
+              sliver: SliverLayoutBuilder(
+                builder: (context, constraints) {
+                  final cols = constraints.crossAxisExtent >= 720 ? 2 : 1;
+                  final delegate = SliverChildBuilderDelegate(
+                    (context, index) {
+                      final song = displayedSongs[index];
+                      final heroTag = 'recommended-list-${song.id}';
+                      final coverUrl = _getCoverUrlForSong(song, songProvider);
 
-                    return SlideTransition(
-                      position: slideAnimation,
-                      child: FadeTransition(
-                        opacity: fadeAnimation,
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                            bottom: 16,
-                            top: index == 0 ? 24 : 0,
+                      return SlideTransition(
+                        position: slideAnimation,
+                        child: FadeTransition(
+                          opacity: fadeAnimation,
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              bottom: 16,
+                              top: index == 0 ? 24 : 0,
+                            ),
+                            child: _buildSongCard(
+                                context, song, coverUrl, heroTag, index),
                           ),
-                          child: _buildSongCard(context, song, coverUrl, heroTag, index),
                         ),
-                      ),
-                    );
-                  },
-                  childCount: _displayedSongs.length,
-                ),
+                      );
+                    },
+                    childCount: displayedSongs.length,
+                  );
+                  if (cols == 1) {
+                    return SliverList(delegate: delegate);
+                  }
+                  return SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisExtent: 118,
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 4,
+                    ),
+                    delegate: delegate,
+                  );
+                },
               ),
             ),
           ),
@@ -235,7 +228,6 @@ class _RecommendedSongsScreenState extends State<RecommendedSongsScreen>
         } else if (value is SortOrder) {
           setState(() => _sortOrder = value);
         }
-        _sortSongs();
       },
       itemBuilder: (context) => [
         PopupMenuItem(enabled: false, child: Text(l10n.sortBy, style: const TextStyle(fontWeight: FontWeight.bold))),

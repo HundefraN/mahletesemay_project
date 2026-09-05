@@ -228,7 +228,8 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
           const SizedBox(width: 4),
         ],
       ),
-      body: Form(
+      body: AdminFormBody(
+        child: Form(
           key: _formKey,
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -301,6 +302,7 @@ class _EditAlbumScreenState extends State<EditAlbumScreen> {
             ),
             const SizedBox(height: 24),
           ],
+        ),
         ),
       ),
     );

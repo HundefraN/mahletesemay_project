@@ -334,13 +334,12 @@ class _AppReleaseManagementScreenState extends State<AppReleaseManagementScreen>
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AdminUiKit.goldAccent))
-          : SingleChildScrollView(
+          : AdminFormBody(
+              maxWidth: 720,
+              child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 680),
-                  child: Form(
+              child: Form(
                     key: _formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -656,66 +655,77 @@ class _AppReleaseManagementScreenState extends State<AppReleaseManagementScreen>
                         const SizedBox(height: 28),
 
                         // 4. Action Buttons
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  side: BorderSide(
-                                    color: AdminUiKit.goldAccent.withValues(alpha: 0.4),
-                                    width: 1.5,
-                                  ),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final stacked = constraints.maxWidth < 520;
+                            final previewButton = OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                side: BorderSide(
+                                  color: AdminUiKit.goldAccent.withValues(alpha: 0.4),
+                                  width: 1.5,
                                 ),
-                                onPressed: _previewLockScreen,
-                                icon: const Icon(Icons.preview_rounded, color: AdminUiKit.goldAccent),
-                                label: Text(
-                                  'Preview Lock Screen',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14,
-                                    color: isDark ? Colors.white : AdminUiKit.primaryNavy,
-                                  ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              ),
+                              onPressed: _previewLockScreen,
+                              icon: const Icon(Icons.preview_rounded, color: AdminUiKit.goldAccent),
+                              label: Text(
+                                'Preview Lock Screen',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                  color: isDark ? Colors.white : AdminUiKit.primaryNavy,
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              flex: 2,
-                              child: FilledButton.icon(
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: AdminUiKit.emeraldGreen,
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                  elevation: 2,
-                                ),
-                                onPressed: _isSaving ? null : _saveReleaseConfig,
-                                icon: _isSaving
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                      )
-                                    : const Icon(Icons.publish_rounded, color: Colors.white, size: 20),
-                                label: Text(
-                                  _isSaving ? 'Publishing...' : 'Publish Release',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 15,
-                                    color: Colors.white,
-                                  ),
+                            );
+                            final publishButton = FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AdminUiKit.emeraldGreen,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                elevation: 2,
+                              ),
+                              onPressed: _isSaving ? null : _saveReleaseConfig,
+                              icon: _isSaving
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    )
+                                  : const Icon(Icons.publish_rounded, color: Colors.white, size: 20),
+                              label: Text(
+                                _isSaving ? 'Publishing...' : 'Publish Release',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                  color: Colors.white,
                                 ),
                               ),
-                            ),
-                          ],
+                            );
+                            if (stacked) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  previewButton,
+                                  const SizedBox(height: 12),
+                                  publishButton,
+                                ],
+                              );
+                            }
+                            return Row(
+                              children: [
+                                Expanded(child: previewButton),
+                                const SizedBox(width: 14),
+                                Expanded(flex: 2, child: publishButton),
+                              ],
+                            );
+                          },
                         ),
                       ],
                     ),
                   ),
                 ),
               ),
-            ),
     );
   }
 

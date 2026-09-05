@@ -276,7 +276,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 19),
         ),
       ),
-      body: StreamBuilder<List<ActivityLog>>(
+      body: AdminPageBody(
+        child: StreamBuilder<List<ActivityLog>>(
         stream: _firebaseService.getActivityLogsStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -323,7 +324,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                         title: l10n?.noMatchingLogs ?? 'No Matching Logs',
                         description: l10n?.noMatchingLogsDesc ?? 'No activity matches your active search and filter filters.',
                       )
-                    : ListView.builder(
+                    : AdminResponsiveItemList(
                         padding: const EdgeInsets.fromLTRB(16, 6, 16, 80),
                         physics: const BouncingScrollPhysics(),
                         itemCount: filteredLogs.length,
@@ -393,6 +394,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
             ],
           );
         },
+      ),
       ),
     );
   }

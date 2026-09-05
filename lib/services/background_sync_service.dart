@@ -69,7 +69,7 @@ class BackgroundSyncService {
         constraints: Constraints(
           networkType: NetworkType.connected,
         ),
-        existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
         backoffPolicy: BackoffPolicy.linear,
         backoffPolicyDelay: const Duration(minutes: 5),
       );
@@ -119,18 +119,27 @@ class BackgroundSyncService {
       final existingSongs = await localDb.getSongs();
       final existingSongIds = existingSongs.map((s) => s.id).toSet();
 
-      // Fetch remote content
-      final artists = await firebaseService.getArtists();
+      // Fetch remote content with timeout guards
+      final artists = await firebaseService.getArtists().timeout(
+            const Duration(seconds: 15),
+            onTimeout: () => [],
+          );
       if (artists.isNotEmpty) {
         await localDb.syncArtists(artists);
       }
 
-      final albums = await firebaseService.getAlbums();
+      final albums = await firebaseService.getAlbums().timeout(
+            const Duration(seconds: 15),
+            onTimeout: () => [],
+          );
       if (albums.isNotEmpty) {
         await localDb.syncAlbums(albums);
       }
 
-      final remoteSongs = await firebaseService.getSongs();
+      final remoteSongs = await firebaseService.getSongs().timeout(
+            const Duration(seconds: 15),
+            onTimeout: () => [],
+          );
       if (remoteSongs.isNotEmpty) {
         await localDb.syncSongs(remoteSongs);
       }

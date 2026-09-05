@@ -11,6 +11,7 @@ import '../models/song_model.dart';
 import '../models/suggestion_model.dart';
 import '../models/vocal_plan_model.dart';
 import '../utils/amharic_transliterator.dart';
+import '../utils/constants.dart';
 
 class SupabaseService {
   static final SupabaseService _instance = SupabaseService._internal();
@@ -20,6 +21,8 @@ class SupabaseService {
   SupabaseClient get _client => Supabase.instance.client;
 
   static final Map<String, DateTime> _lastStreamErrorLog = {};
+  bool _singlesCatalogReady = false;
+
   static void _logStreamErrorThrottled(String key, dynamic error) {
     final now = DateTime.now();
     final lastLog = _lastStreamErrorLog[key];
@@ -37,7 +40,10 @@ class SupabaseService {
     return _client
         .from('artists')
         .stream(primaryKey: ['id'])
-        .map((maps) => maps.map((item) => Artist.fromMap(item)).toList())
+        .map((maps) => maps
+            .where((item) => item['id']?.toString() != singlesArtistId)
+            .map((item) => Artist.fromMap(item))
+            .toList())
         .handleError((e) {
           _logStreamErrorThrottled('artists', e);
         });
@@ -47,7 +53,10 @@ class SupabaseService {
     try {
       final response = await _client.from('artists').select();
       debugPrint('Fetched ${response.length} artists from Supabase');
-      return (response as List).map((item) => Artist.fromMap(item as Map<String, dynamic>)).toList();
+      return (response as List)
+          .map((item) => Artist.fromMap(item as Map<String, dynamic>))
+          .where((artist) => artist.id != singlesArtistId)
+          .toList();
     } catch (e, stackTrace) {
       debugPrint('Error getting artists: $e\n$stackTrace');
       return [];
@@ -100,8 +109,9 @@ class SupabaseService {
 
   Future<void> deleteArtists(List<String> ids) async {
     try {
-      if (ids.isEmpty) return;
-      await _client.from('artists').delete().inFilter('id', ids);
+      final deletableIds = ids.where((id) => id != singlesArtistId).toList();
+      if (deletableIds.isEmpty) return;
+      await _client.from('artists').delete().inFilter('id', deletableIds);
     } catch (e) {
       debugPrint('Error deleting artists: $e');
       rethrow;
@@ -116,7 +126,10 @@ class SupabaseService {
     return _client
         .from('albums')
         .stream(primaryKey: ['id'])
-        .map((maps) => maps.map((item) => Album.fromMap(item)).toList())
+        .map((maps) => maps
+            .where((item) => item['id']?.toString() != singlesAlbumId)
+            .map((item) => Album.fromMap(item))
+            .toList())
         .handleError((e) {
           _logStreamErrorThrottled('albums', e);
         });
@@ -126,7 +139,10 @@ class SupabaseService {
     try {
       final response = await _client.from('albums').select();
       debugPrint('Fetched ${response.length} albums from Supabase');
-      return (response as List).map((item) => Album.fromMap(item as Map<String, dynamic>)).toList();
+      return (response as List)
+          .map((item) => Album.fromMap(item as Map<String, dynamic>))
+          .where((album) => album.id != singlesAlbumId)
+          .toList();
     } catch (e, stackTrace) {
       debugPrint('Error getting albums: $e\n$stackTrace');
       return [];
@@ -175,8 +191,9 @@ class SupabaseService {
 
   Future<void> deleteAlbums(List<String> ids) async {
     try {
-      if (ids.isEmpty) return;
-      await _client.from('albums').delete().inFilter('id', ids);
+      final deletableIds = ids.where((id) => id != singlesAlbumId).toList();
+      if (deletableIds.isEmpty) return;
+      await _client.from('albums').delete().inFilter('id', deletableIds);
     } catch (e) {
       debugPrint('Error deleting albums: $e');
       rethrow;
@@ -222,9 +239,63 @@ class SupabaseService {
     }
   }
 
+  /// Creates the placeholder "Singles" artist/album used by standalone releases.
+  /// Songs reference these IDs, so they must exist before insert/update.
+  Future<void> ensureSinglesCatalog() async {
+    if (_singlesCatalogReady) return;
+    try {
+      await _client.from('artists').upsert(
+        {
+          'id': singlesArtistId,
+          'name': 'Various Artists',
+          'english_name': 'Various Artists',
+          'image_url': '',
+          'region': '',
+          'search_keywords': ['singles', 'various artists'],
+        },
+        onConflict: 'id',
+        ignoreDuplicates: true,
+      );
+      await _client.from('albums').upsert(
+        {
+          'id': singlesAlbumId,
+          'title': 'Singles',
+          'english_title': 'Singles',
+          'artist_id': singlesArtistId,
+          'artist_name': 'Various Artists',
+          'cover_image_url': '',
+          'search_keywords': ['singles'],
+        },
+        onConflict: 'id',
+        ignoreDuplicates: true,
+      );
+      _singlesCatalogReady = true;
+    } catch (e) {
+      debugPrint('Error ensuring singles catalog: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _prepareSongPayload(Map<String, dynamic> payload) async {
+    if (payload['album_id'] is String && (payload['album_id'] as String).isEmpty) {
+      payload['album_id'] = null;
+    }
+    if (payload['artist_id'] is String && (payload['artist_id'] as String).isEmpty) {
+      payload['artist_id'] = null;
+    }
+
+    final albumId = payload['album_id']?.toString();
+    final artistId = payload['artist_id']?.toString();
+    if (albumId == singlesAlbumId || artistId == singlesArtistId) {
+      await ensureSinglesCatalog();
+    }
+  }
+
   Future<void> addSong(Song song) async {
     try {
-      await _client.from('songs').insert(song.toSupabase());
+      final payload = song.toSupabase();
+      await _prepareSongPayload(payload);
+      await _client.from('songs').insert(payload);
     } catch (e) {
       debugPrint('Error adding song: $e');
       rethrow;
@@ -262,6 +333,7 @@ class SupabaseService {
         );
       }
 
+      await _prepareSongPayload(payload);
       await _client.from('songs').update(payload).eq('id', id);
     } catch (e) {
       debugPrint('Error updating song: $e');
@@ -822,12 +894,28 @@ class SupabaseService {
     }
   }
 
-  Future<Invitation?> getInvitationByCode(String inputCode) async {
+  Future<Invitation?> getInvitationByCode(String inputCode, {String? email}) async {
     try {
       final normalizedInput = inputCode.replaceAll('-', '').replaceAll(' ', '').trim().toUpperCase();
       if (normalizedInput.isEmpty) return null;
 
-      // 1. Try exact match on code
+      // SECURITY DEFINER RPC works for anonymous claimers; table SELECT is admin-only.
+      try {
+        final rpcRes = await _client.rpc('lookup_invitation_for_claim', params: {
+          'p_code': inputCode.trim(),
+          'p_email': email?.trim().toLowerCase() ?? '',
+        });
+        if (rpcRes is Map) {
+          final map = Map<String, dynamic>.from(rpcRes);
+          if (map['success'] == true) {
+            return Invitation.fromMap(map);
+          }
+        }
+      } catch (e) {
+        debugPrint('lookup_invitation_for_claim RPC info: $e');
+      }
+
+      // Fallback for databases that still allow invitation SELECT
       final exactRes = await _client
           .from('invitations')
           .select()
@@ -838,11 +926,7 @@ class SupabaseService {
         return Invitation.fromMap(exactRes);
       }
 
-      // 2. Query all invitations and match normalized input
-      final listRes = await _client
-          .from('invitations')
-          .select();
-
+      final listRes = await _client.from('invitations').select();
       for (final item in (listRes as List)) {
         final dbCode = (item['code'] ?? '').toString().replaceAll('-', '').replaceAll(' ', '').trim().toUpperCase();
         if (dbCode == normalizedInput) {
@@ -1066,7 +1150,8 @@ class SupabaseService {
           .from('app_config')
           .select()
           .order('updated_at', ascending: false)
-          .limit(1);
+          .limit(1)
+          .timeout(const Duration(milliseconds: 2500));
 
       if (res.isNotEmpty) {
         return AppConfigModel.fromJson(res.first);
@@ -1085,15 +1170,6 @@ class SupabaseService {
       return null;
     } catch (e) {
       debugPrint('Error fetching app_config: $e');
-      final legacyMinVersion = await getMinRequiredVersion();
-      if (legacyMinVersion != null) {
-        return AppConfigModel(
-          id: 'default',
-          latestVersion: legacyMinVersion,
-          minRequiredVersion: legacyMinVersion,
-          forceUpdate: false,
-        );
-      }
       return null;
     }
   }
@@ -1172,7 +1248,8 @@ class SupabaseService {
           .from('app_config')
           .select('min_required_version, updated_at')
           .order('updated_at', ascending: false)
-          .limit(1);
+          .limit(1)
+          .timeout(const Duration(milliseconds: 2000));
       if (res.isNotEmpty && res.first['min_required_version'] != null) {
         final version = res.first['min_required_version'].toString().trim();
         if (version.isNotEmpty) return version;
@@ -1186,7 +1263,8 @@ class SupabaseService {
           .from('app_settings')
           .select('min_required_version, updated_at')
           .order('updated_at', ascending: false)
-          .limit(1);
+          .limit(1)
+          .timeout(const Duration(milliseconds: 2000));
       if (res.isNotEmpty && res.first['min_required_version'] != null) {
         final version = res.first['min_required_version'].toString().trim();
         return version.isEmpty ? null : version;

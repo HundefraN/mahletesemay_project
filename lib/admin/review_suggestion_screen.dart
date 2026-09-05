@@ -48,7 +48,8 @@ class _ReviewSuggestionsScreenState extends State<ReviewSuggestionsScreen> with 
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
-          child: Container(
+          child: AdminConstrainedBar(
+            child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF13233D) : Colors.black.withValues(alpha: 0.04),
@@ -80,6 +81,7 @@ class _ReviewSuggestionsScreenState extends State<ReviewSuggestionsScreen> with 
                 Tab(text: '❌ ${AppLocalizations.of(context)?.rejectedTab ?? "Rejected"}'),
               ],
             ),
+          ),
           ),
         ),
       ),

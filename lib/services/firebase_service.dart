@@ -25,6 +25,7 @@ class FirebaseService {
   Future<void> addArtist(Artist artist) => _supabase.addArtist(artist);
   Future<void> addAlbum(Album album) => _supabase.addAlbum(album);
   Future<void> addSong(Song song) => _supabase.addSong(song);
+  Future<void> ensureSinglesCatalog() => _supabase.ensureSinglesCatalog();
 
   Future<void> updateArtist(String id, Map<String, dynamic> data) => _supabase.updateArtist(id, data);
   Future<void> updateAlbum(String id, Map<String, dynamic> data) => _supabase.updateAlbum(id, data);

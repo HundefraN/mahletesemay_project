@@ -4,8 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/album_model.dart';
-import '../../models/artist_model.dart';
 import '../../providers/auth_proveider.dart';
+import '../../providers/song_provider.dart';
 import '../../services/firebase_service.dart';
 import '../../services/search_service.dart';
 import '../../widgets/custom_snackbar.dart';
@@ -21,15 +21,12 @@ class ManageAlbumsScreen extends StatefulWidget {
 }
 
 class _ManageAlbumsScreenState extends State<ManageAlbumsScreen> with SingleTickerProviderStateMixin {
-  final FirebaseService _firebaseService = FirebaseService();
-  late Future<Map<String, List<Album>>> _albumsFuture;
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _albumsFuture = _loadAndCategorizeAlbums();
   }
 
   @override
@@ -38,35 +35,8 @@ class _ManageAlbumsScreenState extends State<ManageAlbumsScreen> with SingleTick
     super.dispose();
   }
 
-  Future<Map<String, List<Album>>> _loadAndCategorizeAlbums() async {
-    final List<Album> allAlbums = await _firebaseService.getAlbums();
-    final List<Artist> allArtists = await _firebaseService.getArtists();
-
-    final Map<String, String> artistIdToRegionMap = {
-      for (var artist in allArtists) artist.id: artist.region
-    };
-
-    final List<Album> ethiopianAlbums = [];
-    final List<Album> worldwideAlbums = [];
-
-    for (var album in allAlbums) {
-      if (artistIdToRegionMap[album.artistId] == 'Ethiopian') {
-        ethiopianAlbums.add(album);
-      } else {
-        worldwideAlbums.add(album);
-      }
-    }
-
-    return {
-      'Ethiopian': ethiopianAlbums,
-      'Worldwide': worldwideAlbums,
-    };
-  }
-
   void _refreshData() {
-    setState(() {
-      _albumsFuture = _loadAndCategorizeAlbums();
-    });
+    context.read<SongProvider>().refreshData();
   }
 
   void _navigateToAddAlbum() async {
@@ -74,7 +44,7 @@ class _ManageAlbumsScreenState extends State<ManageAlbumsScreen> with SingleTick
       context,
       MaterialPageRoute(builder: (_) => const AddAlbumScreen()),
     );
-    if (result == true) {
+    if (result == true && mounted) {
       _refreshData();
     }
   }
@@ -83,6 +53,22 @@ class _ManageAlbumsScreenState extends State<ManageAlbumsScreen> with SingleTick
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final songProvider = Provider.of<SongProvider>(context);
+
+    final Map<String, String> artistIdToRegionMap = {
+      for (var artist in songProvider.artists) artist.id: artist.region
+    };
+
+    final List<Album> ethiopianAlbums = [];
+    final List<Album> worldwideAlbums = [];
+
+    for (var album in songProvider.allAlbums) {
+      if (artistIdToRegionMap[album.artistId] == 'Ethiopian') {
+        ethiopianAlbums.add(album);
+      } else {
+        worldwideAlbums.add(album);
+      }
+    }
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF070E1B) : const Color(0xFFF5F7FB),
@@ -104,7 +90,8 @@ class _ManageAlbumsScreenState extends State<ManageAlbumsScreen> with SingleTick
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
-          child: Container(
+          child: AdminConstrainedBar(
+            child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF13233D) : Colors.black.withValues(alpha: 0.04),
@@ -136,46 +123,25 @@ class _ManageAlbumsScreenState extends State<ManageAlbumsScreen> with SingleTick
               ],
             ),
           ),
+          ),
         ),
       ),
-      body: FutureBuilder<Map<String, List<Album>>>(
-        future: _albumsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: AdminUiKit.goldAccent),
-            );
-          }
-          if (snapshot.hasError) {
-            return AdminEmptyState(
-              icon: Icons.error_outline_rounded,
-              title: AppLocalizations.of(context)?.failedToLoadAlbums ?? 'Failed to load albums',
-              description: snapshot.error.toString(),
-              actionLabel: 'Retry',
-              onAction: _refreshData,
-            );
-          }
-
-          final categorizedAlbums = snapshot.data ?? {};
-
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              _AlbumListTab(
-                category: 'Ethiopian',
-                albums: categorizedAlbums['Ethiopian'] ?? [],
-                onDataChanged: _refreshData,
-                onAddAlbum: _navigateToAddAlbum,
-              ),
-              _AlbumListTab(
-                category: 'Worldwide',
-                albums: categorizedAlbums['Worldwide'] ?? [],
-                onDataChanged: _refreshData,
-                onAddAlbum: _navigateToAddAlbum,
-              ),
-            ],
-          );
-        },
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _AlbumListTab(
+            category: 'Ethiopian',
+            albums: ethiopianAlbums,
+            onDataChanged: _refreshData,
+            onAddAlbum: _navigateToAddAlbum,
+          ),
+          _AlbumListTab(
+            category: 'Worldwide',
+            albums: worldwideAlbums,
+            onDataChanged: _refreshData,
+            onAddAlbum: _navigateToAddAlbum,
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
@@ -353,7 +319,8 @@ class _AlbumListTabState extends State<_AlbumListTab> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Column(
+    return AdminPageBody(
+      child: Column(
         children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -415,7 +382,7 @@ class _AlbumListTabState extends State<_AlbumListTab> {
               : RefreshIndicator(
                   color: AdminUiKit.goldAccent,
                   onRefresh: () async => widget.onDataChanged(),
-                  child: ListView.builder(
+                  child: AdminResponsiveItemList(
                     padding: const EdgeInsets.fromLTRB(16, 6, 16, 80),
                     physics: const BouncingScrollPhysics(),
                     itemCount: _filteredAlbums.length,
@@ -574,6 +541,7 @@ class _AlbumListTabState extends State<_AlbumListTab> {
                 ),
         ),
       ],
+      ),
     );
   }
 }

@@ -15,6 +15,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:confetti/confetti.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:mahlete_semay_project/utils/app_themes.dart';
+import 'package:mahlete_semay_project/utils/responsive_sizer.dart';
 import 'package:mahlete_semay_project/widgets/web_content_wrapper.dart';
 
 enum GuidedStep {
@@ -342,6 +343,12 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
     });
   }
 
+  Color _onAccentColor(Color accent) {
+    return ThemeData.estimateBrightnessForColor(accent) == Brightness.dark
+        ? Colors.white
+        : AppThemes.royalNavy;
+  }
+
   void _shareResults() {
     if (_lowestNoteFound.isEmpty || _highestNoteFound.isEmpty) return;
     final voiceType =
@@ -366,7 +373,10 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
       appBar: AppBar(
         title: Text(
           l10n.vocalRangeFinder,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            fontSize: context.sp(17),
+          ),
         ),
         centerTitle: true,
         actions: [
@@ -413,9 +423,9 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
               colors: [
                 theme.colorScheme.primary,
                 theme.colorScheme.secondary,
-                Colors.amber,
-                Colors.greenAccent,
-                Colors.purpleAccent
+                AppThemes.celestialGold,
+                AppThemes.celestialGoldLight,
+                AppThemes.celestialGoldDark,
               ],
             ),
           ),
@@ -542,11 +552,16 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
     return Center(
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+        padding: EdgeInsets.fromLTRB(
+          context.w(16),
+          context.w(20),
+          context.w(16),
+          context.w(20) + context.bottomNavClearance,
+        ),
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(28),
+              padding: EdgeInsets.all(context.w(16)),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
@@ -559,52 +574,53 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.35),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                    blurRadius: context.w(16),
+                    offset: Offset(0, context.w(6)),
                   )
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.graphic_eq_rounded,
-                size: 64,
-                color: Colors.white,
+                size: context.w(36),
+                color: theme.colorScheme.onPrimary,
               ),
             )
                 .animate(
                     onPlay: (controller) => controller.repeat(reverse: true))
                 .scaleXY(end: 1.06, duration: 1200.ms, curve: Curves.easeInOut),
-            const SizedBox(height: 28),
+            SizedBox(height: context.w(16)),
             Text(
               l10n.vocalRangeFinder,
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
-                fontSize: 28,
+                fontSize: context.sp(22),
               ),
               textAlign: TextAlign.center,
             ).animate().fadeIn().slideY(begin: 0.3),
-            const SizedBox(height: 12),
+            SizedBox(height: context.w(8)),
             Text(
               "Discover your exact vocal range and voice type with precision audio detection and interactive sustain tracking.",
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
-                height: 1.5,
+                height: 1.45,
+                fontSize: context.sp(13),
               ),
             ).animate().fadeIn(delay: 150.ms),
-            const SizedBox(height: 32),
+            SizedBox(height: context.w(20)),
             Card(
               elevation: 0,
               color:
                   theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(context.w(16)),
                 side: BorderSide(
                   color: theme.colorScheme.outline.withValues(alpha: 0.12),
                 ),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(22.0),
+                padding: EdgeInsets.all(context.w(14)),
                 child: Column(
                   children: [
                     _StepInfoRow(
@@ -614,7 +630,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                           "Hear countdown 3...2...1, then hum or sing your lowest comfortable pitch and hold it steady.",
                       color: lowColor,
                     ),
-                    const Divider(height: 28),
+                    Divider(height: context.w(20)),
                     _StepInfoRow(
                       number: '2',
                       title: l10n.findHighestNote,
@@ -626,29 +642,29 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                 ),
               ),
             ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.2),
-            const SizedBox(height: 36),
+            SizedBox(height: context.w(22)),
             SizedBox(
               width: double.infinity,
-              height: 56,
+              height: context.w(44),
               child: ElevatedButton.icon(
                 onPressed: _startGuidedTest,
-                icon: const Icon(Icons.play_arrow_rounded, size: 28),
+                icon: Icon(Icons.play_arrow_rounded, size: context.w(22)),
                 label: Text(
                   l10n.startFindingLowest,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontSize: context.sp(15), fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
-                  elevation: 3,
+                  elevation: 2,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(context.w(12)),
                   ),
                   backgroundColor: theme.colorScheme.primary,
                   foregroundColor: theme.colorScheme.onPrimary,
                 ),
               ),
             ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.3),
-            const SizedBox(height: 120),
+            SizedBox(height: context.w(80)),
           ],
         ),
       ),
@@ -679,16 +695,21 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
 
         return SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+          padding: EdgeInsets.fromLTRB(
+            context.w(14),
+            context.w(12),
+            context.w(14),
+            context.w(12) + context.bottomNavClearance,
+          ),
           child: Column(
             children: [
               // Header Step Pill
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: EdgeInsets.symmetric(
+                    horizontal: context.w(14), vertical: context.w(5)),
                 decoration: BoxDecoration(
                   color: accentColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(context.w(20)),
                   border: Border.all(
                     color: accentColor.withValues(alpha: 0.4),
                   ),
@@ -700,29 +721,31 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                       isHighNoteTest
                           ? Icons.arrow_upward_rounded
                           : Icons.arrow_downward_rounded,
-                      size: 18,
+                      size: context.w(14),
                       color: accentColor,
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: context.w(6)),
                     Text(
                       stepTitle,
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: accentColor,
+                        fontSize: context.sp(13),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: context.w(6)),
               Text(
                 stepInstruction,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
+                style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                  fontSize: context.sp(12.5),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: context.w(14)),
 
               // Yousician-Style Circular Sustain Gauge
               _YousicianSustainGauge(
@@ -736,7 +759,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                 isListening: _pitchService.isListening,
               ),
 
-              const SizedBox(height: 18),
+              SizedBox(height: context.w(12)),
 
               // Live Piano Roll Feedback
               VocalPianoRoll(
@@ -745,7 +768,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                 currentNote: displayNote.isNotEmpty ? displayNote : null,
               ),
 
-              const SizedBox(height: 18),
+              SizedBox(height: context.w(12)),
 
               // Captured Notes Badges
               Row(
@@ -763,7 +786,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                       isLocked: currentLowest.isNotEmpty,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: context.w(8)),
                   Expanded(
                     child: _CapturedNoteCard(
                       label: AppLocalizations.of(context)?.highestNote ??
@@ -780,7 +803,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                 ],
               ),
 
-              const SizedBox(height: 20),
+              SizedBox(height: context.w(14)),
 
               // Actions: Listen Tone and Manual Lock Button
               Row(
@@ -788,31 +811,34 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                   if (displayNote.isNotEmpty) ...[
                     IconButton.filledTonal(
                       tooltip: 'Listen to Reference Note',
-                      icon: const Icon(Icons.volume_up_rounded),
+                      icon: Icon(Icons.volume_up_rounded, size: context.w(20)),
                       onPressed: () => _pitchService.playNoteBeep(displayNote),
                     ),
-                    const SizedBox(width: 10),
+                    SizedBox(width: context.w(8)),
                   ],
                   Expanded(
                     child: SizedBox(
-                      height: 52,
+                      height: context.w(44),
                       child: ElevatedButton.icon(
                         onPressed: displayNote.isNotEmpty ? onLockManual : null,
-                        icon: const Icon(Icons.lock_clock_rounded),
+                        icon: Icon(Icons.lock_clock_rounded, size: context.w(18)),
                         label: Text(
                           displayNote.isNotEmpty
                               ? 'Lock Key ($displayNote)'
                               : 'Sing into Microphone...',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: context.sp(13),
+                          ),
                         ),
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(context.w(12)),
                           ),
                           backgroundColor:
                               displayNote.isNotEmpty ? accentColor : null,
                           foregroundColor: displayNote.isNotEmpty
-                              ? Colors.black
+                              ? _onAccentColor(accentColor)
                               : null,
                         ),
                       ),
@@ -820,7 +846,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                   ),
                 ],
               ),
-              const SizedBox(height: 120),
+              SizedBox(height: context.w(80)),
             ],
           ),
         );
@@ -835,14 +861,19 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
     return Center(
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 28.0),
+        padding: EdgeInsets.fromLTRB(
+          context.w(16),
+          context.w(18),
+          context.w(16),
+          context.w(18) + context.bottomNavClearance,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Celebratory Check Badge
             Container(
-              width: 80,
-              height: 80,
+              width: context.w(56),
+              height: context.w(56),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
@@ -853,49 +884,51 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                 boxShadow: [
                   BoxShadow(
                     color: lowAccent.withValues(alpha: 0.35),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
+                    blurRadius: context.w(16),
+                    offset: Offset(0, context.w(6)),
                   ),
                 ],
               ),
-              child: const Icon(Icons.check_rounded,
-                  color: Colors.white, size: 48),
+              child: Icon(Icons.check_rounded,
+                  color: _onAccentColor(lowAccent), size: context.w(30)),
             ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
 
-            const SizedBox(height: 20),
+            SizedBox(height: context.w(14)),
 
             Text(
               "Lowest Key Locked!",
               style: GoogleFonts.poppins(
-                fontSize: 26,
+                fontSize: context.sp(20),
                 fontWeight: FontWeight.w700,
                 color: isDark ? Colors.white : AppThemes.royalNavy,
               ),
               textAlign: TextAlign.center,
             ).animate().fadeIn().slideY(begin: 0.2),
 
-            const SizedBox(height: 8),
+            SizedBox(height: context.w(6)),
 
             Text(
               "Your lowest vocal note has been measured and sustained successfully.",
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                fontSize: context.sp(13),
               ),
               textAlign: TextAlign.center,
             ).animate().fadeIn(delay: 100.ms),
 
-            const SizedBox(height: 24),
+            SizedBox(height: context.w(16)),
 
             // Note Card with Pitch and Tone Playback
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: EdgeInsets.symmetric(
+                  horizontal: context.w(16), vertical: context.w(14)),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest
                     .withValues(alpha: 0.45),
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(context.w(16)),
                 border: Border.all(
                   color: lowAccent.withValues(alpha: 0.35),
-                  width: 1.5,
+                  width: 1.2,
                 ),
               ),
               child: Column(
@@ -906,23 +939,23 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                       Text(
                         _lowestNoteFound,
                         style: GoogleFonts.poppins(
-                          fontSize: 52,
+                          fontSize: context.sp(36),
                           fontWeight: FontWeight.bold,
                           color: lowAccent,
                         ),
                       ),
-                      const SizedBox(width: 14),
+                      SizedBox(width: context.w(10)),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: context.w(10), vertical: context.w(4)),
                         decoration: BoxDecoration(
                           color: lowAccent.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(context.w(10)),
                         ),
                         child: Text(
                           "${_lowestPitchFound?.toStringAsFixed(1) ?? '0.0'} Hz",
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: context.sp(13),
                             fontWeight: FontWeight.w600,
                             color: lowAccent,
                           ),
@@ -930,25 +963,27 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: context.w(8)),
                   OutlinedButton.icon(
                     onPressed: () {
                       if (_lowestPitchFound != null) {
                         _pitchService.playPitchBeep(_lowestPitchFound!);
                       }
                     },
-                    icon: const Icon(Icons.volume_up_rounded, size: 20),
+                    icon: Icon(Icons.volume_up_rounded, size: context.w(16)),
                     label: const Text("Listen to Tone"),
                     style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      textStyle: TextStyle(fontSize: context.sp(13)),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(context.w(10))),
                     ),
                   ),
                 ],
               ),
             ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.15),
 
-            const SizedBox(height: 20),
+            SizedBox(height: context.w(14)),
 
             // Live Piano Roll highlight for lowest note
             VocalPianoRoll(
@@ -957,15 +992,15 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
               currentNote: _lowestNoteFound,
             ).animate().fadeIn(delay: 200.ms),
 
-            const SizedBox(height: 24),
+            SizedBox(height: context.w(16)),
 
             // Next step instruction prompt
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.w(12)),
               decoration: BoxDecoration(
                 color:
                     theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(context.w(14)),
                 border: Border.all(
                   color: theme.colorScheme.primary.withValues(alpha: 0.25),
                 ),
@@ -973,19 +1008,23 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
               child: Row(
                 children: [
                   Icon(Icons.info_outline_rounded,
+                      size: context.w(18),
                       color: theme.colorScheme.primary),
-                  const SizedBox(width: 12),
+                  SizedBox(width: context.w(8)),
                   Expanded(
                     child: Text(
                       "Ready for Step 2? We'll count down 3...2...1, then you glide upwards to your highest comfortable note.",
-                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        height: 1.35,
+                        fontSize: context.sp(12.5),
+                      ),
                     ),
                   ),
                 ],
               ),
             ).animate().fadeIn(delay: 250.ms),
 
-            const SizedBox(height: 28),
+            SizedBox(height: context.w(18)),
 
             // Actions: Retest or Continue to High Note
             Row(
@@ -994,40 +1033,44 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                   flex: 1,
                   child: OutlinedButton.icon(
                     onPressed: _startLowNoteCountdown,
-                    icon: const Icon(Icons.refresh_rounded),
+                    icon: Icon(Icons.refresh_rounded, size: context.w(18)),
                     label: const Text("Retest"),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: context.w(12)),
+                      textStyle: TextStyle(fontSize: context.sp(13)),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(context.w(12)),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 14),
+                SizedBox(width: context.w(10)),
                 Expanded(
                   flex: 2,
                   child: ElevatedButton.icon(
                     onPressed: _startHighNoteCountdown,
-                    icon: const Icon(Icons.arrow_forward_rounded),
-                    label: const Text(
+                    icon: Icon(Icons.arrow_forward_rounded, size: context.w(18)),
+                    label: Text(
                       "Continue to High Key",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: context.sp(13),
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: context.w(12)),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(context.w(12)),
                       ),
                       backgroundColor: theme.colorScheme.primary,
                       foregroundColor: theme.colorScheme.onPrimary,
-                      elevation: 3,
+                      elevation: 2,
                     ),
                   ),
                 ),
               ],
             ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
-            const SizedBox(height: 120),
+            SizedBox(height: context.w(80)),
           ],
         ),
       ),
@@ -1036,6 +1079,9 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
 
   Widget _buildResultsView(ThemeData theme) {
     final l10n = AppLocalizations.of(context)!;
+    final isDark = theme.brightness == Brightness.dark;
+    final lowAccent = isDark ? AppThemes.celestialGold : AppThemes.royalNavy;
+    final highAccent = isDark ? AppThemes.celestialGoldLight : AppThemes.celestialGoldDark;
     final voiceRangeInfo = _pitchService.getVoiceTypeRange(
       _lowestNoteFound,
       _highestNoteFound,
@@ -1048,69 +1094,81 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 18.0),
+      padding: EdgeInsets.fromLTRB(
+        context.w(14),
+        context.w(12),
+        context.w(14),
+        context.w(12) + context.bottomNavClearance,
+      ),
       child: Column(
         children: [
           Card(
-            elevation: 4,
-            shadowColor: theme.colorScheme.primary.withValues(alpha: 0.2),
+            elevation: 3,
+            shadowColor: theme.colorScheme.primary.withValues(alpha: 0.18),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(26),
+              borderRadius: BorderRadius.circular(context.w(18)),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(context.w(16)),
               child: Column(
                 children: [
                   Text(
                     "YOUR VOCAL PROFILE".toUpperCase(),
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      letterSpacing: 1.8,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      letterSpacing: 1.5,
                       fontWeight: FontWeight.bold,
+                      fontSize: context.sp(11),
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: context.w(12)),
 
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 28, vertical: 12),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: context.w(18), vertical: context.w(8)),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF00E5FF), Color(0xFFD500F9)],
+                      gradient: LinearGradient(
+                        colors: [
+                          theme.colorScheme.primary,
+                          isDark
+                              ? AppThemes.celestialGoldLight
+                              : AppThemes.celestialGoldDark,
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(context.w(22)),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFD500F9).withValues(alpha: 0.3),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.28),
+                          blurRadius: context.w(12),
+                          offset: Offset(0, context.w(3)),
                         ),
                       ],
                     ),
                     child: Text(
                       voiceTypeName,
                       style: GoogleFonts.poppins(
-                        fontSize: 30,
+                        fontSize: context.sp(22),
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: theme.colorScheme.onPrimary,
                       ),
                     ),
                   ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
 
                   if (voiceRangeInfo != null) ...[
-                    const SizedBox(height: 10),
+                    SizedBox(height: context.w(8)),
                     Text(
                       voiceRangeInfo.category,
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.bold,
+                        fontSize: context.sp(13),
                       ),
                     ),
                   ],
 
-                  const Divider(height: 36),
+                  Divider(height: context.w(24)),
 
                   // Fixed layout using FittedBox to prevent overflows
                   FittedBox(
@@ -1124,17 +1182,19 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                           hz: _lowestPitchFound != null
                               ? '${_lowestPitchFound!.toStringAsFixed(1)} Hz'
                               : '',
-                          color: const Color(0xFF00E5FF),
+                          color: lowAccent,
                           onPlay: () {
                             if (_lowestPitchFound != null) {
                               _pitchService.playPitchBeep(_lowestPitchFound!);
                             }
                           },
                         ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: context.w(12)),
                           child: Icon(Icons.arrow_forward_rounded,
-                              size: 28, color: Colors.grey),
+                              size: context.w(20),
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.4)),
                         ),
                         _NoteBadge(
                           label: "HIGHEST",
@@ -1142,7 +1202,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                           hz: _highestPitchFound != null
                               ? '${_highestPitchFound!.toStringAsFixed(1)} Hz'
                               : '',
-                          color: const Color(0xFFD500F9),
+                          color: highAccent,
                           onPlay: () {
                             if (_highestPitchFound != null) {
                               _pitchService.playPitchBeep(_highestPitchFound!);
@@ -1152,35 +1212,38 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                       ],
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: context.w(10)),
                   Text(
                     rangeSpan,
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    style: theme.textTheme.titleSmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                       fontWeight: FontWeight.w700,
+                      fontSize: context.sp(14),
                     ),
                   ),
 
                   if (voiceRangeInfo != null) ...[
-                    const SizedBox(height: 20),
+                    SizedBox(height: context.w(14)),
                     Text(
                       voiceRangeInfo.description,
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        height: 1.5,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        height: 1.45,
                         fontStyle: FontStyle.italic,
+                        fontSize: context.sp(12.5),
                         color:
                             theme.colorScheme.onSurface.withValues(alpha: 0.8),
                       ),
                     ),
                     if (voiceRangeInfo.famousExamples.isNotEmpty) ...[
-                      const SizedBox(height: 16),
+                      SizedBox(height: context.w(10)),
                       Text(
                         'Famous Singers: ${voiceRangeInfo.famousExamples.join(", ")}',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.secondary,
+                          color: theme.colorScheme.primary,
                           fontWeight: FontWeight.w600,
+                          fontSize: context.sp(12),
                         ),
                       ),
                     ],
@@ -1189,39 +1252,47 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
               ),
             ),
           ).animate().fadeIn().slideY(begin: 0.2),
-          const SizedBox(height: 20),
+          SizedBox(height: context.w(14)),
 
           VocalPianoRoll(
             lowestNote: _lowestNoteFound,
             highestNote: _highestNoteFound,
             voiceTypeRange: voiceRangeInfo,
           ).animate().fadeIn(delay: 200.ms),
-          const SizedBox(height: 20),
+          SizedBox(height: context.w(14)),
 
           // Training Recommendation Card
           Card(
             elevation: 1,
             color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(context.w(14)),
               side: BorderSide(
                 color: theme.colorScheme.primary.withValues(alpha: 0.2),
               ),
             ),
             child: ListTile(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              dense: true,
+              contentPadding: EdgeInsets.symmetric(
+                  horizontal: context.w(12), vertical: context.w(4)),
               leading: CircleAvatar(
+                radius: context.w(18),
                 backgroundColor: theme.colorScheme.primary,
-                child:
-                    const Icon(Icons.music_note_rounded, color: Colors.white),
+                child: Icon(Icons.music_note_rounded,
+                    color: theme.colorScheme.onPrimary, size: context.w(18)),
               ),
               title: Text(
                 l10n.trainYourVoicePitch,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: context.sp(13),
+                ),
               ),
-              subtitle: Text(l10n.practiceHittingNotes),
-              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+              subtitle: Text(
+                l10n.practiceHittingNotes,
+                style: TextStyle(fontSize: context.sp(12)),
+              ),
+              trailing: Icon(Icons.arrow_forward_ios_rounded, size: context.w(14)),
               onTap: () {
                 Navigator.push(
                   context,
@@ -1232,33 +1303,35 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
               },
             ),
           ).animate().fadeIn(delay: 250.ms),
-          const SizedBox(height: 20),
+          SizedBox(height: context.w(14)),
 
           Row(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _resetState(keepIntro: true),
-                  icon: const Icon(Icons.refresh_rounded),
+                  icon: Icon(Icons.refresh_rounded, size: context.w(18)),
                   label: Text(l10n.retestRange),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(vertical: context.w(12)),
+                    textStyle: TextStyle(fontSize: context.sp(13)),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(context.w(12)),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: context.w(8)),
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: _shareResults,
-                  icon: const Icon(Icons.share_rounded),
+                  icon: Icon(Icons.share_rounded, size: context.w(18)),
                   label: Text(l10n.shareResults),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(vertical: context.w(12)),
+                    textStyle: TextStyle(fontSize: context.sp(13)),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(context.w(12)),
                     ),
                     backgroundColor: theme.colorScheme.primary,
                     foregroundColor: theme.colorScheme.onPrimary,
@@ -1267,7 +1340,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
               ),
             ],
           ).animate().fadeIn(delay: 300.ms),
-          const SizedBox(height: 120),
+          SizedBox(height: context.w(80)),
         ],
       ),
     );
@@ -1300,40 +1373,47 @@ class _CountdownView extends StatelessWidget {
 
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        padding: EdgeInsets.fromLTRB(
+          context.w(16),
+          context.w(20),
+          context.w(16),
+          context.w(20) + context.bottomNavClearance,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+              padding: EdgeInsets.symmetric(
+                  horizontal: context.w(14), vertical: context.w(6)),
               decoration: BoxDecoration(
                 color: accentColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(context.w(20)),
                 border: Border.all(color: accentColor.withValues(alpha: 0.35)),
               ),
               child: Text(
                 stepTitle,
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: context.sp(13),
                   color: accentColor,
                 ),
               ),
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: context.w(10)),
             Text(
               stepSubtitle,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                fontSize: context.sp(13),
               ),
             ),
-            const SizedBox(height: 48),
+            SizedBox(height: context.w(28)),
 
             // Giant Pulsing Countdown Number (3... 2... 1... SING!)
             Container(
-              width: 200,
-              height: 200,
+              width: context.w(140),
+              height: context.w(140),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
@@ -1344,7 +1424,7 @@ class _CountdownView extends StatelessWidget {
                 ),
                 border: Border.all(
                   color: accentColor.withValues(alpha: isGo ? 0.8 : 0.35),
-                  width: isGo ? 4 : 2,
+                  width: isGo ? 3 : 1.5,
                 ),
               ),
               child: Center(
@@ -1364,14 +1444,14 @@ class _CountdownView extends StatelessWidget {
                           "SING!",
                           key: const ValueKey("go"),
                           style: GoogleFonts.poppins(
-                            fontSize: 48,
+                            fontSize: context.sp(32),
                             fontWeight: FontWeight.w900,
-                            letterSpacing: 2,
+                            letterSpacing: 1.5,
                             color: accentColor,
                             shadows: [
                               Shadow(
-                                color: accentColor.withValues(alpha: 0.8),
-                                blurRadius: 24,
+                                color: accentColor.withValues(alpha: 0.7),
+                                blurRadius: context.w(16),
                               ),
                             ],
                           ),
@@ -1380,13 +1460,13 @@ class _CountdownView extends StatelessWidget {
                           "$countdownNumber",
                           key: ValueKey(countdownNumber),
                           style: GoogleFonts.poppins(
-                            fontSize: 88,
+                            fontSize: context.sp(64),
                             fontWeight: FontWeight.w900,
-                            color: Colors.white,
+                            color: accentColor,
                             shadows: [
                               Shadow(
-                                color: accentColor.withValues(alpha: 0.6),
-                                blurRadius: 18,
+                                color: accentColor.withValues(alpha: 0.5),
+                                blurRadius: context.w(12),
                               ),
                             ],
                           ),
@@ -1395,18 +1475,19 @@ class _CountdownView extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 48),
+            SizedBox(height: context.w(28)),
 
             TextButton.icon(
               onPressed: onSkip,
-              icon: const Icon(Icons.fast_forward_rounded, size: 20),
+              icon: Icon(Icons.fast_forward_rounded, size: context.w(16)),
               label: const Text("Skip Countdown"),
               style: TextButton.styleFrom(
+                textStyle: TextStyle(fontSize: context.sp(13)),
                 foregroundColor:
                     theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
-            const SizedBox(height: 120),
+            SizedBox(height: context.w(80)),
           ],
         ),
       ),
@@ -1443,13 +1524,17 @@ class _YousicianSustainGauge extends StatelessWidget {
     final theme = Theme.of(context);
     final isActive = pitch > 0 && note.isNotEmpty;
 
+    final lockedColor = theme.colorScheme.primary;
+    final gaugeSize = context.w(148);
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      padding: EdgeInsets.symmetric(
+          horizontal: context.w(14), vertical: context.w(14)),
       decoration: BoxDecoration(
         color:
             theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(context.w(18)),
         border: Border.all(
           color: isActive
               ? accentColor.withValues(alpha: 0.4)
@@ -1458,9 +1543,9 @@ class _YousicianSustainGauge extends StatelessWidget {
         boxShadow: isActive
             ? [
                 BoxShadow(
-                  color: accentColor.withValues(alpha: 0.15),
-                  blurRadius: 24,
-                  spreadRadius: 2,
+                  color: accentColor.withValues(alpha: 0.12),
+                  blurRadius: context.w(16),
+                  spreadRadius: 1,
                 )
               ]
             : [],
@@ -1469,20 +1554,21 @@ class _YousicianSustainGauge extends StatelessWidget {
         children: [
           // Circular Sustain Ring with Center Note & Live Needle
           SizedBox(
-            width: 210,
-            height: 210,
+            width: gaugeSize,
+            height: gaugeSize,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 // Custom Radial Sustain Painter
                 CustomPaint(
-                  size: const Size(210, 210),
+                  size: Size(gaugeSize, gaugeSize),
                   painter: _SustainRadialPainter(
                     progress: progress,
                     accentColor: accentColor,
                     trackColor: theme.colorScheme.surfaceContainerHighest
                         .withValues(alpha: 0.8),
                     isActive: isActive,
+                    strokeWidth: context.w(7),
                   ),
                 ),
 
@@ -1500,7 +1586,7 @@ class _YousicianSustainGauge extends StatelessWidget {
                         isActive ? note : '--',
                         key: ValueKey(note.isEmpty ? '--' : note),
                         style: GoogleFonts.poppins(
-                          fontSize: 54,
+                          fontSize: context.sp(36),
                           fontWeight: FontWeight.bold,
                           height: 1.0,
                           color: isActive
@@ -1510,25 +1596,26 @@ class _YousicianSustainGauge extends StatelessWidget {
                           shadows: isActive
                               ? [
                                   Shadow(
-                                    color: accentColor.withValues(alpha: 0.6),
-                                    blurRadius: 16,
+                                    color: accentColor.withValues(alpha: 0.5),
+                                    blurRadius: context.w(10),
                                   ),
                                 ]
                               : [],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: context.w(2)),
                     Text(
                       pitch > 0 ? '${pitch.toStringAsFixed(1)} Hz' : '0.0 Hz',
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
+                        fontSize: context.sp(11),
                         color:
                             theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: context.w(6)),
 
                     // Cents In-Tune Ribbon
                     _MiniCentsBar(
@@ -1542,19 +1629,20 @@ class _YousicianSustainGauge extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: context.w(10)),
 
           // Dynamic Status Badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.symmetric(
+                horizontal: context.w(12), vertical: context.w(5)),
             decoration: BoxDecoration(
               color: progress >= 1.0
-                  ? Colors.greenAccent.withValues(alpha: 0.2)
+                  ? lockedColor.withValues(alpha: 0.16)
                   : (progress > 0
                       ? accentColor.withValues(alpha: 0.15)
                       : theme.colorScheme.surfaceContainerHighest
                           .withValues(alpha: 0.5)),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(context.w(16)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -1565,14 +1653,14 @@ class _YousicianSustainGauge extends StatelessWidget {
                       : (progress > 0
                           ? Icons.graphic_eq_rounded
                           : Icons.mic_rounded),
-                  size: 16,
+                  size: context.w(14),
                   color: progress >= 1.0
-                      ? Colors.greenAccent
+                      ? lockedColor
                       : (progress > 0
                           ? accentColor
                           : theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: context.w(6)),
                 Text(
                   progress >= 1.0
                       ? "Key Locked!"
@@ -1581,8 +1669,9 @@ class _YousicianSustainGauge extends StatelessWidget {
                           : "Sing or hum into microphone..."),
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.bold,
+                    fontSize: context.sp(12),
                     color: progress >= 1.0
-                        ? Colors.greenAccent
+                        ? lockedColor
                         : (progress > 0
                             ? accentColor
                             : theme.colorScheme.onSurface
@@ -1593,7 +1682,7 @@ class _YousicianSustainGauge extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 14),
+          SizedBox(height: context.w(10)),
 
           // Real Live Audio PCM Waveform Visualizer
           AudioWaveformVisualizer(
@@ -1601,7 +1690,7 @@ class _YousicianSustainGauge extends StatelessWidget {
             rms: rms,
             pitch: pitch,
             isListening: isListening,
-            height: 44.0,
+            height: context.w(32),
             primaryColor: accentColor,
             secondaryColor: theme.colorScheme.secondary,
           ),
@@ -1619,19 +1708,20 @@ class _SustainRadialPainter extends CustomPainter {
   final Color accentColor;
   final Color trackColor;
   final bool isActive;
+  final double strokeWidth;
 
   _SustainRadialPainter({
     required this.progress,
     required this.accentColor,
     required this.trackColor,
     required this.isActive,
+    this.strokeWidth = 7.0,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width - 24) / 2;
-    const strokeWidth = 10.0;
+    final radius = (size.width - 18) / 2;
 
     // Background circle track
     final trackPaint = Paint()
@@ -1681,7 +1771,8 @@ class _SustainRadialPainter extends CustomPainter {
   bool shouldRepaint(covariant _SustainRadialPainter oldDelegate) {
     return oldDelegate.progress != progress ||
         oldDelegate.accentColor != accentColor ||
-        oldDelegate.isActive != isActive;
+        oldDelegate.isActive != isActive ||
+        oldDelegate.strokeWidth != strokeWidth;
   }
 }
 
@@ -1702,39 +1793,40 @@ class _MiniCentsBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCenter = isActive && cents.abs() <= 12.0;
+    final inTuneColor = Theme.of(context).colorScheme.primary;
 
     return Container(
-      width: 120,
-      height: 16,
+      width: context.w(96),
+      height: context.w(12),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(10),
+        color: AppThemes.royalNavy.withValues(alpha: 0.22),
+        borderRadius: BorderRadius.circular(context.w(8)),
       ),
       child: Stack(
         alignment: Alignment.center,
         children: [
           // Center tick
           Container(
-            width: 2,
-            height: 10,
+            width: 1.5,
+            height: context.w(8),
             color: isCenter
-                ? Colors.greenAccent
+                ? inTuneColor
                 : Colors.white.withValues(alpha: 0.3),
           ),
           if (isActive)
             Align(
               alignment: Alignment((cents / 50.0).clamp(-1.0, 1.0), 0),
               child: Container(
-                width: 8,
-                height: 8,
+                width: context.w(6),
+                height: context.w(6),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isCenter ? Colors.greenAccent : accentColor,
+                  color: isCenter ? inTuneColor : accentColor,
                   boxShadow: [
                     BoxShadow(
-                      color: (isCenter ? Colors.greenAccent : accentColor)
-                          .withValues(alpha: 0.6),
-                      blurRadius: 4,
+                      color: (isCenter ? inTuneColor : accentColor)
+                          .withValues(alpha: 0.55),
+                      blurRadius: 3,
                     )
                   ],
                 ),
@@ -1765,28 +1857,28 @@ class _StepInfoRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         CircleAvatar(
-          radius: 18,
+          radius: context.w(14),
           backgroundColor: color.withValues(alpha: 0.18),
           child: Text(
             number,
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,
-              fontSize: 15,
+              fontSize: context.sp(13),
             ),
           ),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: context.w(12)),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: context.sp(14)),
               ),
-              const SizedBox(height: 3),
+              SizedBox(height: context.w(2)),
               Text(
                 subtitle,
                 style: TextStyle(
@@ -1794,8 +1886,8 @@ class _StepInfoRow extends StatelessWidget {
                       .colorScheme
                       .onSurface
                       .withValues(alpha: 0.7),
-                  fontSize: 13,
-                  height: 1.35,
+                  fontSize: context.sp(12),
+                  height: 1.3,
                 ),
               ),
             ],
@@ -1822,13 +1914,14 @@ class _CapturedNoteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      padding: EdgeInsets.symmetric(
+          vertical: context.w(10), horizontal: context.w(8)),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(context.w(12)),
         border: Border.all(
           color: isLocked ? color : color.withValues(alpha: 0.25),
-          width: isLocked ? 1.5 : 1.0,
+          width: isLocked ? 1.4 : 1.0,
         ),
       ),
       child: Column(
@@ -1837,21 +1930,21 @@ class _CapturedNoteCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (isLocked) ...[
-                Icon(Icons.lock_rounded, size: 12, color: color),
-                const SizedBox(width: 4),
+                Icon(Icons.lock_rounded, size: context.w(10), color: color),
+                SizedBox(width: context.w(3)),
               ],
               Text(
                 label.toUpperCase(),
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: context.sp(9),
                   fontWeight: FontWeight.bold,
                   color: color,
-                  letterSpacing: 1,
+                  letterSpacing: 0.8,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: context.w(4)),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
             transitionBuilder: (child, animation) => ScaleTransition(
@@ -1862,7 +1955,7 @@ class _CapturedNoteCard extends StatelessWidget {
               note.isEmpty ? '--' : note,
               key: ValueKey(note),
               style: GoogleFonts.poppins(
-                fontSize: 24,
+                fontSize: context.sp(20),
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -1891,10 +1984,11 @@ class _NoteBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(
+          horizontal: context.w(12), vertical: context.w(8)),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(context.w(12)),
         border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Column(
@@ -1902,31 +1996,32 @@ class _NoteBadge extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: context.sp(9),
               fontWeight: FontWeight.bold,
               color: color,
-              letterSpacing: 1,
+              letterSpacing: 0.8,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: context.w(2)),
           Text(
             note,
             style: GoogleFonts.poppins(
-              fontSize: 28,
+              fontSize: context.sp(22),
               fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
           if (hz.isNotEmpty) ...[
-            const SizedBox(height: 2),
+            SizedBox(height: context.w(2)),
             Text(
               hz,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                  fontSize: context.sp(11), fontWeight: FontWeight.w600),
             ),
           ],
-          const SizedBox(height: 6),
+          SizedBox(height: context.w(4)),
           IconButton.filledTonal(
-            iconSize: 18,
+            iconSize: context.w(16),
             visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.volume_up_rounded),
             onPressed: onPlay,

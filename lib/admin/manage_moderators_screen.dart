@@ -360,7 +360,8 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AdminUiKit.goldAccent))
-          : Column(
+          : AdminPageBody(
+              child: Column(
                 children: [
                 // Search Bar
                 Padding(
@@ -408,7 +409,7 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
                             MaterialPageRoute(builder: (_) => const CreateInvitationScreen()),
                           ),
                         )
-                      : ListView.builder(
+                      : AdminResponsiveItemList(
                           padding: const EdgeInsets.fromLTRB(16, 10, 16, 80),
                           physics: const BouncingScrollPhysics(),
                           itemCount: filteredModerators.length,
@@ -420,6 +421,7 @@ class _ModeratorsManagementScreenState extends State<ModeratorsManagementScreen>
                 ),
               ],
             ),
+          ),
     );
   }
 

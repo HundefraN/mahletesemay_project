@@ -7,6 +7,7 @@ import 'package:mahlete_semay_project/screens/lyrics/recomended_songs_screen.dar
 import 'package:mahlete_semay_project/utils/responsive_sizer.dart';
 import 'package:mahlete_semay_project/widgets/loading_placeholders.dart';
 import 'package:mahlete_semay_project/widgets/master_detail_scaffold.dart';
+import 'package:mahlete_semay_project/widgets/web_content_wrapper.dart';
 import 'package:provider/provider.dart';
 import 'package:animations/animations.dart';
 import 'package:mahlete_semay_project/models/album_model.dart';
@@ -144,7 +145,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
-        return BackdropFilter(
+        return WebSheetConstraint(
+          child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Container(
             margin: EdgeInsets.all(context.w(16)),
@@ -190,6 +192,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
               ),
             ),
           ),
+        ),
         );
       },
     );
@@ -715,11 +718,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                     ),
                   ),
                   _buildRecommendedGrid(
-                      context,
-                      songProvider
-                          .getPersonalizedRecommendations()
-                          .take(4)
-                          .toList()),
+                      context, songProvider.getPersonalizedRecommendations()),
                   _buildSectionHeader(
                     context,
                     l10n.ethiopianArtists,
@@ -801,7 +800,8 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
                     ),
                     _buildSinglesCarousel(singleSongs.take(8).toList()),
                   ],
-                  SliverToBoxAdapter(child: SizedBox(height: context.w(80))),
+                  SliverToBoxAdapter(
+                      child: SizedBox(height: context.bottomNavClearance)),
                 ]
               ],
             ),
@@ -853,8 +853,11 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
   }
 
   Widget _buildSearchResultsList() {
-    return SliverPadding(
-      padding: EdgeInsets.symmetric(horizontal: context.w(16)),
+    return SliverWebContentWrapper(
+      maxWidth: 900,
+      sliver: SliverPadding(
+      padding: EdgeInsets.fromLTRB(
+          context.w(16), 0, context.w(16), context.bottomNavClearance),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
@@ -873,6 +876,7 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
           childCount: _searchResults.length,
         ),
       ),
+    ),
     );
   }
 
@@ -1293,23 +1297,29 @@ class _ArtistsListScreenState extends State<ArtistsListScreen>
   }
 
   Widget _buildRecommendedGrid(BuildContext context, List<Song> songs) {
-    return SliverPadding(
-      padding: EdgeInsets.symmetric(horizontal: context.w(16)),
-      sliver: SliverGrid(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: context.w(12),
-          crossAxisSpacing: context.w(12),
-          childAspectRatio: 2.1,
-        ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final song = songs[index];
-            return _buildGridItemCard(context, song);
-          },
-          childCount: songs.length,
-        ),
-      ),
+    return SliverLayoutBuilder(
+      builder: (context, constraints) {
+        final cols = constraints.crossAxisExtent >= 700 ? 4 : 2;
+        final visible = songs.take(cols * 2).toList();
+        return SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: context.w(16)),
+          sliver: SliverGrid(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: cols,
+              mainAxisSpacing: context.w(12),
+              crossAxisSpacing: context.w(12),
+              childAspectRatio: 2.1,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final song = visible[index];
+                return _buildGridItemCard(context, song);
+              },
+              childCount: visible.length,
+            ),
+          ),
+        );
+      },
     );
   }
 

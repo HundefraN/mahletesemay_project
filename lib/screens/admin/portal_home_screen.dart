@@ -19,9 +19,11 @@ import '../../admin/review_suggestion_screen.dart';
 import '../../admin/widgets/admin_ui_kit.dart';
 import '../../models/suggestion_model.dart';
 import '../../providers/auth_proveider.dart';
+import '../../providers/song_provider.dart';
 import '../../services/firebase_service.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/responsive_sizer.dart';
+import '../../widgets/web_content_wrapper.dart';
 import '../home_screen.dart';
 import 'app_release_management_screen.dart';
 import 'manage_vocal_plans_screen.dart';
@@ -34,10 +36,15 @@ class PortalHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final songProvider = Provider.of<SongProvider>(context);
     final moderator = authProvider.currentModerator;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final firebaseService = FirebaseService();
+
+    final int songCount = songProvider.allSongs.length;
+    final int albumCount = songProvider.allAlbums.length;
+    final int artistCount = songProvider.artists.length;
 
     if (moderator == null) {
       return Scaffold(
@@ -231,27 +238,33 @@ class PortalHomeScreen extends StatelessWidget {
           ),
 
           // Main Content
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AdminSectionHeader(
-                    title: AppLocalizations.of(context)?.quickActions ??
-                        'Quick Actions',
-                    icon: Icons.bolt_rounded,
-                  ),
-                  const SizedBox(height: 12),
-                  GridView.count(
-                    crossAxisCount:
-                        context.isDesktop ? 4 : (context.isTablet ? 3 : 2),
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 1.6,
-                    children: [
+          SliverWebContentWrapper(
+            sliver: SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  context.responsivePadding,
+                  20,
+                  context.responsivePadding,
+                  32,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AdminSectionHeader(
+                      title: AppLocalizations.of(context)?.quickActions ??
+                          'Quick Actions',
+                      icon: Icons.bolt_rounded,
+                    ),
+                    const SizedBox(height: 12),
+                    GridView.count(
+                      crossAxisCount:
+                          context.isDesktop ? 4 : (context.isTablet ? 3 : 2),
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio: context.isPhone ? 1.6 : 1.8,
+                      children: [
                       _buildQuickActionCard(
                         context,
                         title: AppLocalizations.of(context)?.addArtist ??
@@ -328,80 +341,87 @@ class PortalHomeScreen extends StatelessWidget {
                     icon: Icons.folder_copy_rounded,
                   ),
                   const SizedBox(height: 4),
-                  _buildModernListTile(
-                    context,
-                    title: AppLocalizations.of(context)?.manageSongs ??
-                        'Manage Songs',
-                    subtitle: AppLocalizations.of(context)?.batchEditSubtitle ??
-                        'Edit lyrics, scales, rhythms, and batch delete',
-                    icon: Icons.queue_music_rounded,
-                    accentColor: AdminUiKit.emeraldGreen,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const ManageSongsScreen()),
-                    ),
-                  ),
-                  _buildModernListTile(
-                    context,
-                    title: AppLocalizations.of(context)?.manageAlbums ??
-                        'Manage Albums',
-                    subtitle:
-                        AppLocalizations.of(context)?.organizeAlbumsSubtitle ??
-                            'Organize albums, covers, and track lists',
-                    icon: Icons.library_music_rounded,
-                    accentColor: AdminUiKit.amberOrange,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const ManageAlbumsScreen()),
-                    ),
-                  ),
-                  _buildModernListTile(
-                    context,
-                    title: AppLocalizations.of(context)?.manageArtists ??
-                        'Manage Artists',
-                    subtitle:
-                        AppLocalizations.of(context)?.updateArtistBioSubtitle ??
-                            'Update artist photos, bio, and regions',
-                    icon: Icons.people_outline_rounded,
-                    accentColor: AdminUiKit.royalBlue,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const ManageArtistsScreen()),
-                    ),
-                  ),
-                  _buildModernListTile(
-                    context,
-                    title: AppLocalizations.of(context)?.manageVocalPlans ??
-                        'Manage Vocal Plans',
-                    subtitle:
-                        AppLocalizations.of(context)?.vocalRoutinesSubtitle ??
-                            'Daily, weekly, monthly & quarterly routines',
-                    icon: Icons.fitness_center_rounded,
-                    accentColor: AdminUiKit.goldAccent,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const ManageVocalPlansScreen()),
-                    ),
-                  ),
-                  _buildModernListTile(
-                    context,
-                    title:
-                        AppLocalizations.of(context)?.generalVocalExercises ??
-                            'General Vocal Exercises',
-                    subtitle: AppLocalizations.of(context)
-                            ?.independentDrillsSubtitle ??
-                        'Independent workout audio drills',
-                    icon: Icons.graphic_eq_rounded,
-                    accentColor: AdminUiKit.violetPurple,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const ManageGeneralExercisesScreen()),
-                    ),
+                  AdminResponsiveWrap(
+                    children: [
+                      _buildModernListTile(
+                        context,
+                        title: AppLocalizations.of(context)?.manageSongs ??
+                            'Manage Songs',
+                        subtitle: AppLocalizations.of(context)?.batchEditSubtitle ??
+                            'Edit lyrics, scales, rhythms, and batch delete',
+                        icon: Icons.queue_music_rounded,
+                        accentColor: AdminUiKit.emeraldGreen,
+                        badgeCount: songCount,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const ManageSongsScreen()),
+                        ),
+                      ),
+                      _buildModernListTile(
+                        context,
+                        title: AppLocalizations.of(context)?.manageAlbums ??
+                            'Manage Albums',
+                        subtitle:
+                            AppLocalizations.of(context)?.organizeAlbumsSubtitle ??
+                                'Organize albums, covers, and track lists',
+                        icon: Icons.library_music_rounded,
+                        accentColor: AdminUiKit.amberOrange,
+                        badgeCount: albumCount,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const ManageAlbumsScreen()),
+                        ),
+                      ),
+                      _buildModernListTile(
+                        context,
+                        title: AppLocalizations.of(context)?.manageArtists ??
+                            'Manage Artists',
+                        subtitle:
+                            AppLocalizations.of(context)?.updateArtistBioSubtitle ??
+                                'Update artist photos, bio, and regions',
+                        icon: Icons.people_outline_rounded,
+                        accentColor: AdminUiKit.royalBlue,
+                        badgeCount: artistCount,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const ManageArtistsScreen()),
+                        ),
+                      ),
+                      _buildModernListTile(
+                        context,
+                        title: AppLocalizations.of(context)?.manageVocalPlans ??
+                            'Manage Vocal Plans',
+                        subtitle:
+                            AppLocalizations.of(context)?.vocalRoutinesSubtitle ??
+                                'Daily, weekly, monthly & quarterly routines',
+                        icon: Icons.fitness_center_rounded,
+                        accentColor: AdminUiKit.goldAccent,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const ManageVocalPlansScreen()),
+                        ),
+                      ),
+                      _buildModernListTile(
+                        context,
+                        title:
+                            AppLocalizations.of(context)?.generalVocalExercises ??
+                                'General Vocal Exercises',
+                        subtitle: AppLocalizations.of(context)
+                                ?.independentDrillsSubtitle ??
+                            'Independent workout audio drills',
+                        icon: Icons.graphic_eq_rounded,
+                        accentColor: AdminUiKit.violetPurple,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const ManageGeneralExercisesScreen()),
+                        ),
+                      ),
+                    ],
                   ),
                   if (authProvider.isAdmin) ...[
                     const SizedBox(height: 24),
@@ -412,136 +432,138 @@ class PortalHomeScreen extends StatelessWidget {
                       icon: Icons.security_rounded,
                     ),
                     const SizedBox(height: 4),
-                    _buildModernListTile(
-                      context,
-                      title: AppLocalizations.of(context)?.manageModerators ??
-                          'Manage Moderators',
-                      subtitle:
-                          AppLocalizations.of(context)?.deviceAuthSubtitle ??
-                              'Device authorizations, role elevation, blocks',
-                      icon: Icons.admin_panel_settings_rounded,
-                      accentColor: AdminUiKit.goldAccent,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const ModeratorsManagementScreen()),
-                      ),
-                    ),
-                    _buildModernListTile(
-                      context,
-                      title:
-                          AppLocalizations.of(context)?.createInvitationCode ??
-                              'Create Invitation Code',
-                      subtitle: AppLocalizations.of(context)
-                              ?.generateCredentialsSubtitle ??
-                          'Generate secure single-use access credentials',
-                      icon: Icons.send_rounded,
-                      accentColor: AdminUiKit.royalBlue,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const CreateInvitationScreen()),
-                      ),
-                    ),
-                    _buildModernListTile(
-                      context,
-                      title: AppLocalizations.of(context)
-                              ?.invitationCodesHistory ??
-                          'Invitation Codes History',
-                      subtitle: AppLocalizations.of(context)
-                              ?.trackInvitationsSubtitle ??
-                          'Track claimed, active & pending invitations',
-                      icon: Icons.vpn_key_rounded,
-                      accentColor: AdminUiKit.amberOrange,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const ManageInviteCodesScreen()),
-                      ),
-                    ),
-                    _buildModernListTile(
-                      context,
-                      title: AppLocalizations.of(context)?.auditActivityLogs ??
-                          'Audit Activity Logs',
-                      subtitle: AppLocalizations.of(context)
-                              ?.actionTimelineSubtitle ??
-                          'Real-time moderator action timeline',
-                      icon: Icons.history_rounded,
-                      accentColor: AdminUiKit.violetPurple,
-                      badgeStream: firebaseService.getActivityLogsStream().map(
-                          (list) => list.where((log) => !log.isSeen).length),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const ActivityScreen()),
-                      ),
-                    ),
-                    _buildModernListTile(
-                      context,
-                      title:
-                          AppLocalizations.of(context)?.appAnalyticsInsights ??
-                              'App Analytics & Insights',
-                      subtitle:
-                          AppLocalizations.of(context)?.liveMetricsSubtitle ??
-                              'Live traffic, view charts, and database metrics',
-                      icon: Icons.analytics_rounded,
-                      accentColor: AdminUiKit.emeraldGreen,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const AnalyticsScreen()),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    StreamBuilder<bool>(
-                        stream: SupabaseService().getRepairModeStream(),
-                        initialData: SupabaseService().lastKnownRepairMode,
-                        builder: (context, snapshot) {
-                          final isRepairMode = snapshot.data ?? false;
-                          return _buildModernListTile(
+                    AdminResponsiveWrap(
+                      children: [
+                        _buildModernListTile(
+                          context,
+                          title: AppLocalizations.of(context)?.manageModerators ??
+                              'Manage Moderators',
+                          subtitle:
+                              AppLocalizations.of(context)?.deviceAuthSubtitle ??
+                                  'Device authorizations, role elevation, blocks',
+                          icon: Icons.admin_panel_settings_rounded,
+                          accentColor: AdminUiKit.goldAccent,
+                          onTap: () => Navigator.push(
                             context,
-                            title:
-                                AppLocalizations.of(context)?.appRepairMode ??
-                                    'App Repair Mode',
-                            subtitle: isRepairMode
-                                ? (AppLocalizations.of(context)
-                                        ?.repairModeActive ??
-                                    'Active • App locked for maintenance')
-                                : (AppLocalizations.of(context)
-                                        ?.repairModeInactive ??
-                                    'Inactive • App is live & accessible'),
-                            icon: isRepairMode
-                                ? Icons.build_circle_rounded
-                                : Icons.build_circle_outlined,
-                            accentColor: isRepairMode
-                                ? AdminUiKit.roseRed
-                                : AdminUiKit.emeraldGreen,
-                            onTap: () => _showBeautifulRepairDialog(
-                                context, isRepairMode, moderator, authProvider),
-                            trailingWidget: Switch.adaptive(
-                              value: isRepairMode,
-                              onChanged: (val) => _showBeautifulRepairDialog(
-                                  context,
-                                  isRepairMode,
-                                  moderator,
-                                  authProvider),
-                              activeTrackColor: AdminUiKit.roseRed,
-                            ),
-                          );
-                        }),
-                    const SizedBox(height: 12),
-                    _buildModernListTile(
-                      context,
-                      title: 'App Version & APK Release',
-                      subtitle:
-                          'Upload APK, configure semver releases, force updates & release notes',
-                      icon: Icons.rocket_launch_rounded,
-                      accentColor: AdminUiKit.royalBlue,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const AppReleaseManagementScreen()),
-                      ),
+                            MaterialPageRoute(
+                                builder: (_) => const ModeratorsManagementScreen()),
+                          ),
+                        ),
+                        _buildModernListTile(
+                          context,
+                          title:
+                              AppLocalizations.of(context)?.createInvitationCode ??
+                                  'Create Invitation Code',
+                          subtitle: AppLocalizations.of(context)
+                                  ?.generateCredentialsSubtitle ??
+                              'Generate secure single-use access credentials',
+                          icon: Icons.send_rounded,
+                          accentColor: AdminUiKit.royalBlue,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const CreateInvitationScreen()),
+                          ),
+                        ),
+                        _buildModernListTile(
+                          context,
+                          title: AppLocalizations.of(context)
+                                  ?.invitationCodesHistory ??
+                              'Invitation Codes History',
+                          subtitle: AppLocalizations.of(context)
+                                  ?.trackInvitationsSubtitle ??
+                              'Track claimed, active & pending invitations',
+                          icon: Icons.vpn_key_rounded,
+                          accentColor: AdminUiKit.amberOrange,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const ManageInviteCodesScreen()),
+                          ),
+                        ),
+                        _buildModernListTile(
+                          context,
+                          title: AppLocalizations.of(context)?.auditActivityLogs ??
+                              'Audit Activity Logs',
+                          subtitle: AppLocalizations.of(context)
+                                  ?.actionTimelineSubtitle ??
+                              'Real-time moderator action timeline',
+                          icon: Icons.history_rounded,
+                          accentColor: AdminUiKit.violetPurple,
+                          badgeStream: firebaseService.getActivityLogsStream().map(
+                              (list) => list.where((log) => !log.isSeen).length),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const ActivityScreen()),
+                          ),
+                        ),
+                        _buildModernListTile(
+                          context,
+                          title:
+                              AppLocalizations.of(context)?.appAnalyticsInsights ??
+                                  'App Analytics & Insights',
+                          subtitle:
+                              AppLocalizations.of(context)?.liveMetricsSubtitle ??
+                                  'Live traffic, view charts, and database metrics',
+                          icon: Icons.analytics_rounded,
+                          accentColor: AdminUiKit.emeraldGreen,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const AnalyticsScreen()),
+                          ),
+                        ),
+                        StreamBuilder<bool>(
+                            stream: SupabaseService().getRepairModeStream(),
+                            initialData: SupabaseService().lastKnownRepairMode,
+                            builder: (context, snapshot) {
+                              final isRepairMode = snapshot.data ?? false;
+                              return _buildModernListTile(
+                                context,
+                                title:
+                                    AppLocalizations.of(context)?.appRepairMode ??
+                                        'App Repair Mode',
+                                subtitle: isRepairMode
+                                    ? (AppLocalizations.of(context)
+                                            ?.repairModeActive ??
+                                        'Active • App locked for maintenance')
+                                    : (AppLocalizations.of(context)
+                                            ?.repairModeInactive ??
+                                        'Inactive • App is live & accessible'),
+                                icon: isRepairMode
+                                    ? Icons.build_circle_rounded
+                                    : Icons.build_circle_outlined,
+                                accentColor: isRepairMode
+                                    ? AdminUiKit.roseRed
+                                    : AdminUiKit.emeraldGreen,
+                                onTap: () => _showBeautifulRepairDialog(
+                                    context, isRepairMode, moderator, authProvider),
+                                trailingWidget: Switch.adaptive(
+                                  value: isRepairMode,
+                                  onChanged: (val) => _showBeautifulRepairDialog(
+                                      context,
+                                      isRepairMode,
+                                      moderator,
+                                      authProvider),
+                                  activeTrackColor: AdminUiKit.roseRed,
+                                ),
+                              );
+                            }),
+                        _buildModernListTile(
+                          context,
+                          title: 'App Version & APK Release',
+                          subtitle:
+                              'Upload APK, configure semver releases, force updates & release notes',
+                          icon: Icons.rocket_launch_rounded,
+                          accentColor: AdminUiKit.royalBlue,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const AppReleaseManagementScreen()),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                   const SizedBox(height: 60),
@@ -552,6 +574,7 @@ class PortalHomeScreen extends StatelessWidget {
               ),
             ),
           ),
+        ),
         ],
       ),
     );
@@ -1010,6 +1033,7 @@ class PortalHomeScreen extends StatelessWidget {
     required Color accentColor,
     VoidCallback? onTap,
     Stream<int>? badgeStream,
+    int? badgeCount,
     Widget? trailingWidget,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1046,6 +1070,8 @@ class PortalHomeScreen extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       color: isDark ? Colors.white : AdminUiKit.primaryNavy,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -1067,25 +1093,11 @@ class PortalHomeScreen extends StatelessWidget {
                 builder: (context, snapshot) {
                   final count = snapshot.data ?? 0;
                   if (count == 0) return const SizedBox.shrink();
-                  return Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AdminUiKit.roseRed,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      count.toString(),
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                    ),
-                  );
+                  return _buildBadge(count);
                 },
-              ),
+              )
+            else if (badgeCount != null && badgeCount > 0)
+              _buildBadge(badgeCount),
             trailingWidget ??
                 Icon(
                   Icons.chevron_right_rounded,
@@ -1093,6 +1105,25 @@ class PortalHomeScreen extends StatelessWidget {
                   color: isDark ? Colors.white30 : Colors.black26,
                 ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBadge(int count) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AdminUiKit.goldAccent,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        count.toString(),
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: AdminUiKit.primaryNavy,
         ),
       ),
     );

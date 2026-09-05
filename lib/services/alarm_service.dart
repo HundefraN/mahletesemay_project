@@ -5,12 +5,13 @@ import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'notification_service.dart';
 
 const String _prefAlarmMetaPrefix = 'service_alarm_meta_';
-const String _prefActiveAlarmKey = 'currently_ringing_alarm';
+const String prefActiveAlarmKey = 'currently_ringing_alarm';
 
 /// Model representing the metadata of a scheduled alarm.
 class ServiceAlarmMetadata {
@@ -57,6 +58,7 @@ class ServiceAlarmMetadata {
 /// Top-level callback executed by AlarmManager even when the app is completely killed.
 @pragma('vm:entry-point')
 void serviceAlarmCallback(int id) async {
+  WidgetsFlutterBinding.ensureInitialized();
   debugPrint('AlarmService: serviceAlarmCallback triggered for alarm id $id');
 
   try {
@@ -80,7 +82,7 @@ void serviceAlarmCallback(int id) async {
     await NotificationService.initialize();
 
     // 2. Mark this alarm as actively ringing in prefs
-    await prefs.setString(_prefActiveAlarmKey, metaJson ?? title);
+    await prefs.setString(prefActiveAlarmKey, metaJson ?? title);
 
     // 3. Trigger full-screen intent notification
     await NotificationService.showFullScreenAlarmNotification(
@@ -192,9 +194,9 @@ class AlarmService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('$_prefAlarmMetaPrefix$id');
 
-      final activeKey = prefs.getString(_prefActiveAlarmKey);
+      final activeKey = prefs.getString(prefActiveAlarmKey);
       if (activeKey != null && activeKey.contains('"id":$id')) {
-        await prefs.remove(_prefActiveAlarmKey);
+        await prefs.remove(prefActiveAlarmKey);
       }
     } catch (_) {}
 
@@ -279,7 +281,29 @@ class AlarmService {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_prefActiveAlarmKey);
+      await prefs.remove(prefActiveAlarmKey);
     } catch (_) {}
+  }
+
+  /// Returns metadata of currently ringing alarm if active, or null.
+  static Future<ServiceAlarmMetadata?> getCurrentlyRingingAlarm() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final metaJson = prefs.getString(prefActiveAlarmKey);
+      if (metaJson != null && metaJson.isNotEmpty) {
+        try {
+          return ServiceAlarmMetadata.fromJson(metaJson);
+        } catch (_) {
+          return ServiceAlarmMetadata(
+            id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+            reminderId: 'active_alarm',
+            title: metaJson,
+            body: 'Worship service reminder',
+            serviceDateTime: DateTime.now(),
+          );
+        }
+      }
+    } catch (_) {}
+    return null;
   }
 }

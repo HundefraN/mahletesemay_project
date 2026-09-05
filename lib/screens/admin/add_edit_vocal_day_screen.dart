@@ -14,7 +14,6 @@ import '../../services/firebase_service.dart';
 import '../../services/supabase_storage_service.dart';
 import '../../utils/permission_helper.dart';
 import '../../widgets/custom_snackbar.dart';
-import '../../widgets/web_content_wrapper.dart';
 import '../../l10n/app_localizations.dart';
 
 class AddEditVocalDayScreen extends StatefulWidget {
@@ -252,7 +251,7 @@ class _AddEditVocalDayScreenState extends State<AddEditVocalDayScreen> {
                 fontWeight: FontWeight.w700, fontSize: 19),
           ),
         ),
-        body: WebContentWrapper(
+        body: AdminFormBody(
           maxWidth: 800,
           child: Form(
             key: _formKey,

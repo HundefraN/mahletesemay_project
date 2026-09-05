@@ -69,7 +69,7 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
       final singlesAlbum = Album(
         id: singlesAlbumId,
         title: AppLocalizations.of(context)?.singlesAndStandalone ??
-            "Singles & Standalone",
+            "Singles",
         artistId: effectiveArtist.id,
         artistName: effectiveArtist.name,
         coverImageUrl: '',
@@ -83,7 +83,6 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
   Widget build(BuildContext context) {
     final songProvider = Provider.of<SongProvider>(context);
     final theme = Theme.of(context);
-    final isWide = !context.isPhone;
     final isDark = theme.brightness == Brightness.dark;
 
     final effectiveArtist = songProvider.artists.cast<Artist?>().firstWhere(
@@ -98,34 +97,37 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
     final totalViews =
         allArtistSongs.fold<int>(0, (sum, s) => sum + s.viewCount);
 
-    if (isWide) {
-      return Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        body: CustomScrollView(
-          controller: _scrollController,
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: _buildTabletHeader(
-                  theme, totalViews, allArtistSongs.length, albums, effectiveArtist),
-            ),
-            _buildAlbumGrid(songProvider, theme, isDark, albums, isWide: true),
-          ],
-        ),
-      );
-    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final paneWidth = constraints.maxWidth;
+        final useWideHeader = paneWidth >= 600;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      extendBodyBehindAppBar: true,
-      body: CustomScrollView(
-        controller: _scrollController,
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          _buildSliverAppBar(theme, totalViews, allArtistSongs.length, albums, effectiveArtist),
-          _buildAlbumGrid(songProvider, theme, isDark, albums),
-        ],
-      ),
+        return Scaffold(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          extendBodyBehindAppBar: !useWideHeader,
+          body: CustomScrollView(
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              if (useWideHeader)
+                SliverToBoxAdapter(
+                  child: _buildTabletHeader(theme, totalViews,
+                      allArtistSongs.length, albums, effectiveArtist),
+                )
+              else
+                _buildSliverAppBar(theme, totalViews, allArtistSongs.length,
+                    albums, effectiveArtist),
+              _buildAlbumGrid(
+                songProvider,
+                theme,
+                isDark,
+                albums,
+                paneWidth: paneWidth,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -154,8 +156,13 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: context.maxContentWidth),
+              child: Padding(
+            padding: EdgeInsets.symmetric(
+                horizontal: context.responsivePadding, vertical: 20),
             child: Row(
               children: [
                 if (canPop) ...[
@@ -230,6 +237,8 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                   ),
                 ),
               ],
+            ),
+          ),
             ),
           ),
         ],
@@ -387,8 +396,13 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
   }
 
   Widget _buildAlbumGrid(SongProvider songProvider, ThemeData theme,
-      bool isDark, List<Album> albums, {bool isWide = false}) {
-    final crossCount = isWide ? context.gridCrossAxisCount : 2;
+      bool isDark, List<Album> albums, {required double paneWidth}) {
+    final crossCount = context.columnsForWidth(
+      paneWidth - 32,
+      minTileWidth: 170,
+      minColumns: 2,
+      maxColumns: 5,
+    );
     return SliverWebContentWrapper(
       sliver: SliverPadding(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),

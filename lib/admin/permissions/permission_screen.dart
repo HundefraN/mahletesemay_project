@@ -144,7 +144,9 @@ class _PermissionScreenState extends State<PermissionScreen>
           ),
 
           SafeArea(
-            child: Padding(
+            child: AdminFormBody(
+              maxWidth: 640,
+              child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Column(
                 children: [
@@ -350,6 +352,7 @@ class _PermissionScreenState extends State<PermissionScreen>
                   ).animate(delay: 600.ms).fadeIn(duration: 400.ms),
                 ],
               ),
+            ),
             ),
           ),
         ],

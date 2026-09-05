@@ -29,6 +29,7 @@ class AllArtistsScreen extends StatefulWidget {
 class _AllArtistsScreenState extends State<AllArtistsScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isGridView = false;
+  bool _didInitView = false;
   String _searchQuery = '';
 
   @override
@@ -42,6 +43,15 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
         });
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didInitView) {
+      _didInitView = true;
+      _isGridView = !context.isPhone;
+    }
   }
 
   @override
@@ -143,7 +153,9 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
           ),
 
           // Search & Filter Header
-          SliverToBoxAdapter(
+          SliverWebContentWrapper(
+            maxWidth: context.readableWidth + 100,
+            sliver: SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Column(
@@ -224,6 +236,7 @@ class _AllArtistsScreenState extends State<AllArtistsScreen> {
                 ],
               ),
             ),
+          ),
           ),
 
           // Artist Items: Grid or List

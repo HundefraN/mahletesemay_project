@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../models/artist_model.dart';
 import '../../providers/auth_proveider.dart';
+import '../../providers/song_provider.dart';
 import '../../services/firebase_service.dart';
 import '../../services/search_service.dart';
 import '../../widgets/custom_snackbar.dart';
@@ -22,7 +23,6 @@ class ManageArtistsScreen extends StatefulWidget {
 class _ManageArtistsScreenState extends State<ManageArtistsScreen>
     with SingleTickerProviderStateMixin {
   final FirebaseService _firebaseService = FirebaseService();
-  late Future<List<Artist>> _artistsFuture;
   List<Artist> _allArtists = [];
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
@@ -34,7 +34,6 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _artistsFuture = _loadArtists();
     _searchController.addListener(() => setState(() {}));
   }
 
@@ -45,15 +44,8 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen>
     super.dispose();
   }
 
-  Future<List<Artist>> _loadArtists() async {
-    _allArtists = await _firebaseService.getArtists();
-    return _allArtists;
-  }
-
   void _refreshData() {
-    setState(() {
-      _artistsFuture = _loadArtists();
-    });
+    context.read<SongProvider>().refreshData();
   }
 
   void _navigateToAddArtist() async {
@@ -61,7 +53,7 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen>
       context,
       MaterialPageRoute(builder: (_) => const AddArtistScreen()),
     );
-    if (result == true) {
+    if (result == true && mounted) {
       _refreshData();
     }
   }
@@ -168,7 +160,7 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen>
       context,
       MaterialPageRoute(builder: (_) => EditArtistScreen(artist: artist)),
     );
-    if (result == true) {
+    if (result == true && mounted) {
       _refreshData();
     }
   }
@@ -177,6 +169,13 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final songProvider = Provider.of<SongProvider>(context);
+
+    _allArtists = songProvider.artists;
+    final ethiopianArtists =
+        _allArtists.where((a) => a.region == 'Ethiopian').toList();
+    final worldwideArtists =
+        _allArtists.where((a) => a.region == 'Worldwide').toList();
 
     return Scaffold(
       backgroundColor:
@@ -200,7 +199,8 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen>
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
-          child: Container(
+          child: AdminConstrainedBar(
+            child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: isDark
@@ -236,101 +236,78 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen>
               ],
             ),
           ),
+          ),
         ),
       ),
-      body: FutureBuilder<List<Artist>>(
-        future: _artistsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-                child: CircularProgressIndicator(color: AdminUiKit.goldAccent));
-          }
-          if (snapshot.hasError) {
-            return AdminEmptyState(
-              icon: Icons.error_outline_rounded,
-              title: AppLocalizations.of(context)?.failedToLoadArtists ??
-                  'Failed to load singers',
-              description: snapshot.error.toString(),
-              actionLabel: 'Retry',
-              onAction: _refreshData,
-            );
-          }
-
-          _allArtists = snapshot.data ?? [];
-          final ethiopianArtists =
-              _allArtists.where((a) => a.region == 'Ethiopian').toList();
-          final worldwideArtists =
-              _allArtists.where((a) => a.region == 'Worldwide').toList();
-
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                child: _isSelectionMode
-                    ? Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: AdminUiKit.roseRed.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                              color: AdminUiKit.roseRed.withValues(alpha: 0.3)),
+      body: AdminPageBody(
+        child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: _isSelectionMode
+                ? Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AdminUiKit.roseRed.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                          color: AdminUiKit.roseRed.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 20),
+                          onPressed: _exitSelectionMode,
                         ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.close_rounded, size: 20),
-                              onPressed: _exitSelectionMode,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${_selectedArtistIds.length} Selected',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                                color:
-                                    isDark ? Colors.white : AdminUiKit.roseRed,
-                              ),
-                            ),
-                            const Spacer(),
-                            FilledButton.icon(
-                              onPressed: _selectedArtistIds.isNotEmpty
-                                  ? _deleteSelectedArtists
-                                  : null,
-                              style: FilledButton.styleFrom(
-                                backgroundColor: AdminUiKit.roseRed,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                              ),
-                              icon: const Icon(Icons.delete_sweep_rounded,
-                                  size: 18),
-                              label: Text(
-                                  AppLocalizations.of(context)?.deleteAction ??
-                                      'Delete'),
-                            ),
-                          ],
+                        const SizedBox(width: 6),
+                        Text(
+                          '${_selectedArtistIds.length} Selected',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            color:
+                                isDark ? Colors.white : AdminUiKit.roseRed,
+                          ),
                         ),
-                      )
-                    : AdminSearchBar(
-                        controller: _searchController,
-                        hintText:
-                            AppLocalizations.of(context)?.searchArtistsHint ??
-                                'Search singers by name...',
-                      ),
-              ),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildArtistList('Ethiopian', ethiopianArtists),
-                    _buildArtistList('Worldwide', worldwideArtists),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
+                        const Spacer(),
+                        FilledButton.icon(
+                          onPressed: _selectedArtistIds.isNotEmpty
+                              ? _deleteSelectedArtists
+                              : null,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AdminUiKit.roseRed,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          icon: const Icon(Icons.delete_sweep_rounded,
+                              size: 18),
+                          label: Text(
+                              AppLocalizations.of(context)?.deleteAction ??
+                                  'Delete'),
+                        ),
+                      ],
+                    ),
+                  )
+                : AdminSearchBar(
+                    controller: _searchController,
+                    hintText:
+                        AppLocalizations.of(context)?.searchArtistsHint ??
+                            'Search singers by name...',
+                  ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildArtistList('Ethiopian', ethiopianArtists),
+                _buildArtistList('Worldwide', worldwideArtists),
+              ],
+            ),
+          ),
+        ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
@@ -372,7 +349,7 @@ class _ManageArtistsScreenState extends State<ManageArtistsScreen>
     return RefreshIndicator(
       color: AdminUiKit.goldAccent,
       onRefresh: () async => _refreshData(),
-      child: ListView.builder(
+      child: AdminResponsiveItemList(
         padding: const EdgeInsets.fromLTRB(16, 6, 16, 80),
         physics: const BouncingScrollPhysics(),
         itemCount: displayList.length,

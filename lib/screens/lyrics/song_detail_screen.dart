@@ -12,8 +12,10 @@ import '../../models/song_model.dart';
 import '../../providers/setlist_provider.dart';
 import '../../providers/song_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../utils/responsive_sizer.dart';
 import '../../widgets/cached_image.dart';
 import '../../widgets/custom_snackbar.dart';
+import '../../widgets/web_content_wrapper.dart';
 import 'share_image_preview_screen.dart';
 
 class _LyricsStanza {
@@ -91,12 +93,15 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     caseSensitive: false,
   );
 
+  late Song _currentSong;
+
   @override
   void initState() {
     super.initState();
+    _currentSong = widget.song;
     final songProvider = Provider.of<SongProvider>(context, listen: false);
-    songProvider.addToHistory(widget.song);
-    songProvider.incrementViewCount(widget.song.id);
+    songProvider.addToHistory(_currentSong);
+    songProvider.incrementViewCount(_currentSong.id);
 
     _playPulseController = AnimationController(
       vsync: this,
@@ -146,7 +151,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
   }
 
   void _parseLyrics() {
-    _rawLines = widget.song.lyrics.split('\n');
+    _rawLines = _currentSong.lyrics.split('\n');
     _stanzas = [];
     _lineKeys.clear();
 
@@ -512,7 +517,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
 
     HapticFeedback.mediumImpact();
     final shareContent =
-        '“$text”\n\n— "${widget.song.title}" by ${widget.song.artistName}\nShared via Mahlete Semay';
+        '“$text”\n\n— "${_currentSong.title}" by ${_currentSong.artistName}\nShared via Mahlete Semay';
     Clipboard.setData(ClipboardData(text: shareContent));
     CustomSnackbar.show(
       context,
@@ -526,7 +531,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
 
     HapticFeedback.mediumImpact();
     final shareContent =
-        '“$text”\n\n— "${widget.song.title}" by ${widget.song.artistName}\nShared via Mahlete Semay';
+        '“$text”\n\n— "${_currentSong.title}" by ${_currentSong.artistName}\nShared via Mahlete Semay';
     SharePlus.instance.share(ShareParams(text: shareContent));
   }
 
@@ -537,7 +542,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         .map((l) => l.trim())
         .join('\n');
     final formatted =
-        '${widget.song.title} — ${widget.song.artistName}\n\n$cleanLines\n\nShared via Mahlete Semay';
+        '${_currentSong.title} — ${_currentSong.artistName}\n\n$cleanLines\n\nShared via Mahlete Semay';
     Clipboard.setData(ClipboardData(text: formatted));
     CustomSnackbar.show(
       context,
@@ -549,7 +554,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
   void _copyFullSongStructured() {
     HapticFeedback.mediumImpact();
     final formatted =
-        '${widget.song.title} — ${widget.song.artistName}\n\n${widget.song.lyrics.trim()}\n\nShared via Mahlete Semay';
+        '${_currentSong.title} — ${_currentSong.artistName}\n\n${_currentSong.lyrics.trim()}\n\nShared via Mahlete Semay';
     Clipboard.setData(ClipboardData(text: formatted));
     CustomSnackbar.show(
       context,
@@ -561,7 +566,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
   void _shareFullSongText() {
     HapticFeedback.mediumImpact();
     final shareContent =
-        '🎵 "${widget.song.title}"\n👤 ${widget.song.artistName}\n\n${widget.song.lyrics.trim()}\n\nShared via Mahlete Semay App';
+        '🎵 "${_currentSong.title}"\n👤 ${_currentSong.artistName}\n\n${_currentSong.lyrics.trim()}\n\nShared via Mahlete Semay App';
     SharePlus.instance.share(ShareParams(text: shareContent));
   }
 
@@ -575,7 +580,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
       context,
       MaterialPageRoute(
         builder: (_) => ShareImagePreviewScreen(
-          song: widget.song,
+          song: _currentSong,
           albumCoverUrl: widget.albumCoverUrl ?? '',
           initialSelectedText: text.isNotEmpty ? text : null,
           initialSelectedLines:
@@ -645,7 +650,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
         final primaryColor = theme.colorScheme.primary;
         final onSurface = theme.colorScheme.onSurface;
 
-        return BackdropFilter(
+        return WebSheetConstraint(
+          child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
             margin: const EdgeInsets.all(12),
@@ -713,7 +719,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                             ),
                           ),
                           Text(
-                            '${widget.song.title} • ${widget.song.artistName}',
+                            '${_currentSong.title} • ${_currentSong.artistName}',
                             style: GoogleFonts.outfit(
                               fontSize: 12,
                               color: isDark
@@ -891,7 +897,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                               .take(4)
                               .join('\n');
                           final formatted =
-                              '“$sample”\n\n— "${widget.song.title}" by ${widget.song.artistName}\n#MahleteSemay';
+                              '“$sample”\n\n— "${_currentSong.title}" by ${_currentSong.artistName}\n#MahleteSemay';
                           Clipboard.setData(ClipboardData(text: formatted));
                           CustomSnackbar.show(
                               context, 'Quote lyrics copied to clipboard!');
@@ -970,6 +976,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
               ],
             ),
           ),
+        ),
         );
       },
     );
@@ -1062,7 +1069,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
             final themeProvider = Provider.of<ThemeProvider>(context);
             final currentSize = themeProvider.lyricsFontSize;
 
-            return BackdropFilter(
+            return WebSheetConstraint(
+              child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
               child: Container(
                 margin: const EdgeInsets.all(12),
@@ -1436,6 +1444,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                   ],
                 ),
               ),
+            ),
             );
           },
         );
@@ -1597,7 +1606,8 @@ class _SongDetailScreenState extends State<SongDetailScreen>
 
         final setlistProvider = Provider.of<SetlistProvider>(context);
 
-        return BackdropFilter(
+        return WebSheetConstraint(
+          child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Container(
             margin: const EdgeInsets.all(12),
@@ -1684,10 +1694,10 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                             ),
                             onTap: () {
                               setlistProvider.addSongToSetlist(
-                                  setlist.id!, widget.song.id);
+                                  setlist.id!, _currentSong.id);
                               Navigator.pop(modalCtx);
                               CustomSnackbar.show(context,
-                                  AppLocalizations.of(context)?.addedSongToSetlist(widget.song.title, setlist.name) ?? 'Added "${widget.song.title}" to "${setlist.name}"');
+                                  AppLocalizations.of(context)?.addedSongToSetlist(_currentSong.title, setlist.name) ?? 'Added "${_currentSong.title}" to "${setlist.name}"');
                             },
                           );
                         },
@@ -1721,6 +1731,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
               ),
             ),
           ),
+        ),
         );
       },
     );
@@ -1817,7 +1828,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                       Provider.of<SetlistProvider>(context, listen: false);
                   final setlistId = await setlistProvider
                       .createSetlist(controller.text.trim());
-                  setlistProvider.addSongToSetlist(setlistId, widget.song.id);
+                  setlistProvider.addSongToSetlist(setlistId, _currentSong.id);
                   nav.pop();
                   if (context.mounted) {
                     CustomSnackbar.show(
@@ -1841,6 +1852,16 @@ class _SongDetailScreenState extends State<SongDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    final songProvider = Provider.of<SongProvider>(context);
+    final liveSong = songProvider.allSongs.cast<Song?>().firstWhere(
+          (s) => s?.id == widget.song.id,
+          orElse: () => null,
+        );
+    if (liveSong != null && liveSong != _currentSong) {
+      _currentSong = liveSong;
+      _parseLyrics();
+    }
+
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = theme.colorScheme.primary;
@@ -1906,7 +1927,9 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                   slivers: [
                     // Spotify Top Header Bar (collapsible)
                     SliverAppBar(
-                      expandedHeight: _isFullscreen ? 0 : 200,
+                      expandedHeight: _isFullscreen
+                          ? 0
+                          : (context.isPhone ? 200.0 : 236.0),
                       pinned: true,
                       stretch: true,
                       backgroundColor: _showAppBarTitle
@@ -1997,7 +2020,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                                       )
                                     : Center(
                                         child: _AnimatedFavoriteButton(
-                                          songId: widget.song.id,
+                                          songId: _currentSong.id,
                                           size: 19,
                                           isDark: isDark,
                                           primaryColor: primaryColor,
@@ -2018,7 +2041,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    widget.song.title,
+                                    _currentSong.title,
                                     style: GoogleFonts.outfit(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 15,
@@ -2028,7 +2051,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(
-                                    widget.song.artistName,
+                                    _currentSong.artistName,
                                     style: GoogleFonts.outfit(
                                       fontWeight: FontWeight.w500,
                                       fontSize: 12,
@@ -2048,17 +2071,27 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                       flexibleSpace: _isFullscreen
                           ? null
                           : FlexibleSpaceBar(
-                              background: _buildSpotifyParallaxHeader(
-                                primaryColor: primaryColor,
-                                isDark: isDark,
-                                onSurface: onSurface,
+                              background: Align(
+                                alignment: Alignment.bottomCenter,
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxWidth: context.readableWidth,
+                                  ),
+                                  child: _buildSpotifyParallaxHeader(
+                                    primaryColor: primaryColor,
+                                    isDark: isDark,
+                                    onSurface: onSurface,
+                                  ),
+                                ),
                               ),
                             ),
                     ),
 
                     // Spotify Share Mode Guidance Banner (when active)
                     if (_isShareSelectionMode)
-                      SliverToBoxAdapter(
+                      SliverWebContentWrapper(
+                        maxWidth: context.readableWidth,
+                        sliver: SliverToBoxAdapter(
                         child: Container(
                           margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                           padding: const EdgeInsets.symmetric(
@@ -2100,45 +2133,42 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                           ),
                         ),
                       ),
+                      ),
 
                     // Lyrics Stream Body
-                    SliverToBoxAdapter(
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: MediaQuery.of(context).size.width >= 600 ? 720.0 : double.infinity,
+                    SliverWebContentWrapper(
+                      maxWidth: context.readableWidth,
+                      sliver: SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            20,
+                            _isShareSelectionMode ? 10 : 24,
+                            20,
+                            160,
                           ),
-                          child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          20,
-                          _isShareSelectionMode ? 10 : 24,
-                          20,
-                          160,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: _textAlign == TextAlign.center
-                              ? CrossAxisAlignment.center
-                              : CrossAxisAlignment.start,
-                          children: [
-                            for (int sIdx = 0;
-                                sIdx < _stanzas.length;
-                                sIdx++) ...[
-                              _buildSpotifyStanza(
-                                _stanzas[sIdx],
-                                sIdx,
-                                fontSize,
-                                primaryColor: primaryColor,
-                                isDark: isDark,
-                                onSurface: onSurface,
-                              ),
-                              if (sIdx < _stanzas.length - 1)
-                                const SizedBox(height: 16),
+                          child: Column(
+                            crossAxisAlignment: _textAlign == TextAlign.center
+                                ? CrossAxisAlignment.center
+                                : CrossAxisAlignment.start,
+                            children: [
+                              for (int sIdx = 0;
+                                  sIdx < _stanzas.length;
+                                  sIdx++) ...[
+                                _buildSpotifyStanza(
+                                  _stanzas[sIdx],
+                                  sIdx,
+                                  fontSize,
+                                  primaryColor: primaryColor,
+                                  isDark: isDark,
+                                  onSurface: onSurface,
+                                ),
+                                if (sIdx < _stanzas.length - 1)
+                                  const SizedBox(height: 16),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                        ),
                     ),
                   ],
                 ),
@@ -2251,16 +2281,19 @@ class _SongDetailScreenState extends State<SongDetailScreen>
     required bool isDark,
     required Color onSurface,
   }) {
+    final coverSize = context.isPhone ? 72.0 : (context.isTablet ? 88.0 : 104.0);
+    final titleSize = context.isPhone ? 20.0 : 26.0;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 16),
+      padding: EdgeInsets.fromLTRB(20, context.isPhone ? 60 : 72, 20, 16),
       alignment: Alignment.bottomLeft,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           // Album Cover Card
           Container(
-            width: 72,
-            height: 72,
+            width: coverSize,
+            height: coverSize,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
@@ -2304,14 +2337,14 @@ class _SongDetailScreenState extends State<SongDetailScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Hero(
-                  tag: 'song-title-${widget.song.id}',
+                  tag: 'song-title-${_currentSong.id}',
                   child: Material(
                     color: Colors.transparent,
                     child: Text(
-                      widget.song.title,
+                      _currentSong.title,
                       style: GoogleFonts.outfit(
                         color: isDark ? Colors.white : onSurface,
-                        fontSize: 20,
+                        fontSize: titleSize,
                         fontWeight: FontWeight.w900,
                         letterSpacing: -0.5,
                         shadows: isDark
@@ -2331,7 +2364,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  widget.song.artistName,
+                  _currentSong.artistName,
                   style: GoogleFonts.outfit(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.85)
@@ -2345,10 +2378,10 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    if (widget.song.scale != null &&
-                        widget.song.scale!.isNotEmpty) ...[
+                    if (_currentSong.scale != null &&
+                        _currentSong.scale!.isNotEmpty) ...[
                       _buildMiniBadge(
-                        'Scale: ${widget.song.scale!}',
+                        'Scale: ${_currentSong.scale!}',
                         isDark: isDark,
                         primaryColor: primaryColor,
                         onSurface: onSurface,
@@ -2356,7 +2389,7 @@ class _SongDetailScreenState extends State<SongDetailScreen>
                       const SizedBox(width: 6),
                     ],
                     _buildMiniBadge(
-                      '${NumberFormat.compact().format(widget.song.viewCount)} ${AppLocalizations.of(context)?.plays ?? "plays"}',
+                      '${NumberFormat.compact().format(_currentSong.viewCount)} ${AppLocalizations.of(context)?.plays ?? "plays"}',
                       icon: IconsaxPlusLinear.eye,
                       isDark: isDark,
                       primaryColor: primaryColor,

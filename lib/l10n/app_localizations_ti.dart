@@ -60,10 +60,10 @@ class AppLocalizationsTi extends AppLocalizations {
   String get viewAll => 'ኩሉ ርአ';
 
   @override
-  String get ethiopianArtists => 'ኢትዮጵያውያን ደረፍቲ';
+  String get ethiopianArtists => 'ኢትዮጵያውያን';
 
   @override
-  String get worldwideArtists => 'ዓለምለኻዊ ደረፍቲ';
+  String get worldwideArtists => 'ዓለምለኻዊ';
 
   @override
   String get history => 'ታሪኽ';

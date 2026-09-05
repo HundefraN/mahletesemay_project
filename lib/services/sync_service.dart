@@ -76,17 +76,26 @@ class SyncService {
       final Set<String> existingSongIds =
           existingSongs.map((s) => s.id).toSet();
 
-      final artists = await _firebaseService.getArtists();
+      final artists = await _firebaseService.getArtists().timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => [],
+          );
       if (artists.isNotEmpty) {
         await _localDbService.syncArtists(artists);
       }
 
-      final albums = await _firebaseService.getAlbums();
+      final albums = await _firebaseService.getAlbums().timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => [],
+          );
       if (albums.isNotEmpty) {
         await _localDbService.syncAlbums(albums);
       }
 
-      final songs = await _firebaseService.getSongs();
+      final songs = await _firebaseService.getSongs().timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => [],
+          );
       if (songs.isNotEmpty) {
         await _localDbService.syncSongs(songs);
       }
@@ -135,7 +144,10 @@ class SyncService {
       }
 
       final lastSyncDate = DateTime.fromMillisecondsSinceEpoch(lastSyncMillis);
-      final hasNewSongs = await _firebaseService.hasNewSongsSince(lastSyncDate);
+      final hasNewSongs = await _firebaseService.hasNewSongsSince(lastSyncDate).timeout(
+            const Duration(seconds: 3),
+            onTimeout: () => false,
+          );
       return hasNewSongs;
     } catch (e) {
       debugPrint("Error checking for new data: $e");

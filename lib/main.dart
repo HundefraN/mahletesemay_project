@@ -64,20 +64,20 @@ Future<void> main() async {
       // .env file is optional
     }
 
-    // Initialize Supabase, Firebase, and NotificationService concurrently
+    // Initialize core client backends and alarm/notification channels swiftly
     await Future.wait([
       Supabase.initialize(
         url: SupabaseConfig.url,
         publishableKey: SupabaseConfig.publishableKey,
       ),
       Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
-      NotificationService.initialize(),
-      AlarmService.initialize(),
-      BackgroundSyncService.initialize(),
+      NotificationService.initialize().timeout(const Duration(milliseconds: 2000), onTimeout: () {}),
+      AlarmService.initialize().timeout(const Duration(milliseconds: 2000), onTimeout: () {}),
     ]);
 
-    // Non-blocking FCM background setup
+    // Non-blocking background workers & push notifications
     FcmService.initialize();
+    unawaited(BackgroundSyncService.initialize());
 
     runApp(const MyApp());
   }
@@ -173,6 +173,7 @@ class NotificationCoordinator extends StatefulWidget {
 class _NotificationCoordinatorState extends State<NotificationCoordinator>
     with WidgetsBindingObserver {
   StreamSubscription<ServiceAlarmMetadata>? _alarmSubscription;
+  bool _isAlarmOverlayShowing = false;
 
   @override
   void initState() {
@@ -183,19 +184,44 @@ class _NotificationCoordinatorState extends State<NotificationCoordinator>
     // NotificationService as soon as the handler is registered.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationService.setTapHandler(_handleNotificationTap);
+      _checkActiveRingingAlarm();
     });
 
     if (!kIsWeb) {
       _alarmSubscription = AlarmService.onAlarmRinging.listen((meta) {
         final navigator = navigatorKey.currentState;
-        if (navigator != null && navigator.mounted) {
+        if (navigator != null && navigator.mounted && !_isAlarmOverlayShowing) {
+          _isAlarmOverlayShowing = true;
           navigator.push(
             MaterialPageRoute(
               builder: (_) => AlarmOverlayScreen(metadata: meta),
             ),
-          );
+          ).then((_) {
+            _isAlarmOverlayShowing = false;
+          });
         }
       });
+    }
+  }
+
+  Future<void> _checkActiveRingingAlarm() async {
+    if (kIsWeb || _isAlarmOverlayShowing) return;
+    try {
+      final activeAlarm = await AlarmService.getCurrentlyRingingAlarm();
+      if (activeAlarm != null) {
+        final navigator = navigatorKey.currentState;
+        if (navigator != null && navigator.mounted) {
+          _isAlarmOverlayShowing = true;
+          await navigator.push(
+            MaterialPageRoute(
+              builder: (_) => AlarmOverlayScreen(metadata: activeAlarm),
+            ),
+          );
+          _isAlarmOverlayShowing = false;
+        }
+      }
+    } catch (e) {
+      debugPrint('NotificationCoordinator: error checking active alarm: $e');
     }
   }
 
@@ -210,10 +236,11 @@ class _NotificationCoordinatorState extends State<NotificationCoordinator>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     // Notification access may have been changed in system settings while the
-    // app was in the background. Also check for remote app updates.
+    // app was in the background. Also check for remote app updates and active alarms.
     if (state == AppLifecycleState.resumed && mounted) {
       context.read<NotificationSettingsProvider>().refreshPermission();
       AppUpdateService.instance.checkForUpdate();
+      _checkActiveRingingAlarm();
     }
   }
 

@@ -75,7 +75,8 @@ class ManageGeneralExercisesScreen extends StatelessWidget {
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 18),
         ),
       ),
-      body: StreamBuilder<List<VocalExerciseDay>>(
+      body: AdminPageBody(
+        child: StreamBuilder<List<VocalExerciseDay>>(
         stream: firebaseService.getGeneralExercisesStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -101,7 +102,7 @@ class ManageGeneralExercisesScreen extends StatelessWidget {
             );
           }
           final exercises = snapshot.data!;
-          return ListView.builder(
+          return AdminResponsiveItemList(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
               physics: const BouncingScrollPhysics(),
               itemCount: exercises.length,
@@ -170,6 +171,7 @@ class ManageGeneralExercisesScreen extends StatelessWidget {
             },
           );
         },
+      ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(

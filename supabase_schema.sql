@@ -39,6 +39,16 @@ CREATE TABLE IF NOT EXISTS public.albums (
 ALTER TABLE public.albums ADD COLUMN IF NOT EXISTS search_keywords TEXT[] NOT NULL DEFAULT '{}';
 ALTER TABLE public.albums ADD COLUMN IF NOT EXISTS english_title TEXT NOT NULL DEFAULT '';
 
+-- Placeholder catalog rows for standalone / single releases.
+-- Songs saved as singles reference these IDs (see lib/utils/constants.dart).
+INSERT INTO public.artists (id, name, english_name, image_url, region, search_keywords)
+VALUES ('singles_artist', 'Various Artists', 'Various Artists', '', '', ARRAY['singles', 'various artists'])
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.albums (id, title, english_title, artist_id, artist_name, cover_image_url, search_keywords)
+VALUES ('singles_album', 'Singles', 'Singles', 'singles_artist', 'Various Artists', '', ARRAY['singles'])
+ON CONFLICT (id) DO NOTHING;
+
 -- Songs Table
 CREATE TABLE IF NOT EXISTS public.songs (
     id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::TEXT,
@@ -619,6 +629,61 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.lookup_invitation_for_claim(
+    p_code TEXT,
+    p_email TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_invitation RECORD;
+    v_clean_code TEXT;
+    v_clean_email TEXT;
+BEGIN
+    v_clean_code := UPPER(REPLACE(REPLACE(TRIM(COALESCE(p_code, '')), '-', ''), ' ', ''));
+    v_clean_email := LOWER(TRIM(COALESCE(p_email, '')));
+
+    IF v_clean_code = '' THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Invitation code is required.');
+    END IF;
+
+    SELECT * INTO v_invitation
+    FROM public.invitations
+    WHERE UPPER(REPLACE(REPLACE(TRIM(code), '-', ''), ' ', '')) = v_clean_code
+    LIMIT 1;
+
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Invalid invitation code.');
+    END IF;
+
+    IF v_invitation.status = 'revoked' THEN
+        RETURN jsonb_build_object('success', false, 'error', 'This invitation was revoked by an administrator.');
+    END IF;
+
+    IF v_clean_email <> '' AND LOWER(TRIM(v_invitation.email)) <> v_clean_email THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'error', 'This invitation code belongs to a different email address.',
+            'email', v_invitation.email
+        );
+    END IF;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'id', v_invitation.id,
+        'code', v_invitation.code,
+        'email', v_invitation.email,
+        'first_name', v_invitation.first_name,
+        'last_name', v_invitation.last_name,
+        'role', COALESCE(v_invitation.role, 'moderator'),
+        'status', v_invitation.status
+    );
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.claim_moderator_account(
     p_email TEXT,
     p_password TEXT,
@@ -771,6 +836,48 @@ BEGIN
         END;
     END IF;
 
+    UPDATE auth.users
+    SET confirmation_token = COALESCE(confirmation_token, ''),
+        recovery_token = COALESCE(recovery_token, ''),
+        email_change_token_new = COALESCE(email_change_token_new, ''),
+        email_change = COALESCE(email_change, ''),
+        email_change_token_current = COALESCE(email_change_token_current, ''),
+        reauthentication_token = COALESCE(reauthentication_token, ''),
+        phone_change = COALESCE(phone_change, ''),
+        phone_change_token = COALESCE(phone_change_token, ''),
+        email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
+        updated_at = NOW()
+    WHERE id = v_user_id;
+
+    BEGIN
+        IF NOT EXISTS (
+            SELECT 1 FROM auth.identities
+            WHERE user_id = v_user_id AND provider = 'email'
+        ) THEN
+            INSERT INTO auth.identities (
+                id,
+                user_id,
+                identity_data,
+                provider,
+                provider_id,
+                last_sign_in_at,
+                created_at,
+                updated_at
+            ) VALUES (
+                v_user_id,
+                v_user_id,
+                jsonb_build_object('sub', v_user_id::TEXT, 'email', v_clean_email, 'email_verified', true),
+                'email',
+                v_user_id::TEXT,
+                NOW(),
+                NOW(),
+                NOW()
+            );
+        END IF;
+    EXCEPTION WHEN OTHERS THEN
+        NULL;
+    END;
+
     -- 4. Prepare approved devices array
     IF p_device_info IS NOT NULL AND p_device_info::TEXT != 'null' AND p_device_info::TEXT != '{}' THEN
         v_devices := jsonb_build_array(p_device_info);
@@ -880,7 +987,38 @@ CREATE TRIGGER trg_auto_confirm_moderator_email
   FOR EACH ROW
   EXECUTE FUNCTION public.auto_confirm_moderator_email();
 
+CREATE OR REPLACE FUNCTION public.enforce_auth_user_token_defaults()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = auth
+AS $$
+BEGIN
+  NEW.confirmation_token := COALESCE(NEW.confirmation_token, '');
+  NEW.recovery_token := COALESCE(NEW.recovery_token, '');
+  NEW.email_change_token_new := COALESCE(NEW.email_change_token_new, '');
+  NEW.email_change := COALESCE(NEW.email_change, '');
+  NEW.email_change_token_current := COALESCE(NEW.email_change_token_current, '');
+  NEW.reauthentication_token := COALESCE(NEW.reauthentication_token, '');
+  NEW.phone_change := COALESCE(NEW.phone_change, '');
+  NEW.phone_change_token := COALESCE(NEW.phone_change_token, '');
+  RETURN NEW;
+END;
+$$;
+
+DO $$
+BEGIN
+  DROP TRIGGER IF EXISTS trg_enforce_auth_user_token_defaults ON auth.users;
+  CREATE TRIGGER trg_enforce_auth_user_token_defaults
+    BEFORE INSERT OR UPDATE ON auth.users
+    FOR EACH ROW
+    EXECUTE FUNCTION public.enforce_auth_user_token_defaults();
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Could not attach auth.users token trigger: %', SQLERRM;
+END $$;
+
 GRANT EXECUTE ON FUNCTION public.claim_moderator_account(TEXT, TEXT, TEXT, JSONB, UUID) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.lookup_invitation_for_claim(TEXT, TEXT) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.confirm_user_email(UUID) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.is_active_moderator() TO anon, authenticated, service_role;

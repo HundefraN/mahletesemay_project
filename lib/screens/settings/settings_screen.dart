@@ -16,6 +16,8 @@ import '../../providers/auth_proveider.dart';
 import '../../providers/theme_provider.dart';
 import 'package:mahlete_semay_project/providers/notification_settings_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mahlete_semay_project/utils/responsive_sizer.dart';
+import 'package:mahlete_semay_project/widgets/web_content_wrapper.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -100,7 +102,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return BackdropFilter(
+        return WebSheetConstraint(
+          child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Container(
             margin: const EdgeInsets.all(16),
@@ -148,6 +151,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
               ],
             ),
           ),
+        ),
         );
       },
     );
@@ -225,15 +229,10 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
               ),
             ),
             SliverPadding(
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 60),
-              sliver: SliverLayoutBuilder(
-                builder: (context, constraints) {
-                  final screenW = MediaQuery.of(context).size.width;
-                  final maxW = screenW >= 1024 ? 700.0 : (screenW >= 600 ? 600.0 : screenW);
-                  final hPad = ((constraints.crossAxisExtent - maxW) / 2).clamp(0.0, double.infinity);
-                  return SliverPadding(
-                    padding: EdgeInsets.symmetric(horizontal: hPad),
-                    sliver: SliverList(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, context.bottomNavClearance),
+              sliver: SliverWebContentWrapper(
+                maxWidth: 700,
+                sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   FadeTransition(
                     opacity: _fadeAnimation,
@@ -397,8 +396,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   ),
                 ]),
               ),
-                  );
-                },
               ),
             ),
           ],

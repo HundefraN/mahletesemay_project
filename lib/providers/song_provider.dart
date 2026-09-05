@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -231,12 +231,18 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
     });
 
-    final bool shouldForce = _songs.isEmpty;
-    await _handleSync(forceOnMobile: shouldForce || true);
-
-    if (_isLoading) {
+    if (_songs.isNotEmpty) {
+      // Local SQLite cache is already loaded: render instantly and sync in the background
       _isLoading = false;
       notifyListeners();
+      unawaited(_handleSync(forceOnMobile: false));
+    } else {
+      // Database is empty: attempt initial sync
+      await _handleSync(forceOnMobile: true);
+      if (_isLoading) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
 
     // Subscribe to real-time streams for live updates
@@ -287,7 +293,7 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
     _artistsStreamSubscription?.cancel();
     _artistsStreamSubscription = _firebaseService.getArtistsStream().listen(
       (artists) {
-        if (artists.isNotEmpty && _hasDataChanged(_artists, artists)) {
+        if (_hasDataChanged(_artists, artists)) {
           _artists = artists;
           if (!kIsWeb) _localDbService.syncArtists(artists);
           _safeNotifyListeners();
@@ -302,7 +308,7 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
     _albumsStreamSubscription?.cancel();
     _albumsStreamSubscription = _firebaseService.getAlbumsStream().listen(
       (albums) {
-        if (albums.isNotEmpty && _hasDataChanged(_albums, albums)) {
+        if (_hasDataChanged(_albums, albums)) {
           _albums = albums;
           if (!kIsWeb) _localDbService.syncAlbums(albums);
           _safeNotifyListeners();
@@ -317,7 +323,7 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
     _songsStreamSubscription?.cancel();
     _songsStreamSubscription = _firebaseService.getSongsStream().listen(
       (songs) {
-        if (songs.isNotEmpty && _hasDataChanged(_songs, songs)) {
+        if (_hasDataChanged(_songs, songs)) {
           _songs = songs;
           if (!kIsWeb) _localDbService.syncSongs(songs);
           _safeNotifyListeners();
@@ -330,20 +336,9 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
-  /// Lightweight diff: checks if two lists differ by length or element IDs.
+  /// Accurate real-time diff: checks if lists differ in elements, length, or content.
   bool _hasDataChanged<T>(List<T> oldList, List<T> newList) {
-    if (oldList.length != newList.length) return true;
-    // Compare by identity of IDs for the known model types
-    final oldIds = oldList.map((e) => _extractId(e)).toSet();
-    final newIds = newList.map((e) => _extractId(e)).toSet();
-    return !oldIds.containsAll(newIds) || !newIds.containsAll(oldIds);
-  }
-
-  String _extractId(dynamic item) {
-    if (item is Artist) return item.id;
-    if (item is Album) return item.id;
-    if (item is Song) return item.id;
-    return item.hashCode.toString();
+    return !listEquals(oldList, newList);
   }
 
   @override
@@ -524,7 +519,9 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   List<Album> getAlbumsByArtist(String artistId) {
     if (_albums.isEmpty) return [];
-    return _albums.where((album) => album.artistId == artistId).toList();
+    return _albums
+        .where((album) => album.artistId == artistId && album.id != singlesAlbumId)
+        .toList();
   }
 
   List<Song> getSongsByAlbum(String albumId) {
@@ -559,7 +556,9 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
     }
 
-    List<Artist> sortedArtists = List.from(_artists);
+    List<Artist> sortedArtists = _artists
+        .where((artist) => artist.id != singlesArtistId)
+        .toList();
     sortedArtists.sort((a, b) {
       double scoreA = artistScores[a.id] ?? 0.0;
       double scoreB = artistScores[b.id] ?? 0.0;

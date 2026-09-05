@@ -316,7 +316,7 @@ class VocalExerciseListScreen extends StatelessWidget {
             maxWidth: 1000,
             sliver: _buildGeneralExercisesList(context, firebaseService),
           ),
-          SliverToBoxAdapter(child: SizedBox(height: context.w(120))),
+          SliverToBoxAdapter(child: SizedBox(height: context.bottomNavClearance)),
         ],
       ),
     );
@@ -915,34 +915,6 @@ class __ModernAudioPlayerState extends State<_ModernAudioPlayer>
             ),
           ),
           SizedBox(height: context.w(8)),
-
-          // Timeline Slider
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: context.w(4),
-              thumbShape:
-                  RoundSliderThumbShape(enabledThumbRadius: context.w(6)),
-              overlayShape:
-                  RoundSliderOverlayShape(overlayRadius: context.w(12)),
-              activeTrackColor: theme.colorScheme.primary,
-              inactiveTrackColor: theme.colorScheme.primary.withValues(alpha: 0.15),
-              thumbColor: theme.colorScheme.primary,
-            ),
-            child: Slider(
-              min: 0,
-              max: _duration.inSeconds.toDouble(),
-              value: _position.inSeconds
-                  .toDouble()
-                  .clamp(0, _duration.inSeconds.toDouble()),
-              onChanged: (value) async {
-                final position = Duration(seconds: value.toInt());
-                await _audioPlayer.seek(position);
-                if (_playerState != PlayerState.playing) {
-                  await _audioPlayer.resume();
-                }
-              },
-            ),
-          ),
 
           Padding(
             padding: EdgeInsets.symmetric(horizontal: context.w(8)),

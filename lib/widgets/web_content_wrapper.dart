@@ -78,3 +78,27 @@ class SliverWebContentWrapper extends StatelessWidget {
     );
   }
 }
+
+/// Keeps modal sheets from stretching across a desktop browser.
+class WebSheetConstraint extends StatelessWidget {
+  final Widget child;
+  final double maxWidth;
+
+  const WebSheetConstraint({
+    super.key,
+    required this.child,
+    this.maxWidth = 520,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (context.isPhone) return child;
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: child,
+      ),
+    );
+  }
+}

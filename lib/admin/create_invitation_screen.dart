@@ -125,7 +125,8 @@ This code is single-use and linked to your email. Welcome to the team!
           const SizedBox(width: 8),
         ],
       ),
-      body: ListView(
+      body: AdminFormBody(
+        child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           physics: const BouncingScrollPhysics(),
           children: [
@@ -142,8 +143,11 @@ This code is single-use and linked to your email. Welcome to the team!
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 10,
+                    runSpacing: 10,
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -162,7 +166,6 @@ This code is single-use and linked to your email. Welcome to the team!
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
                       IconButton.filled(
                         icon: const Icon(Icons.copy_rounded, size: 20),
                         style: IconButton.styleFrom(
@@ -222,26 +225,38 @@ This code is single-use and linked to your email. Welcome to the team!
               key: _formKey,
               child: Column(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _firstNameController,
-                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
-                          decoration: _inputDecoration('First Name *', Icons.person_outline_rounded),
-                          validator: (v) => v!.trim().isEmpty ? 'Required' : null,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _lastNameController,
-                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
-                          decoration: _inputDecoration('Last Name *', Icons.person_outline_rounded),
-                          validator: (v) => v!.trim().isEmpty ? 'Required' : null,
-                        ),
-                      ),
-                    ],
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final stacked = constraints.maxWidth < 520;
+                      final firstName = TextFormField(
+                        controller: _firstNameController,
+                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                        decoration: _inputDecoration('First Name *', Icons.person_outline_rounded),
+                        validator: (v) => v!.trim().isEmpty ? 'Required' : null,
+                      );
+                      final lastName = TextFormField(
+                        controller: _lastNameController,
+                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                        decoration: _inputDecoration('Last Name *', Icons.person_outline_rounded),
+                        validator: (v) => v!.trim().isEmpty ? 'Required' : null,
+                      );
+                      if (stacked) {
+                        return Column(
+                          children: [
+                            firstName,
+                            const SizedBox(height: 14),
+                            lastName,
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          Expanded(child: firstName),
+                          const SizedBox(width: 12),
+                          Expanded(child: lastName),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 14),
                   TextFormField(
@@ -282,6 +297,7 @@ This code is single-use and linked to your email. Welcome to the team!
           ),
           const SizedBox(height: 40),
         ],
+        ),
       ),
     );
   }

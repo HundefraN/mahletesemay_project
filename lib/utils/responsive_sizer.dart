@@ -62,6 +62,22 @@ extension ResponsiveSizer on BuildContext {
     return 3;
   }
 
+  /// How many columns fit in [availableWidth] given a minimum tile size.
+  int columnsForWidth(
+    double availableWidth, {
+    double minTileWidth = 180,
+    int minColumns = 1,
+    int maxColumns = 6,
+  }) {
+    if (availableWidth <= 0) return minColumns;
+    return (availableWidth / minTileWidth).floor().clamp(minColumns, maxColumns);
+  }
+
+  /// Two-column lists on wide panes, single column otherwise.
+  int listColumnsForWidth(double availableWidth) {
+    return availableWidth >= 720 ? 2 : 1;
+  }
+
   // ─── Scale Factor ──────────────────────────────────────────────────────────
 
   double get _scaleFactor {
@@ -90,5 +106,14 @@ extension ResponsiveSizer on BuildContext {
 
   double sp(double size) {
     return (size * 0.84) * _scaleFactor;
+  }
+
+  /// Scroll inset so the last items sit above the floating phone nav bar.
+  /// Matches `_ModernNavBar` (80 height + 20 bottom padding) plus a small gap.
+  /// On tablet/desktop the rail is used, so only the system safe area is added.
+  double get bottomNavClearance {
+    final safeBottom = MediaQuery.paddingOf(this).bottom;
+    if (!isPhone) return safeBottom;
+    return safeBottom + w(80) + w(20) + w(16);
   }
 }

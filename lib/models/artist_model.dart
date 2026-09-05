@@ -103,4 +103,18 @@ class Artist {
       'search_keywords': effectiveKeywords,
     };
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Artist &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          name == other.name &&
+          englishName == other.englishName &&
+          imageUrl == other.imageUrl &&
+          region == other.region;
+
+  @override
+  int get hashCode => Object.hash(id, name, englishName, imageUrl, region);
 }

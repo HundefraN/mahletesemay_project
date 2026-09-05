@@ -352,7 +352,8 @@ class _AddAlbumScreenState extends State<AddAlbumScreen> {
             style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 17),
           ),
         ),
-        body: Form(
+        body: AdminFormBody(
+          child: Form(
             key: _formKey,
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -488,6 +489,7 @@ class _AddAlbumScreenState extends State<AddAlbumScreen> {
               const SizedBox(height: 24),
             ],
           ),
+        ),
         ),
       ),
     );

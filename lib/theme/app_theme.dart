@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 class AppTheme {
   static const Color primaryColor = Color(0xFF0A1E3F); // Royal Navy
-  static const Color secondaryColor = Color(0xFFDFB76C); // Celestial Divine Gold
+  static const Color secondaryColor =
+      Color(0xFFDFB76C); // Celestial Divine Gold
   static const Color accentColor = Color(0xFFF5E09D); // Gold Highlight
   static const Color backgroundColor = Color(0xFFF5F7FB);
   static const Color darkBackgroundColor = Color(0xFF070E1B);

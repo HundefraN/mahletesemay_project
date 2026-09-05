@@ -2,11 +2,20 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'background_sync_service.dart';
 import 'supabase_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('Handling background message: ${message.messageId}');
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    // Synchronize SQLite cache in background when push notification arrives while app is closed
+    await BackgroundSyncService.performBackgroundSync();
+  } catch (e, stack) {
+    debugPrint('FCM background sync error: $e\n$stack');
+  }
 }
 
 class FcmService {

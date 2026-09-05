@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../../utils/responsive_sizer.dart';
+import '../../widgets/web_content_wrapper.dart';
+
 /// Modern 2026 Admin Design Kit
 class AdminUiKit {
   static const Color primaryNavy = Color(0xFF0A1E3F);
@@ -630,6 +633,175 @@ class AdminEmptyState extends StatelessWidget {
           ],
         ),
       ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.95, 0.95)),
+    );
+  }
+}
+
+/// Centers admin page content on tablet/desktop without changing phone layout.
+class AdminPageBody extends StatelessWidget {
+  final Widget child;
+  final double maxWidth;
+
+  const AdminPageBody({
+    super.key,
+    required this.child,
+    this.maxWidth = 1100,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return WebContentWrapper(
+      maxWidth: maxWidth,
+      applyPadding: false,
+      child: SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Narrower constrained body for add/edit forms on wide screens.
+class AdminFormBody extends StatelessWidget {
+  final Widget child;
+  final double maxWidth;
+
+  const AdminFormBody({
+    super.key,
+    required this.child,
+    this.maxWidth = 720,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return WebContentWrapper(
+      maxWidth: maxWidth,
+      applyPadding: !context.isPhone,
+      child: SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Centers AppBar extras (tab bars, toolbars) so they match page content width.
+class AdminConstrainedBar extends StatelessWidget {
+  final Widget child;
+  final double maxWidth;
+
+  const AdminConstrainedBar({
+    super.key,
+    required this.child,
+    this.maxWidth = 1100,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (context.isPhone) return child;
+    return Align(
+      alignment: Alignment.center,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Single-column list on phones, two columns on wide panes.
+class AdminResponsiveItemList extends StatelessWidget {
+  final int itemCount;
+  final IndexedWidgetBuilder itemBuilder;
+  final EdgeInsetsGeometry padding;
+  final ScrollPhysics? physics;
+
+  const AdminResponsiveItemList({
+    super.key,
+    required this.itemCount,
+    required this.itemBuilder,
+    this.padding = EdgeInsets.zero,
+    this.physics,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = context.listColumnsForWidth(constraints.maxWidth);
+        final scrollPhysics = physics ?? const BouncingScrollPhysics();
+
+        if (columns <= 1) {
+          return ListView.builder(
+            padding: padding,
+            physics: scrollPhysics,
+            itemCount: itemCount,
+            itemBuilder: itemBuilder,
+          );
+        }
+
+        final rowCount = (itemCount / columns).ceil();
+        return ListView.builder(
+          padding: padding,
+          physics: scrollPhysics,
+          itemCount: rowCount,
+          itemBuilder: (context, rowIndex) {
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: List.generate(columns, (col) {
+                final index = rowIndex * columns + col;
+                if (index >= itemCount) {
+                  return const Expanded(child: SizedBox.shrink());
+                }
+                return Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      left: col == 0 ? 0 : 6,
+                      right: col == columns - 1 ? 0 : 6,
+                    ),
+                    child: itemBuilder(context, index),
+                  ),
+                );
+              }),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+/// Stacks children on phones; wraps into multiple columns on wide screens.
+class AdminResponsiveWrap extends StatelessWidget {
+  final List<Widget> children;
+  final double spacing;
+
+  const AdminResponsiveWrap({
+    super.key,
+    required this.children,
+    this.spacing = 10,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = context.listColumnsForWidth(constraints.maxWidth);
+        if (columns <= 1) {
+          return Column(children: children);
+        }
+        final itemWidth =
+            (constraints.maxWidth - spacing * (columns - 1)) / columns;
+        return Wrap(
+          spacing: spacing,
+          children: [
+            for (final child in children)
+              SizedBox(width: itemWidth, child: child),
+          ],
+        );
+      },
     );
   }
 }

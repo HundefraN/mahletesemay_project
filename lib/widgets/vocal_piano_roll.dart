@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
+import 'package:mahlete_semay_project/utils/app_themes.dart';
 import 'package:mahlete_semay_project/utils/constants.dart';
+import 'package:mahlete_semay_project/utils/responsive_sizer.dart';
 
 class VocalPianoRoll extends StatelessWidget {
   final String? lowestNote;
@@ -71,17 +73,21 @@ class VocalPianoRoll extends StatelessWidget {
       }
     }
 
+    final lowMarker = isDark ? AppThemes.celestialGold : AppThemes.royalNavy;
+    final highMarker =
+        isDark ? AppThemes.celestialGoldLight : AppThemes.celestialGoldDark;
+
     return Card(
-      elevation: 3,
+      elevation: 2,
       shadowColor: theme.colorScheme.primary.withValues(alpha: 0.12),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(context.w(14)),
         side: BorderSide(
           color: theme.colorScheme.outline.withValues(alpha: 0.1),
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(18.0),
+        padding: EdgeInsets.all(context.w(12)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -93,9 +99,9 @@ class VocalPianoRoll extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Vocal Range Roll',
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: context.sp(13),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -103,12 +109,12 @@ class VocalPianoRoll extends StatelessWidget {
                 if (voiceTypeRange != null)
                   Flexible(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: context.w(8), vertical: context.w(3)),
                       decoration: BoxDecoration(
                         color:
                             theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(context.w(14)),
                         border: Border.all(
                           color: theme.colorScheme.primary.withValues(alpha: 0.2),
                         ),
@@ -118,7 +124,7 @@ class VocalPianoRoll extends StatelessWidget {
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onPrimaryContainer,
                           fontWeight: FontWeight.bold,
-                          fontSize: 11,
+                          fontSize: context.sp(10),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -126,24 +132,24 @@ class VocalPianoRoll extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: context.w(10)),
 
             // Piano Keyboard Visualizer Box
             Container(
               padding: const EdgeInsets.symmetric(vertical: 4),
               decoration: BoxDecoration(
                 color: isDark ? Colors.grey.shade900 : Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(context.w(10)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
               child: SizedBox(
-                height: 115,
+                height: context.w(86),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final totalWhiteKeys = whiteKeysMidi.length;
@@ -181,7 +187,7 @@ class VocalPianoRoll extends StatelessWidget {
 
                             return Container(
                               width: keyWidth,
-                              height: 108,
+                              height: context.w(80),
                               decoration: BoxDecoration(
                                 color: baseColor,
                                 gradient: LinearGradient(
@@ -212,7 +218,7 @@ class VocalPianoRoll extends StatelessWidget {
                                       child: Text(
                                         'C$octaveNum',
                                         style: TextStyle(
-                                          fontSize: 9,
+                                          fontSize: context.sp(8),
                                           fontWeight: FontWeight.bold,
                                           color: isCurrent
                                               ? Colors.white
@@ -224,33 +230,36 @@ class VocalPianoRoll extends StatelessWidget {
                                     ),
                                   if (isLowest)
                                     Positioned(
-                                      top: 6,
+                                      top: context.w(4),
                                       child: Container(
-                                        padding: const EdgeInsets.all(2),
-                                        decoration: const BoxDecoration(
-                                          color: Colors.blueAccent,
+                                        padding: EdgeInsets.all(context.w(2)),
+                                        decoration: BoxDecoration(
+                                          color: lowMarker,
                                           shape: BoxShape.circle,
                                         ),
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.arrow_downward_rounded,
-                                          size: 8,
+                                          size: context.w(7),
                                           color: Colors.white,
                                         ),
                                       ),
                                     ),
                                   if (isHighest)
                                     Positioned(
-                                      top: 6,
+                                      top: context.w(4),
                                       child: Container(
-                                        padding: const EdgeInsets.all(2),
-                                        decoration: const BoxDecoration(
-                                          color: Colors.purpleAccent,
+                                        padding: EdgeInsets.all(context.w(2)),
+                                        decoration: BoxDecoration(
+                                          color: highMarker,
                                           shape: BoxShape.circle,
                                         ),
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.arrow_upward_rounded,
-                                          size: 8,
-                                          color: Colors.white,
+                                          size: context.w(7),
+                                          color: ThemeData.estimateBrightnessForColor(highMarker) ==
+                                                  Brightness.dark
+                                              ? Colors.white
+                                              : AppThemes.royalNavy,
                                         ),
                                       ),
                                     ),
@@ -299,7 +308,7 @@ class VocalPianoRoll extends StatelessWidget {
                             left: leftOffset,
                             top: 0,
                             width: blackWidth,
-                            height: 68,
+                            height: context.w(50),
                             child: Container(
                               decoration: BoxDecoration(
                                 color: keyColor,
@@ -328,7 +337,7 @@ class VocalPianoRoll extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 14),
+            SizedBox(height: context.w(10)),
 
             // Modern Styled Legend Indicators
             Row(
@@ -338,14 +347,14 @@ class VocalPianoRoll extends StatelessWidget {
                   color: theme.colorScheme.primary.withValues(alpha: 0.4),
                   label: AppLocalizations.of(context)?.analyzedRange ?? 'Analyzed Range',
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: context.w(8)),
                 _LegendPill(
-                  color: Colors.blueAccent,
+                  color: lowMarker,
                   label: AppLocalizations.of(context)?.lowNote ?? 'Low Note',
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: context.w(8)),
                 _LegendPill(
-                  color: Colors.purpleAccent,
+                  color: highMarker,
                   label: AppLocalizations.of(context)?.highNote ?? 'High Note',
                 ),
               ],
@@ -368,24 +377,24 @@ class _LegendPill extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 8,
-          height: 8,
+          width: context.w(7),
+          height: context.w(7),
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
                 color: color.withValues(alpha: 0.4),
-                blurRadius: 4,
+                blurRadius: 3,
               )
             ],
           ),
         ),
-        const SizedBox(width: 5),
+        SizedBox(width: context.w(4)),
         Text(
           label,
           style: TextStyle(
-            fontSize: 11,
+            fontSize: context.sp(10),
             fontWeight: FontWeight.w600,
             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),

@@ -111,11 +111,7 @@ class AuthProvider with ChangeNotifier {
     try {
       User? user;
       try {
-        final response = await _supabase.auth.signInWithPassword(
-          email: normalizedEmail,
-          password: trimmedPassword,
-        );
-        user = response.user;
+        user = await _signInRepairingSchema(normalizedEmail, trimmedPassword);
       } on AuthException catch (e) {
         final msg = e.message.toLowerCase();
         // If email not confirmed, attempt auto confirmation then retry
@@ -124,21 +120,13 @@ class AuthProvider with ChangeNotifier {
             final dummySignUp = await _supabase.auth.signUp(email: normalizedEmail, password: trimmedPassword);
             if (dummySignUp.user != null) {
               await _supabaseService.confirmUserEmail(dummySignUp.user!.id);
-              final retryRes = await _supabase.auth.signInWithPassword(email: normalizedEmail, password: trimmedPassword);
-              user = retryRes.user;
+              user = await _signInRepairingSchema(normalizedEmail, trimmedPassword);
             }
-          } catch (_) {}
-        } else if (msg.contains('schema') || msg.contains('database error')) {
-          // Self-heal auth.users token columns and retry
-          try {
-            await _supabaseService.repairAuthUsersSchema();
-            final retryRes = await _supabase.auth.signInWithPassword(email: normalizedEmail, password: trimmedPassword);
-            user = retryRes.user;
           } catch (_) {}
         }
 
         if (user == null) {
-          if (e.message.toLowerCase().contains('database error querying schema')) {
+          if (msg.contains('database error querying schema') || msg.contains('unexpected_failure')) {
             _authError = "Account synchronization in progress. Please try logging in again.";
           } else {
             _authError = e.message;
@@ -272,6 +260,32 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  String _friendlyInviteError(String? rawError, String displayCode) {
+    final error = (rawError ?? '').toLowerCase();
+    if (error.contains('not found') || error.contains('invalid invitation')) {
+      return "Invitation code '$displayCode' was not found. Please check your code or ask an admin for a new invite.";
+    }
+    if (rawError != null && rawError.trim().isNotEmpty) {
+      return rawError;
+    }
+    return 'Could not claim account. Please check your invitation code and email.';
+  }
+
+  Future<User?> _signInRepairingSchema(String email, String password) async {
+    try {
+      final res = await _supabase.auth.signInWithPassword(email: email, password: password);
+      return res.user;
+    } on AuthException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('schema') || msg.contains('database error') || msg.contains('unexpected_failure')) {
+        await _supabaseService.repairAuthUsersSchema();
+        final retry = await _supabase.auth.signInWithPassword(email: email, password: password);
+        return retry.user;
+      }
+      rethrow;
+    }
+  }
+
   Future<SignInResult> claimAccount({required String email, required String password, required String inviteCode}) async {
     _isSigningIn = true;
     _authError = null;
@@ -279,7 +293,8 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final cleanEmail = email.trim().toLowerCase();
-      final cleanCode = inviteCode.replaceAll('-', '').replaceAll(' ', '').trim().toUpperCase();
+      final displayCode = inviteCode.trim().toUpperCase();
+      final cleanCode = displayCode.replaceAll('-', '').replaceAll(' ', '');
 
       if (cleanEmail.isEmpty || !cleanEmail.contains('@')) {
         _authError = "Please enter a valid email address.";
@@ -294,89 +309,47 @@ class AuthProvider with ChangeNotifier {
         return SignInResult.failed;
       }
 
-      final invitation = await _supabaseService.getInvitationByCode(cleanCode);
-      if (invitation == null) {
-        _authError = "Invitation code '$inviteCode' was not found. Please check your code or ask an admin for a new invite.";
-        return SignInResult.failed;
-      }
-
-      if (invitation.email.toLowerCase().trim() != cleanEmail) {
-        _authError = "This invitation was issued to '${invitation.email}'. Please enter that email address to claim this account.";
-        return SignInResult.failed;
-      }
-
-      if (invitation.status.toLowerCase() == 'revoked') {
-        _authError = "This invitation was revoked by an administrator.";
-        return SignInResult.failed;
-      }
-
       final currentDeviceInfo = await _getDeviceInfo();
-      final username = "${invitation.firstName.toLowerCase().replaceAll(' ', '')}.${invitation.lastName.toLowerCase().replaceAll(' ', '')}";
 
-      // Step 1: Run secure claim stored procedure (creates/updates auth.users directly, bypassing email rate limit)
+      // Validate + claim server-side. Client SELECT on invitations is blocked
+      // for anonymous users after RLS hardening, so do not look the row up here.
       final rpcResult = await _supabaseService.claimModeratorAccountRpc(
         email: cleanEmail,
         password: password.trim(),
-        code: invitation.code,
+        code: displayCode,
         deviceInfo: currentDeviceInfo,
       );
 
-      if (rpcResult != null && rpcResult['success'] == false) {
-        _authError = rpcResult['error']?.toString() ?? 'Could not claim account.';
+      if (rpcResult == null) {
+        _authError = "Could not reach the invitation service. Please try again.";
         return SignInResult.failed;
       }
 
-      // Step 2: Establish active session via signInWithPassword (no confirmation email needed)
+      if (rpcResult['success'] == false) {
+        _authError = _friendlyInviteError(rpcResult['error']?.toString(), displayCode);
+        return SignInResult.failed;
+      }
+
+      final firstName = rpcResult['first_name']?.toString() ?? '';
+      final lastName = rpcResult['last_name']?.toString() ?? '';
+      final role = rpcResult['role']?.toString() ?? 'moderator';
+      final username = "${firstName.toLowerCase().replaceAll(' ', '')}.${lastName.toLowerCase().replaceAll(' ', '')}";
+
       User? activeUser;
       try {
-        final signInRes = await _supabase.auth.signInWithPassword(
-          email: cleanEmail,
-          password: password.trim(),
-        );
-        activeUser = signInRes.user;
+        activeUser = await _signInRepairingSchema(cleanEmail, password.trim());
       } on AuthException catch (e) {
         final msg = e.message.toLowerCase();
-        if (msg.contains('schema') || msg.contains('database error')) {
-          try {
-            await _supabaseService.repairAuthUsersSchema();
-            final retry = await _supabase.auth.signInWithPassword(
-              email: cleanEmail,
-              password: password.trim(),
-            );
-            activeUser = retry.user;
-          } catch (_) {}
+        if (msg.contains('rate limit')) {
+          _authError = "Your account was successfully claimed! Please sign in from the login screen.";
+          return SignInResult.failed;
         }
-
-        if (activeUser == null) {
-          // If signIn fails, try fallback signUp / confirmation
-          try {
-            final signUpRes = await _supabase.auth.signUp(
-              email: cleanEmail,
-              password: password.trim(),
-            );
-            activeUser = signUpRes.user;
-            if (activeUser != null) {
-              await _supabaseService.confirmUserEmail(activeUser.id);
-              final retry = await _supabase.auth.signInWithPassword(email: cleanEmail, password: password.trim());
-              activeUser = retry.user;
-            }
-          } on AuthException catch (signUpErr) {
-            final sMsg = signUpErr.message.toLowerCase();
-            if (sMsg.contains('rate limit')) {
-              _authError = "Your account was successfully claimed and updated! Please sign in from the login screen.";
-            } else {
-              _authError = signUpErr.message;
-            }
-            return SignInResult.failed;
-          } catch (_) {
-            if (e.message.toLowerCase().contains('database error querying schema')) {
-              _authError = "Account synchronized successfully. Please sign in directly with your email and password.";
-            } else {
-              _authError = e.message;
-            }
-            return SignInResult.failed;
-          }
+        if (msg.contains('schema') || msg.contains('database error') || msg.contains('unexpected_failure')) {
+          _authError = "Account synchronized successfully. Please sign in directly with your email and password.";
+          return SignInResult.failed;
         }
+        _authError = e.message;
+        return SignInResult.failed;
       } catch (e) {
         _authError = "Sign-in after claim failed: ${e.toString()}";
         return SignInResult.failed;
@@ -384,18 +357,19 @@ class AuthProvider with ChangeNotifier {
 
       final verifiedUser = activeUser ?? _supabase.auth.currentUser;
       if (verifiedUser == null) {
-        _authError = "Could not establish user authentication session.";
+        _authError = "Your account was claimed. Please sign in with your email and password.";
         return SignInResult.failed;
       }
 
-      // Step 3: Ensure moderator profile and invitation are updated
+      await _supabaseService.confirmUserEmail(verifiedUser.id);
+
       final moderatorData = {
         'id': verifiedUser.id,
         'email': cleanEmail,
-        'first_name': invitation.firstName,
-        'last_name': invitation.lastName,
+        'first_name': firstName,
+        'last_name': lastName,
         'username': username,
-        'role': invitation.role,
+        'role': role,
         'status': 'active',
         'is_active': true,
         'approved_devices': currentDeviceInfo != null ? [currentDeviceInfo] : [],
@@ -403,23 +377,12 @@ class AuthProvider with ChangeNotifier {
         'created_at': DateTime.now().toIso8601String(),
         'last_login': DateTime.now().toIso8601String(),
       };
-      await _supabaseService.setModeratorData(verifiedUser.id, moderatorData);
-      await _supabaseService.claimInvitation(invitation.id, verifiedUser.id);
-      await _supabaseService.confirmUserEmail(verifiedUser.id);
 
-      // Step 4: Log activity
-      await _supabaseService.logActivity(
-        moderatorId: verifiedUser.id,
-        moderatorName: '${invitation.firstName} ${invitation.lastName}',
-        action: 'ACCOUNT_CLAIMED',
-        details: 'Claimed ${invitation.role.toUpperCase()} account with code ${invitation.code}',
-      );
-
-      // Step 7: Load freshly synced moderator profile
       final freshDoc = await _supabaseService.getModeratorDoc(verifiedUser.id);
       if (freshDoc.exists) {
         _moderator = Moderator.fromMap(freshDoc.data(), verifiedUser.id);
       } else {
+        await _supabaseService.setModeratorData(verifiedUser.id, moderatorData);
         _moderator = Moderator.fromMap(moderatorData, verifiedUser.id);
       }
 

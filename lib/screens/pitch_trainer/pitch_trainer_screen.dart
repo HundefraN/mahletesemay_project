@@ -394,7 +394,7 @@ class _PitchTrainerScreenState extends State<PitchTrainerScreen>
                             // Main Control Action Button
                             SizedBox(height: context.w(16)),
                             _buildMainActionButton(theme),
-                            SizedBox(height: context.w(12)),
+                            SizedBox(height: context.w(120)),
                           ],
                         ),
                       ),

@@ -14,6 +14,7 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../models/song_model.dart';
 import '../../providers/song_provider.dart';
 import '../../services/search_service.dart';
+import '../../utils/responsive_sizer.dart';
 import '../../widgets/web_content_wrapper.dart';
 import '../lyrics/song_detail_screen.dart';
 
@@ -101,7 +102,8 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
             align: ContentAlign.bottom,
             child: _buildTutorialContent(
               l10n?.tutorialFilterScaleTitle ?? "Filter by Scale",
-              l10n?.tutorialFilterScaleDesc ?? "First, press a scale like 'Tizita Minor' to see all songs in that musical key.",
+              l10n?.tutorialFilterScaleDesc ??
+                  "First, press a scale like 'Tizita Minor' to see all songs in that musical key.",
             ),
           ),
         ],
@@ -117,7 +119,8 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
             align: ContentAlign.bottom,
             child: _buildTutorialContent(
               l10n?.tutorialFilterRhythmTitle ?? "Filter by Rhythm",
-              l10n?.tutorialFilterRhythmDesc ?? "Then, press a rhythm like 'Waltz' to find songs that match both the key and the beat.",
+              l10n?.tutorialFilterRhythmDesc ??
+                  "Then, press a rhythm like 'Waltz' to find songs that match both the key and the beat.",
             ),
           ),
         ],
@@ -132,7 +135,8 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
             align: ContentAlign.bottom,
             child: _buildTutorialContent(
               l10n?.tutorialSearchTitle ?? "Or, Search Directly",
-              l10n?.tutorialSearchDesc ?? "Alternatively, press the search icon to find any song by its title, artist, or lyrics.",
+              l10n?.tutorialSearchDesc ??
+                  "Alternatively, press the search icon to find any song by its title, artist, or lyrics.",
             ),
           ),
         ],
@@ -220,13 +224,17 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
       final daysAgo = DateTime.now().difference(song.createdAt.toDate()).inDays;
       final recencyScore = 1.0 / (daysAgo + 1.0);
       final popularityScore = song.viewCount / maxViews;
-      
+
       // Bonus score for songs with specified Scale & Rhythm which enable seamless mashups
       double mashupMetaDataBonus = 0.0;
-      if (song.scale != null && song.scale!.isNotEmpty) mashupMetaDataBonus += 0.25;
-      if (song.rhythm != null && song.rhythm!.isNotEmpty) mashupMetaDataBonus += 0.25;
+      if (song.scale != null && song.scale!.isNotEmpty)
+        mashupMetaDataBonus += 0.25;
+      if (song.rhythm != null && song.rhythm!.isNotEmpty)
+        mashupMetaDataBonus += 0.25;
 
-      final totalScore = (popularityScore * 0.5) + (recencyScore * 0.25) + (mashupMetaDataBonus * 0.25);
+      final totalScore = (popularityScore * 0.5) +
+          (recencyScore * 0.25) +
+          (mashupMetaDataBonus * 0.25);
       scoredSongs.add((song: song, score: totalScore));
     }
 
@@ -299,7 +307,8 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
                 )
               else
                 IconButton(
-                  tooltip: AppLocalizations.of(context)?.syncFromServer ?? "Sync from Server",
+                  tooltip: AppLocalizations.of(context)?.syncFromServer ??
+                      "Sync from Server",
                   iconSize: 20,
                   icon: Icon(
                     Icons.sync_rounded,
@@ -311,7 +320,8 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
                 margin: const EdgeInsets.only(right: 12),
                 child: IconButton(
                   key: searchKey,
-                  tooltip: AppLocalizations.of(context)?.searchSongs ?? "Search Songs",
+                  tooltip: AppLocalizations.of(context)?.searchSongs ??
+                      "Search Songs",
                   iconSize: 20,
                   icon: Icon(
                     Icons.search_rounded,
@@ -323,7 +333,10 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
             ],
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(40),
-              child: Container(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: context.maxContentWidth),
+                  child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest
@@ -361,9 +374,10 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.flag_rounded, size: 14),
+                          const Icon(Icons.flag_rounded, size: 10),
                           const SizedBox(width: 6),
-                          Text('${AppLocalizations.of(context)?.ethiopianArtists.toUpperCase() ?? 'ETHIOPIAN'} (${ethiopianSongs.length})'),
+                          Text(
+                              '${AppLocalizations.of(context)?.ethiopianArtists.toUpperCase() ?? 'ETHIOPIAN'} (${ethiopianSongs.length})', style: const TextStyle(fontSize: 10),),
                         ],
                       ),
                     ),
@@ -371,13 +385,16 @@ class _MashupHelperScreenState extends State<MashupHelperScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.public_rounded, size: 14),
+                          const Icon(Icons.public_rounded, size: 10),
                           const SizedBox(width: 6),
-                          Text('${AppLocalizations.of(context)?.worldwideArtists.toUpperCase() ?? 'WORLDWIDE'} (${worldwideSongs.length})'),
+                          Text(
+                              '${AppLocalizations.of(context)?.worldwideArtists.toUpperCase() ?? 'WORLDWIDE'} (${worldwideSongs.length})', style: const TextStyle(fontSize: 10),),
                         ],
                       ),
                     ),
                   ],
+                ),
+              ),
                 ),
               ),
             ),
@@ -580,7 +597,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
       onRefresh: () => songProvider.refreshData(),
       color: Theme.of(context).colorScheme.primary,
       child: WebContentWrapper(
-        maxWidth: 1000,
+        maxWidth: 1100,
         child: Column(
           children: [
             AnimatedBuilder(
@@ -628,7 +645,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
   Widget _buildEmptyState(SongProvider songProvider) {
     final theme = Theme.of(context);
     return ListView(
-      padding: const EdgeInsets.all(24.0),
+      padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + context.bottomNavClearance),
       children: [
         const SizedBox(height: 40),
         Center(
@@ -647,7 +664,8 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
         ),
         const SizedBox(height: 20),
         Text(
-          AppLocalizations.of(context)?.noMashupMatch ?? 'No Mashup Songs Found',
+          AppLocalizations.of(context)?.noMashupMatch ??
+              'No Mashup Songs Found',
           textAlign: TextAlign.center,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
@@ -674,10 +692,10 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
                         strokeWidth: 2, color: Colors.white),
                   )
                 : const Icon(Icons.sync_rounded, size: 18),
-            label: Text(
-                songProvider.isSyncing
-                    ? (AppLocalizations.of(context)?.syncing ?? 'Syncing...')
-                    : (AppLocalizations.of(context)?.fetchFromServer ?? 'Fetch from Server')),
+            label: Text(songProvider.isSyncing
+                ? (AppLocalizations.of(context)?.syncing ?? 'Syncing...')
+                : (AppLocalizations.of(context)?.fetchFromServer ??
+                    'Fetch from Server')),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: Colors.white,
@@ -716,7 +734,8 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
         onTapOutside: (_) => FocusScope.of(context).unfocus(),
         style: const TextStyle(fontSize: 13),
         decoration: InputDecoration(
-          hintText: AppLocalizations.of(context)?.searchHint ?? 'Search songs, artists, lyrics...',
+          hintText: AppLocalizations.of(context)?.searchHint ??
+              'Search songs, artists, lyrics...',
           hintStyle: TextStyle(
             fontSize: 13,
             color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
@@ -763,7 +782,8 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
       children: [
         _buildModernChipList(
           key: widget.scaleFilterKey,
-          title: AppLocalizations.of(context)?.musicalScaleKey ?? 'Musical Scale (Key)',
+          title: AppLocalizations.of(context)?.musicalScaleKey ??
+              'Musical Scale (Key)',
           icon: Icons.tune_rounded,
           items: _sortedScales,
           selectedItem: _selectedScale,
@@ -788,7 +808,8 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
         if (sortedRhythms != null)
           _buildModernChipList(
             key: widget.rhythmFilterKey,
-            title: AppLocalizations.of(context)?.rhythmPattern ?? 'Rhythm Pattern',
+            title:
+                AppLocalizations.of(context)?.rhythmPattern ?? 'Rhythm Pattern',
             icon: Icons.speed_rounded,
             items: sortedRhythms,
             selectedItem: _selectedRhythm,
@@ -829,7 +850,8 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
             ),
             const SizedBox(height: 12),
             Text(
-              AppLocalizations.of(context)?.selectRhythmPattern ?? 'Select a Rhythm Pattern',
+              AppLocalizations.of(context)?.selectRhythmPattern ??
+                  'Select a Rhythm Pattern',
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -850,24 +872,46 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
   }
 
   Widget _buildSongsList(List<Song> songs) {
-    return ListView.builder(
-      key: ValueKey('$_selectedScale-$_selectedRhythm'),
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-      itemCount: songs.length,
-      itemBuilder: (context, index) {
-        return TweenAnimationBuilder<double>(
-          duration: Duration(milliseconds: 200 + (index * 40).clamp(0, 400)),
-          tween: Tween(begin: 0.0, end: 1.0),
-          builder: (context, value, child) {
-            return Transform.translate(
-              offset: Offset(0, (1 - value) * 15),
-              child: Opacity(
-                opacity: value,
-                child: child,
-              ),
-            );
-          },
-          child: _buildModernSongCard(context, songs[index]),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cols = context.listColumnsForWidth(constraints.maxWidth);
+        final padding =
+            EdgeInsets.fromLTRB(12, 8, 12, 8 + context.bottomNavClearance);
+
+        Widget cardAt(int index) {
+          return TweenAnimationBuilder<double>(
+            duration: Duration(milliseconds: 200 + (index * 40).clamp(0, 400)),
+            tween: Tween(begin: 0.0, end: 1.0),
+            builder: (context, value, child) {
+              return Transform.translate(
+                offset: Offset(0, (1 - value) * 15),
+                child: Opacity(opacity: value, child: child),
+              );
+            },
+            child: _buildModernSongCard(context, songs[index]),
+          );
+        }
+
+        if (cols == 1) {
+          return ListView.builder(
+            key: ValueKey('$_selectedScale-$_selectedRhythm'),
+            padding: padding,
+            itemCount: songs.length,
+            itemBuilder: (context, index) => cardAt(index),
+          );
+        }
+
+        return GridView.builder(
+          key: ValueKey('$_selectedScale-$_selectedRhythm-grid'),
+          padding: padding,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisExtent: 88,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 4,
+          ),
+          itemCount: songs.length,
+          itemBuilder: (context, index) => cardAt(index),
         );
       },
     );
@@ -878,13 +922,37 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
     if (_searchResults.isEmpty) {
       return _buildNoResultsState();
     }
-    return ListView.builder(
-      key: const ValueKey('results'),
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-      itemCount: _searchResults.length,
-      itemBuilder: (context, index) {
-        final result = _searchResults[index];
-        return _buildModernSongCard(context, result.item, result: result);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cols = context.listColumnsForWidth(constraints.maxWidth);
+        final padding =
+            EdgeInsets.fromLTRB(12, 8, 12, 8 + context.bottomNavClearance);
+        if (cols == 1) {
+          return ListView.builder(
+            key: const ValueKey('results'),
+            padding: padding,
+            itemCount: _searchResults.length,
+            itemBuilder: (context, index) {
+              final result = _searchResults[index];
+              return _buildModernSongCard(context, result.item, result: result);
+            },
+          );
+        }
+        return GridView.builder(
+          key: const ValueKey('results-grid'),
+          padding: padding,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisExtent: 88,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 4,
+          ),
+          itemCount: _searchResults.length,
+          itemBuilder: (context, index) {
+            final result = _searchResults[index];
+            return _buildModernSongCard(context, result.item, result: result);
+          },
+        );
       },
     );
   }
@@ -910,7 +978,8 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
           ),
           const SizedBox(height: 12),
           Text(
-            AppLocalizations.of(context)?.noMatchingSongs ?? 'No matching songs found',
+            AppLocalizations.of(context)?.noMatchingSongs ??
+                'No matching songs found',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -939,8 +1008,15 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
     Key? key,
   }) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final activeColor =
         isPrimary ? theme.colorScheme.primary : theme.colorScheme.secondary;
+    // Gold chips need dark text; navy chips need light/gold text.
+    final onActiveColor = isPrimary
+        ? theme.colorScheme.onPrimary
+        : theme.colorScheme.onSecondary;
+    final unselectedCountColor =
+        isDark ? theme.colorScheme.primary : activeColor;
 
     return Container(
       key: key,
@@ -975,13 +1051,20 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
                 final item = items[index];
                 final isSelected = item == selectedItem;
                 final count = getItemCount(item);
+                final chipLabelColor = isSelected
+                    ? onActiveColor
+                    : theme.colorScheme.onSurface;
+                final countColor =
+                    isSelected ? onActiveColor : unselectedCountColor;
 
                 return Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     child: ChoiceChip(
+                      showCheckmark: false,
                       labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                      labelStyle: TextStyle(color: chipLabelColor),
                       label: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -992,9 +1075,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
                               fontWeight: isSelected
                                   ? FontWeight.bold
                                   : FontWeight.w500,
-                              color: isSelected
-                                  ? Colors.white
-                                  : theme.colorScheme.onSurface,
+                              color: chipLabelColor,
                             ),
                           ),
                           if (count > 0) ...[
@@ -1003,9 +1084,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 5, vertical: 1),
                               decoration: BoxDecoration(
-                                color: isSelected
-                                    ? Colors.white.withValues(alpha: 0.25)
-                                    : activeColor.withValues(alpha: 0.12),
+                                color: countColor.withValues(alpha: 0.22),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
@@ -1013,8 +1092,7 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  color:
-                                      isSelected ? Colors.white : activeColor,
+                                  color: countColor,
                                 ),
                               ),
                             ),
@@ -1032,7 +1110,8 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
                         side: BorderSide(
                           color: isSelected
                               ? activeColor
-                              : theme.colorScheme.outline.withValues(alpha: 0.2),
+                              : theme.colorScheme.outline
+                                  .withValues(alpha: 0.2),
                           width: isSelected ? 1.5 : 1.0,
                         ),
                       ),
@@ -1098,7 +1177,8 @@ class _MashupCategoryListState extends State<_MashupCategoryList>
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.2),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           )

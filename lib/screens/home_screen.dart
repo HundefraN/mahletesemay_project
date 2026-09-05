@@ -121,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
         if (isSetlistScreen)
           Positioned(
-            bottom: 80.0,
+            bottom: context.isPhone ? 80.0 : 16.0,
             right: 0,
             child: FloatingActionButton(
               onPressed: () => _showCreateSetlistDialog(context),
@@ -767,6 +767,7 @@ class _CreateSetlistDialogState extends State<_CreateSetlistDialog> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: Container(
+          constraints: const BoxConstraints(maxWidth: 440),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: theme.cardColor.withValues(alpha: 0.9),

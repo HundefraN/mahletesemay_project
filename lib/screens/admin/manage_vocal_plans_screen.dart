@@ -21,110 +21,124 @@ class ManageVocalPlansScreen extends StatelessWidget {
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 19),
         ),
       ),
-      body: ListView(
+      body: AdminPageBody(
+        child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           physics: const BouncingScrollPhysics(),
           children: [
-          // Daily Plans
           AdminSectionHeader(
             title: l10n?.dailyTrainingPlans ?? 'Daily Training Plans',
             icon: Icons.wb_sunny_rounded,
             padding: const EdgeInsets.only(top: 8, bottom: 10),
           ),
-          _buildPlanCard(
-            context,
-            title: l10n?.maleDailyPlan ?? 'Male Daily Vocal Plan',
-            subtitle: l10n?.maleDailyPlanSubtitle ?? 'Daily routine drills for male vocal ranges',
-            planId: 'male_daily',
-            icon: Icons.male_rounded,
-            accentColor: AdminUiKit.royalBlue,
-          ),
-          _buildPlanCard(
-            context,
-            title: l10n?.femaleDailyPlan ?? 'Female Daily Vocal Plan',
-            subtitle: l10n?.femaleDailyPlanSubtitle ?? 'Daily routine drills for female vocal ranges',
-            planId: 'female_daily',
-            icon: Icons.female_rounded,
-            accentColor: AdminUiKit.violetPurple,
+          AdminResponsiveWrap(
+            children: [
+              _buildPlanCard(
+                context,
+                title: l10n?.maleDailyPlan ?? 'Male Daily Vocal Plan',
+                subtitle: l10n?.maleDailyPlanSubtitle ?? 'Daily routine drills for male vocal ranges',
+                planId: 'male_daily',
+                icon: Icons.male_rounded,
+                accentColor: AdminUiKit.royalBlue,
+              ),
+              _buildPlanCard(
+                context,
+                title: l10n?.femaleDailyPlan ?? 'Female Daily Vocal Plan',
+                subtitle: l10n?.femaleDailyPlanSubtitle ?? 'Daily routine drills for female vocal ranges',
+                planId: 'female_daily',
+                icon: Icons.female_rounded,
+                accentColor: AdminUiKit.violetPurple,
+              ),
+            ],
           ),
 
           const SizedBox(height: 16),
 
-          // Weekly Plans
           AdminSectionHeader(
             title: l10n?.weeklyCurriculums ?? 'Weekly 7-Day Curriculums',
             icon: Icons.calendar_view_week_rounded,
             padding: const EdgeInsets.only(top: 8, bottom: 10),
           ),
-          _buildPlanCard(
-            context,
-            title: l10n?.maleWeeklyPlan ?? 'Male Weekly Plan',
-            subtitle: l10n?.weeklyPlanSubtitle ?? 'Structured 7-day progressive workout',
-            planId: 'male_weekly',
-            icon: Icons.male_rounded,
-            accentColor: AdminUiKit.royalBlue,
-          ),
-          _buildPlanCard(
-            context,
-            title: l10n?.femaleWeeklyPlan ?? 'Female Weekly Plan',
-            subtitle: l10n?.weeklyPlanSubtitle ?? 'Structured 7-day progressive workout',
-            planId: 'female_weekly',
-            icon: Icons.female_rounded,
-            accentColor: AdminUiKit.violetPurple,
+          AdminResponsiveWrap(
+            children: [
+              _buildPlanCard(
+                context,
+                title: l10n?.maleWeeklyPlan ?? 'Male Weekly Plan',
+                subtitle: l10n?.weeklyPlanSubtitle ?? 'Structured 7-day progressive workout',
+                planId: 'male_weekly',
+                icon: Icons.male_rounded,
+                accentColor: AdminUiKit.royalBlue,
+              ),
+              _buildPlanCard(
+                context,
+                title: l10n?.femaleWeeklyPlan ?? 'Female Weekly Plan',
+                subtitle: l10n?.weeklyPlanSubtitle ?? 'Structured 7-day progressive workout',
+                planId: 'female_weekly',
+                icon: Icons.female_rounded,
+                accentColor: AdminUiKit.violetPurple,
+              ),
+            ],
           ),
 
           const SizedBox(height: 16),
 
-          // Monthly Plans
           AdminSectionHeader(
             title: l10n?.monthlyIntensives ?? 'Monthly 30-Day Intensives',
             icon: Icons.calendar_month_rounded,
             padding: const EdgeInsets.only(top: 8, bottom: 10),
           ),
-          _buildPlanCard(
-            context,
-            title: l10n?.maleMonthlyPlan ?? 'Male Monthly Plan',
-            subtitle: l10n?.monthlyPlanSubtitle ?? '30-day stamina and range expansion',
-            planId: 'male_monthly',
-            icon: Icons.male_rounded,
-            accentColor: AdminUiKit.royalBlue,
-          ),
-          _buildPlanCard(
-            context,
-            title: l10n?.femaleMonthlyPlan ?? 'Female Monthly Plan',
-            subtitle: l10n?.monthlyPlanSubtitle ?? '30-day stamina and range expansion',
-            planId: 'female_monthly',
-            icon: Icons.female_rounded,
-            accentColor: AdminUiKit.violetPurple,
+          AdminResponsiveWrap(
+            children: [
+              _buildPlanCard(
+                context,
+                title: l10n?.maleMonthlyPlan ?? 'Male Monthly Plan',
+                subtitle: l10n?.monthlyPlanSubtitle ?? '30-day stamina and range expansion',
+                planId: 'male_monthly',
+                icon: Icons.male_rounded,
+                accentColor: AdminUiKit.royalBlue,
+              ),
+              _buildPlanCard(
+                context,
+                title: l10n?.femaleMonthlyPlan ?? 'Female Monthly Plan',
+                subtitle: l10n?.monthlyPlanSubtitle ?? '30-day stamina and range expansion',
+                planId: 'female_monthly',
+                icon: Icons.female_rounded,
+                accentColor: AdminUiKit.violetPurple,
+              ),
+            ],
           ),
 
           const SizedBox(height: 16),
 
-          // Quarterly Plans
           AdminSectionHeader(
             title: l10n?.quarterlyMasteries ?? 'Quarterly (90-Day) Masteries',
             icon: Icons.military_tech_rounded,
             padding: const EdgeInsets.only(top: 8, bottom: 10),
           ),
-          _buildPlanCard(
-            context,
-            title: l10n?.maleQuarterlyPlan ?? 'Male Quarterly Plan',
-            subtitle: l10n?.quarterlyPlanSubtitle ?? 'Comprehensive 3-month vocal mastery',
-            planId: 'male_quarterly',
-            icon: Icons.male_rounded,
-            accentColor: AdminUiKit.royalBlue,
-          ),
-          _buildPlanCard(
-            context,
-            title: l10n?.femaleQuarterlyPlan ?? 'Female Quarterly Plan',
-            subtitle: l10n?.quarterlyPlanSubtitle ?? 'Comprehensive 3-month vocal mastery',
-            planId: 'female_quarterly',
-            icon: Icons.female_rounded,
-            accentColor: AdminUiKit.violetPurple,
+          AdminResponsiveWrap(
+            children: [
+              _buildPlanCard(
+                context,
+                title: l10n?.maleQuarterlyPlan ?? 'Male Quarterly Plan',
+                subtitle: l10n?.quarterlyPlanSubtitle ?? 'Comprehensive 3-month vocal mastery',
+                planId: 'male_quarterly',
+                icon: Icons.male_rounded,
+                accentColor: AdminUiKit.royalBlue,
+              ),
+              _buildPlanCard(
+                context,
+                title: l10n?.femaleQuarterlyPlan ?? 'Female Quarterly Plan',
+                subtitle: l10n?.quarterlyPlanSubtitle ?? 'Comprehensive 3-month vocal mastery',
+                planId: 'female_quarterly',
+                icon: Icons.female_rounded,
+                accentColor: AdminUiKit.violetPurple,
+              ),
+            ],
           ),
 
           const SizedBox(height: 40),
         ],
+        ),
       ),
     );
   }

@@ -3,9 +3,9 @@ import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/artist_model.dart';
 import '../../models/song_model.dart';
 import '../../providers/auth_proveider.dart';
+import '../../providers/song_provider.dart';
 import '../../services/firebase_service.dart';
 import '../../services/search_service.dart';
 import '../../widgets/custom_snackbar.dart';
@@ -21,15 +21,12 @@ class ManageSongsScreen extends StatefulWidget {
 }
 
 class _ManageSongsScreenState extends State<ManageSongsScreen> with SingleTickerProviderStateMixin {
-  final FirebaseService _firebaseService = FirebaseService();
-  late Future<Map<String, List<Song>>> _songsFuture;
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _songsFuture = _loadAndCategorizeSongs();
   }
 
   @override
@@ -38,35 +35,8 @@ class _ManageSongsScreenState extends State<ManageSongsScreen> with SingleTicker
     super.dispose();
   }
 
-  Future<Map<String, List<Song>>> _loadAndCategorizeSongs() async {
-    final List<Song> allSongs = await _firebaseService.getSongs();
-    final List<Artist> allArtists = await _firebaseService.getArtists();
-
-    final Map<String, String> artistIdToRegionMap = {
-      for (var artist in allArtists) artist.id: artist.region
-    };
-
-    final List<Song> ethiopianSongs = [];
-    final List<Song> worldwideSongs = [];
-
-    for (var song in allSongs) {
-      if (artistIdToRegionMap[song.artistId] == 'Ethiopian') {
-        ethiopianSongs.add(song);
-      } else {
-        worldwideSongs.add(song);
-      }
-    }
-
-    return {
-      'Ethiopian': ethiopianSongs,
-      'Worldwide': worldwideSongs,
-    };
-  }
-
   void _refreshData() {
-    setState(() {
-      _songsFuture = _loadAndCategorizeSongs();
-    });
+    context.read<SongProvider>().refreshData();
   }
 
   void _navigateToAddSong() async {
@@ -74,7 +44,7 @@ class _ManageSongsScreenState extends State<ManageSongsScreen> with SingleTicker
       context,
       MaterialPageRoute(builder: (_) => const AddSongScreen()),
     );
-    if (result == true) {
+    if (result == true && mounted) {
       _refreshData();
     }
   }
@@ -83,6 +53,22 @@ class _ManageSongsScreenState extends State<ManageSongsScreen> with SingleTicker
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final songProvider = Provider.of<SongProvider>(context);
+
+    final Map<String, String> artistIdToRegionMap = {
+      for (var artist in songProvider.artists) artist.id: artist.region
+    };
+
+    final List<Song> ethiopianSongs = [];
+    final List<Song> worldwideSongs = [];
+
+    for (var song in songProvider.allSongs) {
+      if (artistIdToRegionMap[song.artistId] == 'Ethiopian') {
+        ethiopianSongs.add(song);
+      } else {
+        worldwideSongs.add(song);
+      }
+    }
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF070E1B) : const Color(0xFFF5F7FB),
@@ -105,7 +91,8 @@ class _ManageSongsScreenState extends State<ManageSongsScreen> with SingleTicker
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
-          child: Container(
+          child: AdminConstrainedBar(
+            child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF13233D) : Colors.black.withValues(alpha: 0.04),
@@ -137,46 +124,25 @@ class _ManageSongsScreenState extends State<ManageSongsScreen> with SingleTicker
               ],
             ),
           ),
+          ),
         ),
       ),
-      body: FutureBuilder<Map<String, List<Song>>>(
-        future: _songsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: AdminUiKit.goldAccent),
-            );
-          }
-          if (snapshot.hasError) {
-            return AdminEmptyState(
-              icon: Icons.error_outline_rounded,
-              title: AppLocalizations.of(context)?.failedToLoadSongs ?? 'Failed to load songs',
-              description: snapshot.error.toString(),
-              actionLabel: 'Retry',
-              onAction: _refreshData,
-            );
-          }
-
-          final categorizedSongs = snapshot.data ?? {};
-
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              _SongListTab(
-                category: 'Ethiopian',
-                songs: categorizedSongs['Ethiopian'] ?? [],
-                onDataChanged: _refreshData,
-                onAddSong: _navigateToAddSong,
-              ),
-              _SongListTab(
-                category: 'Worldwide',
-                songs: categorizedSongs['Worldwide'] ?? [],
-                onDataChanged: _refreshData,
-                onAddSong: _navigateToAddSong,
-              ),
-            ],
-          );
-        },
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _SongListTab(
+            category: 'Ethiopian',
+            songs: ethiopianSongs,
+            onDataChanged: _refreshData,
+            onAddSong: _navigateToAddSong,
+          ),
+          _SongListTab(
+            category: 'Worldwide',
+            songs: worldwideSongs,
+            onDataChanged: _refreshData,
+            onAddSong: _navigateToAddSong,
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
@@ -357,7 +323,8 @@ class _SongListTabState extends State<_SongListTab> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Column(
+    return AdminPageBody(
+      child: Column(
         children: [
         // Selection Bar or Search Field
         Padding(
@@ -421,7 +388,7 @@ class _SongListTabState extends State<_SongListTab> {
               : RefreshIndicator(
                   color: AdminUiKit.goldAccent,
                   onRefresh: () async => widget.onDataChanged(),
-                  child: ListView.builder(
+                  child: AdminResponsiveItemList(
                     padding: const EdgeInsets.fromLTRB(16, 6, 16, 80),
                     physics: const BouncingScrollPhysics(),
                     itemCount: _filteredSongs.length,
@@ -580,6 +547,7 @@ class _SongListTabState extends State<_SongListTab> {
                 ),
         ),
       ],
+      ),
     );
   }
 }

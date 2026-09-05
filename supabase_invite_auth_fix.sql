@@ -1,15 +1,20 @@
 -- ==============================================================================
--- Mahlete Semay - Database Fix & Permissions Script
--- Run this in your Supabase SQL Editor to enable flawless Moderator/Admin Claiming
--- (Bypasses email rate limits, fixes auth.users schema NULL tokens, and auto-confirms moderator accounts)
+-- Mahlete Semay - Invitation Claim & Auth Login Fix
+-- Run this in the Supabase SQL Editor (once) to fix:
+--   1. Moderators getting "Invitation code was not found" on signup
+--   2. Intermittent login error: Database error querying schema
 -- ==============================================================================
 
--- 0. Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 0.1 CRITICAL: Repair auth.users NULL string columns
--- Supabase GoTrue throws "500: Database error querying schema" if string columns are NULL.
+BEGIN;
+
+-- ------------------------------------------------------------------------------
+-- 1. Repair existing auth.users rows that break GoTrue login
+--    GoTrue throws "unexpected_failure / Database error querying schema"
+--    when token varchar columns are NULL.
+-- ------------------------------------------------------------------------------
 UPDATE auth.users
 SET confirmation_token = COALESCE(confirmation_token, ''),
     recovery_token = COALESCE(recovery_token, ''),
@@ -28,59 +33,53 @@ WHERE confirmation_token IS NULL
    OR phone_change IS NULL
    OR phone_change_token IS NULL;
 
--- 1. Ensure moderators table has all required columns
-ALTER TABLE public.moderators ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active';
-ALTER TABLE public.moderators ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
-ALTER TABLE public.moderators ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'moderator';
-ALTER TABLE public.moderators ADD COLUMN IF NOT EXISTS approved_devices JSONB NOT NULL DEFAULT '[]'::JSONB;
-ALTER TABLE public.moderators ADD COLUMN IF NOT EXISTS pending_device JSONB;
-ALTER TABLE public.moderators ADD COLUMN IF NOT EXISTS last_login TIMESTAMPTZ;
-UPDATE public.moderators SET is_active = (status = 'active') WHERE is_active IS NULL;
-
--- 2. Ensure invitations table has all required columns
-ALTER TABLE public.invitations ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'moderator';
-ALTER TABLE public.invitations ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending';
-ALTER TABLE public.invitations ADD COLUMN IF NOT EXISTS claimed_by TEXT;
-ALTER TABLE public.invitations ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ;
-
--- 3. Helper functions
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS BOOLEAN AS $$
+-- Keep extra GoTrue columns valid when they exist
+DO $$
 BEGIN
-    RETURN EXISTS (
-        SELECT 1 FROM public.moderators
-        WHERE id = auth.uid()::TEXT 
-          AND role = 'admin' 
-          AND (status = 'active' OR is_active IS TRUE)
-    );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+    UPDATE auth.users
+    SET email_change_confirm_status = COALESCE(email_change_confirm_status, 0)
+    WHERE email_change_confirm_status IS NULL;
+EXCEPTION WHEN undefined_column THEN
+    NULL;
+END $$;
 
-CREATE OR REPLACE FUNCTION public.is_active_moderator()
-RETURNS BOOLEAN AS $$
-BEGIN
-    RETURN EXISTS (
-        SELECT 1 FROM public.moderators
-        WHERE id = auth.uid()::TEXT 
-          AND (status = 'active' OR is_active IS TRUE)
-    );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- 4. Auto-confirm user email function
-CREATE OR REPLACE FUNCTION public.confirm_user_email(user_id UUID)
-RETURNS void
+-- ------------------------------------------------------------------------------
+-- 2. Prevent NULL tokens on every future insert/update
+-- ------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.enforce_auth_user_token_defaults()
+RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = auth
 AS $$
 BEGIN
-  UPDATE auth.users
-  SET email_confirmed_at = COALESCE(email_confirmed_at, NOW())
-  WHERE id = user_id;
+    NEW.confirmation_token := COALESCE(NEW.confirmation_token, '');
+    NEW.recovery_token := COALESCE(NEW.recovery_token, '');
+    NEW.email_change_token_new := COALESCE(NEW.email_change_token_new, '');
+    NEW.email_change := COALESCE(NEW.email_change, '');
+    NEW.email_change_token_current := COALESCE(NEW.email_change_token_current, '');
+    NEW.reauthentication_token := COALESCE(NEW.reauthentication_token, '');
+    NEW.phone_change := COALESCE(NEW.phone_change, '');
+    NEW.phone_change_token := COALESCE(NEW.phone_change_token, '');
+    RETURN NEW;
 END;
 $$;
 
+DO $$
+BEGIN
+    DROP TRIGGER IF EXISTS trg_enforce_auth_user_token_defaults ON auth.users;
+    CREATE TRIGGER trg_enforce_auth_user_token_defaults
+        BEFORE INSERT OR UPDATE ON auth.users
+        FOR EACH ROW
+        EXECUTE FUNCTION public.enforce_auth_user_token_defaults();
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Could not attach auth.users token trigger: %', SQLERRM;
+END $$;
+
+-- ------------------------------------------------------------------------------
+-- 3. Secure single-code lookup for anonymous claimers
+--    Invitations stay hidden from public table SELECT (admin-only RLS).
+-- ------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.lookup_invitation_for_claim(
     p_code TEXT,
     p_email TEXT DEFAULT NULL
@@ -136,7 +135,12 @@ BEGIN
 END;
 $$;
 
--- 4.1 Standalone procedure to self-heal auth.users schema
+CREATE INDEX IF NOT EXISTS idx_invitations_code_normalized
+    ON public.invitations (UPPER(REPLACE(REPLACE(TRIM(code), '-', ''), ' ', '')));
+
+-- ------------------------------------------------------------------------------
+-- 4. Stronger claim function: valid invite match + GoTrue-safe user/identity
+-- ------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.repair_auth_users_schema()
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -169,14 +173,11 @@ BEGIN
 END;
 $$;
 
--- 5. Drop any prior overloaded versions of claim_moderator_account
 DROP FUNCTION IF EXISTS public.claim_moderator_account(UUID, TEXT, TEXT, JSONB);
 DROP FUNCTION IF EXISTS public.claim_moderator_account(TEXT, TEXT, TEXT, JSONB, UUID);
 DROP FUNCTION IF EXISTS public.claim_moderator_account(TEXT, TEXT, TEXT, JSONB);
 DROP FUNCTION IF EXISTS public.claim_moderator_account;
 
--- 6. Bulletproof Account Claiming Stored Procedure
--- Creates/updates auth.users & moderators with bcrypt hash directly (bypasses email rate limiters)
 CREATE OR REPLACE FUNCTION public.claim_moderator_account(
     p_email TEXT,
     p_password TEXT,
@@ -203,8 +204,6 @@ BEGIN
     v_clean_email := LOWER(TRIM(p_email));
     v_clean_code := UPPER(REPLACE(REPLACE(TRIM(p_code), '-', ''), ' ', ''));
 
-    -- 1. Validate invitation code and email
-    -- Allow matching email and code even if previously marked claimed so user can finalize or re-claim credentials
     SELECT * INTO v_invitation
     FROM public.invitations
     WHERE LOWER(TRIM(email)) = v_clean_email
@@ -213,7 +212,7 @@ BEGIN
 
     IF NOT FOUND THEN
         IF EXISTS (
-            SELECT 1 FROM public.invitations 
+            SELECT 1 FROM public.invitations
             WHERE UPPER(REPLACE(REPLACE(TRIM(code), '-', ''), ' ', '')) = v_clean_code
         ) THEN
             RETURN jsonb_build_object('success', false, 'error', 'This invitation code belongs to a different email address.');
@@ -228,12 +227,10 @@ BEGIN
 
     v_role := COALESCE(v_invitation.role, 'moderator');
 
-    -- 2. Encrypt password using pgcrypto bcrypt
     IF p_password IS NOT NULL AND LENGTH(TRIM(p_password)) >= 6 THEN
         v_encrypted_pw := crypt(TRIM(p_password), gen_salt('bf', 10));
     END IF;
 
-    -- 3. Check if user already exists in auth.users
     SELECT id INTO v_existing_auth_id
     FROM auth.users
     WHERE LOWER(TRIM(email)) = v_clean_email
@@ -241,7 +238,6 @@ BEGIN
 
     IF v_existing_auth_id IS NOT NULL THEN
         v_user_id := v_existing_auth_id;
-        -- Update password and ensure all token columns are non-null strings
         UPDATE auth.users
         SET encrypted_password = COALESCE(v_encrypted_pw, encrypted_password),
             email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
@@ -257,7 +253,6 @@ BEGIN
             raw_app_meta_data = '{"provider": "email", "providers": ["email"]}'::jsonb
         WHERE id = v_user_id;
     ELSE
-        -- Create new user in auth.users directly with ALL token columns initialized to empty strings
         v_user_id := COALESCE(p_user_id, gen_random_uuid());
         INSERT INTO auth.users (
             instance_id,
@@ -302,36 +297,9 @@ BEGIN
             NOW(),
             NOW()
         );
-
-        -- Ensure identity record exists
-        BEGIN
-            INSERT INTO auth.identities (
-                id,
-                user_id,
-                identity_data,
-                provider,
-                provider_id,
-                last_sign_in_at,
-                created_at,
-                updated_at
-            ) VALUES (
-                v_user_id::text,
-                v_user_id,
-                jsonb_build_object('sub', v_user_id::TEXT, 'email', v_clean_email, 'email_verified', true),
-                'email',
-                v_user_id::text,
-                NOW(),
-                NOW(),
-                NOW()
-            )
-            ON CONFLICT (provider, id) DO UPDATE SET
-                identity_data = EXCLUDED.identity_data,
-                updated_at = NOW();
-        EXCEPTION WHEN OTHERS THEN
-            NULL;
-        END;
     END IF;
 
+    -- Always re-assert GoTrue-safe token values after insert/update
     UPDATE auth.users
     SET confirmation_token = COALESCE(confirmation_token, ''),
         recovery_token = COALESCE(recovery_token, ''),
@@ -345,6 +313,15 @@ BEGIN
         updated_at = NOW()
     WHERE id = v_user_id;
 
+    BEGIN
+        UPDATE auth.users
+        SET email_change_confirm_status = COALESCE(email_change_confirm_status, 0)
+        WHERE id = v_user_id;
+    EXCEPTION WHEN undefined_column OR OTHERS THEN
+        NULL;
+    END;
+
+    -- Ensure an email identity exists (required by current GoTrue)
     BEGIN
         IF NOT EXISTS (
             SELECT 1 FROM auth.identities
@@ -371,20 +348,37 @@ BEGIN
             );
         END IF;
     EXCEPTION WHEN OTHERS THEN
-        NULL;
+        BEGIN
+            INSERT INTO auth.identities (
+                user_id,
+                identity_data,
+                provider,
+                provider_id,
+                last_sign_in_at,
+                created_at,
+                updated_at
+            ) VALUES (
+                v_user_id,
+                jsonb_build_object('sub', v_user_id::TEXT, 'email', v_clean_email, 'email_verified', true),
+                'email',
+                v_user_id::TEXT,
+                NOW(),
+                NOW(),
+                NOW()
+            );
+        EXCEPTION WHEN OTHERS THEN
+            NULL;
+        END;
     END;
 
-    -- 4. Prepare approved devices array
     IF p_device_info IS NOT NULL AND p_device_info::TEXT != 'null' AND p_device_info::TEXT != '{}' THEN
         v_devices := jsonb_build_array(p_device_info);
     ELSE
         v_devices := '[]'::jsonb;
     END IF;
 
-    -- 5. Generate clean username
     v_username := LOWER(REPLACE(COALESCE(v_invitation.first_name, 'user'), ' ', '')) || '.' || LOWER(REPLACE(COALESCE(v_invitation.last_name, 'mod'), ' ', ''));
 
-    -- 6. Upsert moderator profile
     INSERT INTO public.moderators (
         id,
         email,
@@ -419,23 +413,21 @@ BEGIN
         role = EXCLUDED.role,
         status = 'active',
         is_active = TRUE,
-        approved_devices = CASE 
-            WHEN jsonb_array_length(public.moderators.approved_devices) > 0 AND jsonb_array_length(v_devices) > 0 
+        approved_devices = CASE
+            WHEN jsonb_array_length(public.moderators.approved_devices) > 0 AND jsonb_array_length(v_devices) > 0
                 THEN public.moderators.approved_devices || v_devices
-            WHEN jsonb_array_length(v_devices) > 0 
+            WHEN jsonb_array_length(v_devices) > 0
                 THEN v_devices
             ELSE public.moderators.approved_devices
         END,
         last_login = NOW();
 
-    -- 7. Mark invitation as claimed
     UPDATE public.invitations
     SET status = 'claimed',
         claimed_by = v_user_id::TEXT,
         claimed_at = NOW()
     WHERE id = v_invitation.id;
 
-    -- 8. Log activity
     INSERT INTO public.activity_logs (
         moderator_id,
         moderator_name,
@@ -463,128 +455,17 @@ BEGIN
 END;
 $$;
 
--- 7. Trigger for auto confirming email on moderator creation/update
-CREATE OR REPLACE FUNCTION public.auto_confirm_moderator_email()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, auth
-AS $$
-BEGIN
-  UPDATE auth.users
-  SET email_confirmed_at = COALESCE(email_confirmed_at, NOW())
-  WHERE id = NEW.id::uuid;
-  RETURN NEW;
-END;
-$$;
-
-DROP TRIGGER IF EXISTS trg_auto_confirm_moderator_email ON public.moderators;
-CREATE TRIGGER trg_auto_confirm_moderator_email
-  AFTER INSERT OR UPDATE ON public.moderators
-  FOR EACH ROW
-  EXECUTE FUNCTION public.auto_confirm_moderator_email();
-
-CREATE OR REPLACE FUNCTION public.enforce_auth_user_token_defaults()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = auth
-AS $$
-BEGIN
-  NEW.confirmation_token := COALESCE(NEW.confirmation_token, '');
-  NEW.recovery_token := COALESCE(NEW.recovery_token, '');
-  NEW.email_change_token_new := COALESCE(NEW.email_change_token_new, '');
-  NEW.email_change := COALESCE(NEW.email_change, '');
-  NEW.email_change_token_current := COALESCE(NEW.email_change_token_current, '');
-  NEW.reauthentication_token := COALESCE(NEW.reauthentication_token, '');
-  NEW.phone_change := COALESCE(NEW.phone_change, '');
-  NEW.phone_change_token := COALESCE(NEW.phone_change_token, '');
-  RETURN NEW;
-END;
-$$;
-
-DO $$
-BEGIN
-  DROP TRIGGER IF EXISTS trg_enforce_auth_user_token_defaults ON auth.users;
-  CREATE TRIGGER trg_enforce_auth_user_token_defaults
-    BEFORE INSERT OR UPDATE ON auth.users
-    FOR EACH ROW
-    EXECUTE FUNCTION public.enforce_auth_user_token_defaults();
-EXCEPTION WHEN OTHERS THEN
-  RAISE NOTICE 'Could not attach auth.users token trigger: %', SQLERRM;
-END $$;
-
--- 8. Fix RLS Policies for Invitations & Moderators
-ALTER TABLE public.invitations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.moderators ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Invitations readable for validation or admin" ON public.invitations;
-DROP POLICY IF EXISTS "Admins can manage invitations" ON public.invitations;
-DROP POLICY IF EXISTS "Anyone can claim pending invitation" ON public.invitations;
-
-CREATE POLICY "Invitations readable for validation or admin" ON public.invitations 
-    FOR SELECT USING (true);
-
-CREATE POLICY "Anyone can claim pending invitation" ON public.invitations 
-    FOR UPDATE USING (status = 'pending' OR status = 'claimed' OR is_admin());
-
-CREATE POLICY "Admins can manage invitations" ON public.invitations 
-    FOR ALL USING (is_admin());
-
-DROP POLICY IF EXISTS "Moderators can read own record or admins read all" ON public.moderators;
-DROP POLICY IF EXISTS "Moderators can update own record (devices, last login) or admin full update" ON public.moderators;
-DROP POLICY IF EXISTS "Admins can insert moderators or user upon claiming" ON public.moderators;
-DROP POLICY IF EXISTS "Admins can delete moderators" ON public.moderators;
-
-CREATE POLICY "Moderators can read own record or admins read all" ON public.moderators
-    FOR SELECT USING (auth.uid()::TEXT = id OR is_admin() OR is_active_moderator());
-
-CREATE POLICY "Moderators can update own record (devices, last login) or admin full update" ON public.moderators
-    FOR UPDATE USING (auth.uid()::TEXT = id OR is_admin());
-
-CREATE POLICY "Admins can insert moderators or user upon claiming" ON public.moderators
-    FOR INSERT WITH CHECK (auth.uid()::TEXT = id OR is_admin() OR true);
-
-CREATE POLICY "Admins can delete moderators" ON public.moderators
-    FOR DELETE USING (is_admin());
-
--- 9. Grant Execution Rights
-GRANT EXECUTE ON FUNCTION public.claim_moderator_account(TEXT, TEXT, TEXT, JSONB, UUID) TO anon, authenticated, service_role;
+-- ------------------------------------------------------------------------------
+-- 5. Grants: anonymous users must be able to look up/claim an invite
+--    and self-heal auth token columns before they have a session.
+-- ------------------------------------------------------------------------------
 GRANT EXECUTE ON FUNCTION public.lookup_invitation_for_claim(TEXT, TEXT) TO anon, authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.confirm_user_email(UUID) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.claim_moderator_account(TEXT, TEXT, TEXT, JSONB, UUID) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.repair_auth_users_schema() TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.confirm_user_email(UUID) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.is_active_moderator() TO anon, authenticated, service_role;
 
--- 10. App Settings Table & Realtime Replication
-CREATE TABLE IF NOT EXISTS public.app_settings (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    is_repair_mode BOOLEAN NOT NULL DEFAULT FALSE,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
-);
+SELECT public.repair_auth_users_schema();
 
-ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "App settings are readable by everyone" ON public.app_settings;
-CREATE POLICY "App settings are readable by everyone" ON public.app_settings 
-    FOR SELECT USING (true);
-
-DROP POLICY IF EXISTS "App settings are updatable by active moderators" ON public.app_settings;
-CREATE POLICY "App settings are updatable by active moderators" ON public.app_settings 
-    FOR UPDATE USING (is_active_moderator() OR is_admin());
-
-DROP POLICY IF EXISTS "App settings are insertable by active moderators" ON public.app_settings;
-CREATE POLICY "App settings are insertable by active moderators" ON public.app_settings 
-    FOR INSERT WITH CHECK (is_active_moderator() OR is_admin());
-
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_publication_tables 
-        WHERE pubname = 'supabase_realtime' 
-        AND schemaname = 'public' 
-        AND tablename = 'app_settings'
-    ) THEN
-        ALTER PUBLICATION supabase_realtime ADD TABLE public.app_settings;
-    END IF;
-END $$;
+COMMIT;

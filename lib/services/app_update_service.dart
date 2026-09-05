@@ -1,4 +1,5 @@
 import 'dart:io' show File, Platform;
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:open_filex/open_filex.dart';
@@ -59,13 +60,30 @@ class AppUpdateService extends ChangeNotifier {
       return false;
     }
 
+    // Fast-path: If device is offline, skip network check entirely
+    try {
+      final connectivityResults = await Connectivity().checkConnectivity();
+      final isConnected = connectivityResults.any((r) => r != ConnectivityResult.none);
+      if (!isConnected) {
+        debugPrint('[AppUpdateService] Device is offline, skipping update check');
+        _isChecking = false;
+        _isUpdateRequired = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (_) {
+      // Continue if connectivity check itself throws
+    }
+
     _isChecking = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      // 1. Fetch remote release config
-      final config = await SupabaseService().getAppConfig();
+      // 1. Fetch remote release config with strict 2.5s timeout so startup is never delayed
+      final config = await SupabaseService()
+          .getAppConfig()
+          .timeout(const Duration(milliseconds: 2500), onTimeout: () => null);
       _currentConfig = config;
 
       if (config == null) {

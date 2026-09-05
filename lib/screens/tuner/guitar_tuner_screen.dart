@@ -9,6 +9,7 @@ import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:mahlete_semay_project/l10n/app_localizations.dart';
 import '../../services/pitch_service.dart';
+import '../../utils/app_themes.dart';
 import '../../utils/generated_tones.dart';
 import '../../utils/responsive_sizer.dart';
 import '../../widgets/custom_snackbar.dart';
@@ -874,7 +875,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
 
     return Scaffold(
       backgroundColor:
-          isDark ? const Color(0xFF080A0F) : const Color(0xFFF4F6FC),
+          isDark ? AppThemes.navyBackgroundDark : AppThemes.navyBackgroundLight,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -978,7 +979,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                     horizontal: context.w(16), vertical: context.w(2)),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xFF131722).withValues(alpha: 0.9)
+                      ? AppThemes.navyCardDark.withValues(alpha: 0.9)
                       : Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(context.w(16)),
                   border: Border.all(
@@ -999,7 +1000,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                     value: _currentPreset,
                     isExpanded: true,
                     dropdownColor:
-                        isDark ? const Color(0xFF131722) : Colors.white,
+                        isDark ? AppThemes.navyCardDark : Colors.white,
                     icon: Icon(IconsaxPlusLinear.arrow_down_1,
                         size: context.w(18), color: theme.colorScheme.primary),
                     items: _presets.map((preset) {
@@ -1191,7 +1192,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                   child: LinearProgressIndicator(
                     value: _rangeHoldProgress,
                     backgroundColor: isDark
-                        ? const Color(0xFF1A1F2C)
+                        ? AppThemes.navySurfaceDark
                         : const Color(0xFFE2E7F0),
                     valueColor: AlwaysStoppedAnimation<Color>(
                       _beepTriggeredForCurrentHold
@@ -1232,7 +1233,7 @@ class _GuitarTunerScreenState extends State<GuitarTunerScreen>
                       ),
                       selectedColor: statusColor,
                       backgroundColor: isDark
-                          ? const Color(0xFF1A1F2C)
+                          ? AppThemes.navySurfaceDark
                           : const Color(0xFFE2E7F0),
                       onSelected: (_) => _selectString(idx),
                     ),
