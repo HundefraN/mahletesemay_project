@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:confetti/confetti.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:mahlete_semay_project/utils/app_themes.dart';
 import 'package:mahlete_semay_project/widgets/web_content_wrapper.dart';
 
 enum GuidedStep {
@@ -424,6 +425,10 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
   }
 
   Widget _buildCurrentStepView(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final lowAccent = isDark ? AppThemes.celestialGold : AppThemes.royalNavy;
+    final highAccent = isDark ? AppThemes.celestialGoldLight : AppThemes.celestialGoldDark;
+
     switch (_currentStep) {
       case GuidedStep.intro:
         return _buildIntroView(theme);
@@ -436,7 +441,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
               "Take a breath and get ready to hum or sing your lowest comfortable note.",
           countdownNumber: _countdownNumber,
           isGo: _isCountdownGo,
-          accentColor: const Color(0xFF00E5FF),
+          accentColor: lowAccent,
           onSkip: () {
             _resetCountdown();
             _startLowNoteListening();
@@ -453,7 +458,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
               "Hum or sing downwards to your lowest comfortable pitch and hold it steady.",
           currentLowest: _lowestNoteFound,
           currentHighest: _highestNoteFound,
-          accentColor: const Color(0xFF00E5FF),
+          accentColor: lowAccent,
           onLockManual: () {
             final pitchData = _pitchService.pitchData;
             final noteToLock =
@@ -485,7 +490,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
               "Take a deep breath and get ready to glide up to your highest comfortable note.",
           countdownNumber: _countdownNumber,
           isGo: _isCountdownGo,
-          accentColor: const Color(0xFFD500F9),
+          accentColor: highAccent,
           onSkip: () {
             _resetCountdown();
             _startHighNoteListening();
@@ -502,7 +507,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
               "Glide upwards to your highest comfortable note (chest or head voice) and hold it steady.",
           currentLowest: _lowestNoteFound,
           currentHighest: _highestNoteFound,
-          accentColor: const Color(0xFFD500F9),
+          accentColor: highAccent,
           onLockManual: () {
             final pitchData = _pitchService.pitchData;
             final noteToLock =
@@ -530,6 +535,10 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
 
   Widget _buildIntroView(ThemeData theme) {
     final l10n = AppLocalizations.of(context)!;
+    final isDark = theme.brightness == Brightness.dark;
+    final lowColor = isDark ? AppThemes.celestialGold : AppThemes.royalNavy;
+    final highColor = isDark ? AppThemes.celestialGoldLight : AppThemes.celestialGoldDark;
+
     return Center(
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -603,7 +612,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                       title: l10n.findLowestNote,
                       subtitle:
                           "Hear countdown 3...2...1, then hum or sing your lowest comfortable pitch and hold it steady.",
-                      color: const Color(0xFF00E5FF),
+                      color: lowColor,
                     ),
                     const Divider(height: 28),
                     _StepInfoRow(
@@ -611,7 +620,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                       title: l10n.findHighestNote,
                       subtitle:
                           "Hear countdown 3...2...1, then glide up to your highest comfortable note and hold it steady.",
-                      color: const Color(0xFFD500F9),
+                      color: highColor,
                     ),
                   ],
                 ),
@@ -639,6 +648,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                 ),
               ),
             ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.3),
+            const SizedBox(height: 120),
           ],
         ),
       ),
@@ -660,6 +670,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
         final pitchData = pitchService.pitchData;
         final currentPitch = pitchData.pitch;
         final currentNote = pitchData.note;
+        final isDark = theme.brightness == Brightness.dark;
 
         final displayNote =
             _candidateNote.isNotEmpty ? _candidateNote : currentNote;
@@ -748,7 +759,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                           : (!isHighNoteTest && displayNote.isNotEmpty
                               ? displayNote
                               : '--'),
-                      color: const Color(0xFF00E5FF),
+                      color: isDark ? AppThemes.celestialGold : AppThemes.royalNavy,
                       isLocked: currentLowest.isNotEmpty,
                     ),
                   ),
@@ -762,7 +773,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                           : (isHighNoteTest && displayNote.isNotEmpty
                               ? displayNote
                               : '--'),
-                      color: const Color(0xFFD500F9),
+                      color: isDark ? AppThemes.celestialGoldLight : AppThemes.celestialGoldDark,
                       isLocked: currentHighest.isNotEmpty,
                     ),
                   ),
@@ -809,7 +820,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 120),
             ],
           ),
         );
@@ -819,6 +830,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
 
   Widget _buildLowNoteConfirmedView(ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
+    final lowAccent = isDark ? AppThemes.celestialGold : AppThemes.royalNavy;
 
     return Center(
       child: SingleChildScrollView(
@@ -833,21 +845,21 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
               height: 80,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF00E5FF), Color(0xFF00B0FF)],
+                gradient: LinearGradient(
+                  colors: [lowAccent, isDark ? AppThemes.celestialGoldLight : AppThemes.celestialGoldDark],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF00E5FF).withValues(alpha: 0.35),
+                    color: lowAccent.withValues(alpha: 0.35),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: const Icon(Icons.check_rounded,
-                  color: Colors.black, size: 48),
+                  color: Colors.white, size: 48),
             ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
 
             const SizedBox(height: 20),
@@ -857,7 +869,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
               style: GoogleFonts.poppins(
                 fontSize: 26,
                 fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : const Color(0xFF0A1E3F),
+                color: isDark ? Colors.white : AppThemes.royalNavy,
               ),
               textAlign: TextAlign.center,
             ).animate().fadeIn().slideY(begin: 0.2),
@@ -882,7 +894,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                     .withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(22),
                 border: Border.all(
-                  color: const Color(0xFF00E5FF).withValues(alpha: 0.35),
+                  color: lowAccent.withValues(alpha: 0.35),
                   width: 1.5,
                 ),
               ),
@@ -896,7 +908,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                         style: GoogleFonts.poppins(
                           fontSize: 52,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF00E5FF),
+                          color: lowAccent,
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -904,16 +916,15 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color:
-                              const Color(0xFF00E5FF).withValues(alpha: 0.15),
+                          color: lowAccent.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           "${_lowestPitchFound?.toStringAsFixed(1) ?? '0.0'} Hz",
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF00E5FF),
+                            color: lowAccent,
                           ),
                         ),
                       ),
@@ -1016,6 +1027,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
                 ),
               ],
             ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
+            const SizedBox(height: 120),
           ],
         ),
       ),
@@ -1255,7 +1267,7 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
               ),
             ],
           ).animate().fadeIn(delay: 300.ms),
-          const SizedBox(height: 60),
+          const SizedBox(height: 120),
         ],
       ),
     );
@@ -1394,6 +1406,7 @@ class _CountdownView extends StatelessWidget {
                     theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
+            const SizedBox(height: 120),
           ],
         ),
       ),

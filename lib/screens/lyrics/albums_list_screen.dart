@@ -53,12 +53,13 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
     super.dispose();
   }
 
-  List<Album> _getAlbums(SongProvider songProvider) {
-    final artistAlbums = songProvider.getAlbumsByArtist(widget.artist.id);
+  List<Album> _getAlbums(SongProvider songProvider, [Artist? artist]) {
+    final effectiveArtist = artist ?? widget.artist;
+    final artistAlbums = songProvider.getAlbumsByArtist(effectiveArtist.id);
     final artistSingles = songProvider.allSongs
         .where(
           (song) =>
-              song.artistId == widget.artist.id &&
+              song.artistId == effectiveArtist.id &&
               song.albumId == singlesAlbumId,
         )
         .toList();
@@ -69,8 +70,8 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
         id: singlesAlbumId,
         title: AppLocalizations.of(context)?.singlesAndStandalone ??
             "Singles & Standalone",
-        artistId: widget.artist.id,
-        artistName: widget.artist.name,
+        artistId: effectiveArtist.id,
+        artistName: effectiveArtist.name,
         coverImageUrl: '',
       );
       list.insert(0, singlesAlbum);
@@ -85,9 +86,14 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
     final isWide = !context.isPhone;
     final isDark = theme.brightness == Brightness.dark;
 
-    final albums = _getAlbums(songProvider);
+    final effectiveArtist = songProvider.artists.cast<Artist?>().firstWhere(
+          (a) => a?.id == widget.artist.id,
+          orElse: () => null,
+        ) ?? widget.artist;
+
+    final albums = _getAlbums(songProvider, effectiveArtist);
     final allArtistSongs = songProvider.allSongs
-        .where((s) => s.artistId == widget.artist.id)
+        .where((s) => s.artistId == effectiveArtist.id)
         .toList();
     final totalViews =
         allArtistSongs.fold<int>(0, (sum, s) => sum + s.viewCount);
@@ -101,7 +107,7 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
           slivers: [
             SliverToBoxAdapter(
               child: _buildTabletHeader(
-                  theme, totalViews, allArtistSongs.length, albums),
+                  theme, totalViews, allArtistSongs.length, albums, effectiveArtist),
             ),
             _buildAlbumGrid(songProvider, theme, isDark, albums, isWide: true),
           ],
@@ -116,15 +122,15 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
         controller: _scrollController,
         physics: const BouncingScrollPhysics(),
         slivers: [
-          _buildSliverAppBar(theme, totalViews, allArtistSongs.length, albums),
+          _buildSliverAppBar(theme, totalViews, allArtistSongs.length, albums, effectiveArtist),
           _buildAlbumGrid(songProvider, theme, isDark, albums),
         ],
       ),
     );
   }
 
-  Widget _buildTabletHeader(
-      ThemeData theme, int totalViews, int totalSongs, List<Album> albums) {
+  Widget _buildTabletHeader(ThemeData theme, int totalViews, int totalSongs,
+      List<Album> albums, Artist artist) {
     final compactViews = NumberFormat.compact().format(totalViews);
     final canPop = Navigator.canPop(context);
     return Container(
@@ -142,7 +148,7 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
             child: Opacity(
               opacity: 0.15,
               child: CachedImage(
-                imageUrl: widget.artist.imageUrl,
+                imageUrl: artist.imageUrl,
                 memCacheWidth: 600,
                 memCacheHeight: 300,
               ),
@@ -178,7 +184,7 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                     ),
                     child: ClipOval(
                       child: CachedImage(
-                        imageUrl: widget.artist.imageUrl,
+                        imageUrl: artist.imageUrl,
                         memCacheWidth: 250,
                         memCacheHeight: 250,
                       ),
@@ -197,7 +203,7 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                         child: Material(
                           color: Colors.transparent,
                           child: Text(
-                            widget.artist.name,
+                            artist.name,
                             style: const TextStyle(
                                 fontWeight: FontWeight.w800, fontSize: 24),
                             maxLines: 1,
@@ -231,28 +237,21 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
     );
   }
 
-  SliverAppBar _buildSliverAppBar(
-      ThemeData theme, int totalViews, int totalSongs, List<Album> albums) {
+  Widget _buildSliverAppBar(ThemeData theme, int totalViews, int totalSongs,
+      List<Album> albums, Artist artist) {
     final compactViews = NumberFormat.compact().format(totalViews);
-
     return SliverAppBar(
-      expandedHeight: 280,
+      expandedHeight: 280.0,
       pinned: true,
-      stretch: true,
-      backgroundColor: _isScrolled
-          ? theme.scaffoldBackgroundColor.withValues(alpha: 0.9)
-          : Colors.transparent,
       elevation: 0,
+      backgroundColor: theme.scaffoldBackgroundColor,
       leading: Padding(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(8.0),
         child: ClipOval(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.35),
-                shape: BoxShape.circle,
-              ),
+              color: Colors.black.withValues(alpha: 0.2),
               child: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new_rounded,
                     color: Colors.white, size: 18),
@@ -268,7 +267,7 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
           opacity: _isScrolled ? 1.0 : 0.0,
           duration: const Duration(milliseconds: 200),
           child: Text(
-            widget.artist.name,
+            artist.name,
             style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 18,
@@ -283,7 +282,7 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
           children: [
             // Ambient Backdrop Image with Blur
             CachedImage(
-              imageUrl: widget.artist.imageUrl,
+              imageUrl: artist.imageUrl,
               memCacheWidth: 600,
               memCacheHeight: 400,
               fit: BoxFit.cover,
@@ -330,7 +329,7 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                       ),
                       child: ClipOval(
                         child: CachedImage(
-                          imageUrl: widget.artist.imageUrl,
+                          imageUrl: artist.imageUrl,
                           memCacheWidth: 250,
                           memCacheHeight: 250,
                         ),
@@ -343,7 +342,7 @@ class _AlbumsListScreenState extends State<AlbumsListScreen> {
                     child: Material(
                       color: Colors.transparent,
                       child: Text(
-                        widget.artist.name,
+                        artist.name,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 22,
