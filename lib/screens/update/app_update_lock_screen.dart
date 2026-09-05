@@ -11,13 +11,43 @@ import '../../providers/auth_proveider.dart';
 import '../../services/app_update_service.dart';
 
 /// Production-grade, strict non-dismissible App Lock Screen shown when a mandatory update is required.
-class AppUpdateLockScreen extends StatelessWidget {
+class AppUpdateLockScreen extends StatefulWidget {
   final AppConfigModel? config;
 
   const AppUpdateLockScreen({
     super.key,
     this.config,
   });
+
+  @override
+  State<AppUpdateLockScreen> createState() => _AppUpdateLockScreenState();
+}
+
+class _AppUpdateLockScreenState extends State<AppUpdateLockScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Recover a completed download after the install-permission settings restart.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppUpdateService.instance.onAppResumed();
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed && mounted) {
+      AppUpdateService.instance.onAppResumed();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +96,7 @@ class AppUpdateLockScreen extends StatelessWidget {
                     animation: AppUpdateService.instance,
                     builder: (context, _) {
                       final updateService = AppUpdateService.instance;
-                      final effectiveConfig = config ?? updateService.currentConfig;
+                      final effectiveConfig = widget.config ?? updateService.currentConfig;
                       final installedVersion = updateService.installedVersion ?? '1.0.0';
                       final latestVersion = effectiveConfig?.latestVersion ?? 'Latest';
                       final releaseNotes = effectiveConfig?.releaseNotes;
@@ -346,26 +376,26 @@ class AppUpdateLockScreen extends StatelessWidget {
                             // 6. Action Panel: Download / Progress / Install
                             _buildActionSection(context, updateService, apkUrl, isDark),
 
-                            // 7. Developer & Admin Session Bypass
-                            if (kDebugMode || authProvider.isAdmin) ...[
-                              const SizedBox(height: 16),
-                              Center(
-                                child: TextButton.icon(
-                                  icon: const Icon(Icons.admin_panel_settings_outlined, size: 16),
-                                  onPressed: () {
-                                    updateService.bypassForAdminOrDebug();
-                                  },
-                                  label: Text(
-                                    'Bypass App Lock (Admin / Debug)',
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AdminUiKit.amberOrange,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                            // // 7. Developer & Admin Session Bypass
+                            // if (kDebugMode || authProvider.isAdmin) ...[
+                            //   const SizedBox(height: 16),
+                            //   Center(
+                            //     child: TextButton.icon(
+                            //       icon: const Icon(Icons.admin_panel_settings_outlined, size: 16),
+                            //       onPressed: () {
+                            //         updateService.bypassForAdminOrDebug();
+                            //       },
+                            //       label: Text(
+                            //         'Bypass App Lock (Admin / Debug)',
+                            //         style: GoogleFonts.plusJakartaSans(
+                            //           fontSize: 12,
+                            //           fontWeight: FontWeight.w600,
+                            //           color: AdminUiKit.amberOrange,
+                            //         ),
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ],
                           ],
                         ),
                       );
@@ -467,9 +497,37 @@ class AppUpdateLockScreen extends StatelessWidget {
     }
 
     // B. Permission Required on Android (Install unknown apps)
-    if (updateService.installPermissionRequired) {
+    if (updateService.installPermissionRequired && updateService.isApkReady) {
       return Column(
         children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AdminUiKit.emeraldGreen.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: AdminUiKit.emeraldGreen.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.download_done_rounded, color: AdminUiKit.emeraldGreen, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'The new version is already on your phone. Allow install permission once, then we will open the installer — no second download.',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -486,7 +544,7 @@ class AppUpdateLockScreen extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Android requires permission to install APK packages directly. Tap below to enable.',
+                    'Android needs permission to install this update. After you allow it, return here and installation will continue automatically.',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -523,7 +581,7 @@ class AppUpdateLockScreen extends StatelessWidget {
           TextButton(
             onPressed: () => updateService.triggerApkInstallation(),
             child: Text(
-              'I have granted permission • Try Installing',
+              'Permission granted • Install now',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
@@ -536,9 +594,37 @@ class AppUpdateLockScreen extends StatelessWidget {
     }
 
     // C. Download Complete / Ready to Install
-    if (updateService.downloadedApkPath != null) {
+    if (updateService.isApkReady) {
       return Column(
         children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AdminUiKit.emeraldGreen.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: AdminUiKit.emeraldGreen.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.verified_rounded, color: AdminUiKit.emeraldGreen, size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Update downloaded and ready. Tap Install to replace this version — you will not need to download again.',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             height: 52,
@@ -549,7 +635,7 @@ class AppUpdateLockScreen extends StatelessWidget {
                 elevation: 2,
               ),
               onPressed: () => updateService.triggerApkInstallation(),
-              icon: const Icon(Icons.download_done_rounded, color: Colors.white, size: 22),
+              icon: const Icon(Icons.install_mobile_rounded, color: Colors.white, size: 22),
               label: Text(
                 'Install Update Now',
                 style: GoogleFonts.plusJakartaSans(
@@ -563,7 +649,10 @@ class AppUpdateLockScreen extends StatelessWidget {
           const SizedBox(height: 10),
           TextButton.icon(
             icon: const Icon(Icons.refresh_rounded, size: 16),
-            onPressed: () => updateService.downloadAndInstallApk(apkUrl: apkUrl),
+            onPressed: () => updateService.downloadAndInstallApk(
+              apkUrl: apkUrl,
+              forceRedownload: true,
+            ),
             label: Text(
               'Re-download APK',
               style: GoogleFonts.plusJakartaSans(

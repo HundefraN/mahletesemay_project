@@ -34,10 +34,14 @@ class _AppReleaseManagementScreenState extends State<AppReleaseManagementScreen>
   final _apkUrlController = TextEditingController();
 
   bool _forceUpdate = false;
+  bool _notifyUsers = true;
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isUploadingApk = false;
+  bool _uploadComplete = false;
   double _uploadProgress = 0.0;
+  int _uploadedBytes = 0;
+  int _uploadTotalBytes = 0;
 
   PlatformFile? _pickedApkFile;
   Uint8List? _pickedApkBytes;
@@ -46,16 +50,28 @@ class _AppReleaseManagementScreenState extends State<AppReleaseManagementScreen>
   @override
   void initState() {
     super.initState();
+    _apkUrlController.addListener(_onApkUrlChanged);
     _loadCurrentConfig();
+  }
+
+  void _onApkUrlChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _apkUrlController.removeListener(_onApkUrlChanged);
     _latestVersionController.dispose();
     _minRequiredVersionController.dispose();
     _releaseNotesController.dispose();
     _apkUrlController.dispose();
     super.dispose();
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   Future<void> _loadCurrentConfig() async {
@@ -105,9 +121,14 @@ class _AppReleaseManagementScreenState extends State<AppReleaseManagementScreen>
           return;
         }
 
+        final apkBytes = bytes;
         setState(() {
           _pickedApkFile = file;
-          _pickedApkBytes = bytes;
+          _pickedApkBytes = apkBytes;
+          _uploadComplete = false;
+          _uploadProgress = 0.0;
+          _uploadedBytes = 0;
+          _uploadTotalBytes = apkBytes.length;
         });
 
         if (mounted) {
@@ -132,7 +153,10 @@ class _AppReleaseManagementScreenState extends State<AppReleaseManagementScreen>
 
     setState(() {
       _isUploadingApk = true;
-      _uploadProgress = 0.1;
+      _uploadComplete = false;
+      _uploadProgress = 0.0;
+      _uploadedBytes = 0;
+      _uploadTotalBytes = _pickedApkBytes!.length;
     });
 
     try {
@@ -140,17 +164,19 @@ class _AppReleaseManagementScreenState extends State<AppReleaseManagementScreen>
           ? _pickedApkFile!.name
           : 'mahlete_semay_v${_latestVersionController.text.trim()}.apk';
 
-      // Upload binary to Supabase 'app-releases' bucket
+      // Upload binary to Supabase 'app-releases' bucket with live byte progress
       final uploadedUrl = await SupabaseStorageService.uploadApkBytes(
         _pickedApkBytes!,
         fileName: fileName,
         bucket: 'app-releases',
         onProgress: (count, total) {
-          if (total > 0 && mounted) {
-            setState(() {
-              _uploadProgress = count / total;
-            });
-          }
+          if (!mounted) return;
+          final actualTotal = total > 0 ? total : _pickedApkBytes!.length;
+          setState(() {
+            _uploadedBytes = count;
+            _uploadTotalBytes = actualTotal;
+            _uploadProgress = actualTotal > 0 ? (count / actualTotal).clamp(0.0, 1.0) : 0.0;
+          });
         },
       );
 
@@ -158,10 +184,15 @@ class _AppReleaseManagementScreenState extends State<AppReleaseManagementScreen>
         setState(() {
           _apkUrlController.text = uploadedUrl;
           _uploadProgress = 1.0;
+          _uploadedBytes = _uploadTotalBytes;
+          _uploadComplete = true;
         });
 
         if (mounted) {
-          CustomSnackbar.show(context, 'APK uploaded successfully to Supabase Storage!');
+          CustomSnackbar.show(
+            context,
+            'APK uploaded. Public URL filled below — tap Publish Release to save it.',
+          );
         }
       } else {
         throw Exception('Upload returned empty URL. Please verify storage bucket permissions.');
@@ -205,6 +236,7 @@ class _AppReleaseManagementScreenState extends State<AppReleaseManagementScreen>
           '• Latest Version: $latestVer\n'
           '• Minimum Required: $minVer\n'
           '• Force Update: ${_forceUpdate ? "ACTIVE (All users locked)" : "INACTIVE"}\n'
+          '• Notify all users: ${_notifyUsers ? "YES — every device gets an update reminder" : "No"}\n'
           '• APK URL: ${apkUrl.isNotEmpty ? apkUrl : "None"}',
           style: GoogleFonts.plusJakartaSans(fontSize: 13, height: 1.5),
         ),
@@ -243,14 +275,28 @@ class _AppReleaseManagementScreenState extends State<AppReleaseManagementScreen>
         updatedAt: DateTime.now().toUtc(),
       );
 
-      await SupabaseService().saveAppConfig(newConfig, adminId, adminName);
+      final pushResult = await SupabaseService().saveAppConfig(
+        newConfig,
+        adminId,
+        adminName,
+        notifyUsers: _notifyUsers,
+      );
 
       if (mounted) {
         setState(() {
           _currentConfig = newConfig;
           _isSaving = false;
         });
-        CustomSnackbar.show(context, 'App Release published successfully!');
+        final pushNote = !_notifyUsers
+            ? ''
+            : pushResult == null
+                ? ''
+                : ' ${pushResult.adminSummary}';
+        CustomSnackbar.show(
+          context,
+          'App Release published successfully!$pushNote',
+          isError: _notifyUsers && pushResult != null && !pushResult.ok,
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -482,6 +528,57 @@ class _AppReleaseManagementScreenState extends State<AppReleaseManagementScreen>
                                   ],
                                 ),
                               ),
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: AdminUiKit.royalBlue.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: AdminUiKit.royalBlue.withValues(alpha: 0.25),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.notifications_active_rounded,
+                                      color: AdminUiKit.royalBlue,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Notify All Users',
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 13.5,
+                                              color: isDark ? Colors.white : AdminUiKit.primaryNavy,
+                                            ),
+                                          ),
+                                          Text(
+                                            _notifyUsers
+                                                ? 'A push reminder will be sent to every registered device'
+                                                : 'Users will only see the update after they open the app',
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 11.5,
+                                              color: isDark ? Colors.white54 : Colors.grey,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Switch.adaptive(
+                                      value: _notifyUsers,
+                                      activeTrackColor: AdminUiKit.royalBlue,
+                                      onChanged: (val) => setState(() => _notifyUsers = val),
+                                    ),
+                                  ],
+                                ),
+                              ),
                               const SizedBox(height: 18),
 
                               // Release Notes Field
@@ -597,22 +694,30 @@ class _AppReleaseManagementScreenState extends State<AppReleaseManagementScreen>
                                 ],
                               ),
 
-                              // Upload progress bar
-                              if (_isUploadingApk) ...[
+                              // Upload progress bar — stays visible after success
+                              if (_isUploadingApk || _uploadComplete) ...[
                                 const SizedBox(height: 14),
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(6),
                                   child: LinearProgressIndicator(
-                                    value: _uploadProgress > 0 ? _uploadProgress : null,
+                                    value: _uploadProgress,
                                     minHeight: 8,
                                     backgroundColor: isDark ? Colors.white12 : Colors.black12,
-                                    valueColor: const AlwaysStoppedAnimation<Color>(AdminUiKit.royalBlue),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      _uploadComplete ? AdminUiKit.emeraldGreen : AdminUiKit.royalBlue,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  'Uploading to Supabase: ${(_uploadProgress * 100).toStringAsFixed(0)}%',
-                                  style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AdminUiKit.royalBlue),
+                                  _uploadComplete
+                                      ? 'Uploaded ${_formatBytes(_uploadTotalBytes)} · 100%'
+                                      : 'Uploading ${_formatBytes(_uploadedBytes)} / ${_formatBytes(_uploadTotalBytes)} · ${(_uploadProgress * 100).toStringAsFixed(1)}%',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: _uploadComplete ? AdminUiKit.emeraldGreen : AdminUiKit.royalBlue,
+                                  ),
                                 ),
                               ],
 
@@ -627,6 +732,14 @@ class _AppReleaseManagementScreenState extends State<AppReleaseManagementScreen>
                                   color: isDark ? Colors.white : AdminUiKit.primaryNavy,
                                 ),
                               ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Filled automatically after a successful upload. Then tap Publish Release to save it for users. You can also copy it from Supabase Dashboard → Storage → app-releases → apks.',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11.5,
+                                  color: isDark ? Colors.white54 : Colors.black54,
+                                ),
+                              ),
                               const SizedBox(height: 6),
                               TextFormField(
                                 controller: _apkUrlController,
@@ -634,14 +747,35 @@ class _AppReleaseManagementScreenState extends State<AppReleaseManagementScreen>
                                   hintText: 'https://.../storage/v1/object/public/app-releases/apks/...',
                                   prefixIcon: const Icon(Icons.link_rounded, size: 20),
                                   suffixIcon: _apkUrlController.text.isNotEmpty
-                                      ? IconButton(
-                                          icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                                          onPressed: () async {
-                                            final uri = Uri.tryParse(_apkUrlController.text.trim());
-                                            if (uri != null && await canLaunchUrl(uri)) {
-                                              await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                            }
-                                          },
+                                      ? SizedBox(
+                                          width: 96,
+                                          child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              tooltip: 'Copy URL',
+                                              icon: const Icon(Icons.copy_rounded, size: 18),
+                                              onPressed: () async {
+                                                await Clipboard.setData(
+                                                  ClipboardData(text: _apkUrlController.text.trim()),
+                                                );
+                                                if (mounted) {
+                                                  CustomSnackbar.show(context, 'APK URL copied to clipboard');
+                                                }
+                                              },
+                                            ),
+                                            IconButton(
+                                              tooltip: 'Open URL',
+                                              icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                                              onPressed: () async {
+                                                final uri = Uri.tryParse(_apkUrlController.text.trim());
+                                                if (uri != null && await canLaunchUrl(uri)) {
+                                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                                }
+                                              },
+                                            ),
+                                          ],
+                                        ),
                                         )
                                       : null,
                                   filled: true,

@@ -2,6 +2,7 @@
 import '../models/activity_log_model.dart';
 import '../models/album_model.dart';
 import '../models/artist_model.dart';
+import '../models/bug_report_model.dart';
 import '../models/invitation_model.dart';
 import '../models/moderator_model.dart';
 import '../models/song_model.dart';
@@ -57,6 +58,23 @@ class FirebaseService {
   Stream<List<Suggestion>> getSuggestionsStream() => _supabase.getSuggestionsStream();
   Future<void> updateSuggestionStatus(String id, SuggestionStatus status) => _supabase.updateSuggestionStatus(id, status);
   Future<void> deleteSuggestion(String id) => _supabase.deleteSuggestion(id);
+
+  Future<void> submitBugReport(BugReport report) => _supabase.submitBugReport(report);
+  Stream<List<BugReport>> getBugReportsStream() => _supabase.getBugReportsStream();
+  Future<void> updateBugReport({
+    required String id,
+    BugReportStatus? status,
+    String? adminNotes,
+    bool? isSeen,
+  }) =>
+      _supabase.updateBugReport(
+        id: id,
+        status: status,
+        adminNotes: adminNotes,
+        isSeen: isSeen,
+      );
+  Future<void> markAllBugReportsAsSeen() => _supabase.markAllBugReportsAsSeen();
+  Future<void> deleteBugReport(String id) => _supabase.deleteBugReport(id);
 
   Stream<List<Moderator>> getModeratorsStream() => _supabase.getModeratorsStream();
   Future<void> updateModeratorStatus(String uid, String status) => _supabase.updateModeratorStatus(uid, status);

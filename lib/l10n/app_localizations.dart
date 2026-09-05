@@ -500,6 +500,54 @@ abstract class AppLocalizations {
   /// **'Share The App'**
   String get shareApp;
 
+  /// No description provided for @shareAppSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send the Android app to another device'**
+  String get shareAppSubtitle;
+
+  /// No description provided for @downloadApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Download App'**
+  String get downloadApp;
+
+  /// No description provided for @downloadAppSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Install the Android app on this device'**
+  String get downloadAppSubtitle;
+
+  /// No description provided for @downloadAppBannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Get the Android app'**
+  String get downloadAppBannerTitle;
+
+  /// No description provided for @downloadAppBannerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Download Mahlete Semay to install it on this phone'**
+  String get downloadAppBannerBody;
+
+  /// No description provided for @downloadAppUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The Android app is not available to download right now.'**
+  String get downloadAppUnavailable;
+
+  /// No description provided for @preparingAppShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing the app to share...'**
+  String get preparingAppShare;
+
+  /// No description provided for @shareAppFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not share the app. Please try again.'**
+  String get shareAppFailed;
+
   /// No description provided for @notifications.
   ///
   /// In en, this message translates to:
@@ -3583,6 +3631,462 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'100% On-Device Processing'**
   String get onDeviceProcessingOnly;
+
+  /// No description provided for @reportABug.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a Problem'**
+  String get reportABug;
+
+  /// No description provided for @reportABugSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a crash or bug report'**
+  String get reportABugSubtitle;
+
+  /// No description provided for @bugReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug & Crash Reports'**
+  String get bugReports;
+
+  /// No description provided for @userReports.
+  ///
+  /// In en, this message translates to:
+  /// **'User Reports'**
+  String get userReports;
+
+  /// No description provided for @reviewBugReportsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review user issues, screenshots, and crash logs'**
+  String get reviewBugReportsSubtitle;
+
+  /// No description provided for @reportTypeBug.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug'**
+  String get reportTypeBug;
+
+  /// No description provided for @reportTypeCrash.
+  ///
+  /// In en, this message translates to:
+  /// **'Crash'**
+  String get reportTypeCrash;
+
+  /// No description provided for @reportTypeFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback'**
+  String get reportTypeFeedback;
+
+  /// No description provided for @reportTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'What are you reporting?'**
+  String get reportTypeLabel;
+
+  /// No description provided for @reportTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Short title'**
+  String get reportTitleLabel;
+
+  /// No description provided for @reportTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. App freezes on lyrics'**
+  String get reportTitleHint;
+
+  /// No description provided for @reportDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'What happened?'**
+  String get reportDescriptionLabel;
+
+  /// No description provided for @reportDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what you were doing and what went wrong.'**
+  String get reportDescriptionHint;
+
+  /// No description provided for @reportScreenshots.
+  ///
+  /// In en, this message translates to:
+  /// **'Screenshots'**
+  String get reportScreenshots;
+
+  /// No description provided for @reportAddScreenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photo'**
+  String get reportAddScreenshot;
+
+  /// No description provided for @reportTakePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get reportTakePhoto;
+
+  /// No description provided for @reportScreenshotLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You can attach up to {count} screenshots'**
+  String reportScreenshotLimit(int count);
+
+  /// No description provided for @reportContactEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact email (optional)'**
+  String get reportContactEmail;
+
+  /// No description provided for @reportContactEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'So we can follow up if needed'**
+  String get reportContactEmailHint;
+
+  /// No description provided for @reportDeviceInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Device details included'**
+  String get reportDeviceInfo;
+
+  /// No description provided for @reportSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Report'**
+  String get reportSubmit;
+
+  /// No description provided for @reportSubmitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending report…'**
+  String get reportSubmitting;
+
+  /// No description provided for @reportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you! Your report was sent.'**
+  String get reportSuccess;
+
+  /// No description provided for @reportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send the report. Please try again.'**
+  String get reportFailed;
+
+  /// No description provided for @reportOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline. Connect to the internet to send a report.'**
+  String get reportOffline;
+
+  /// No description provided for @reportTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please add a short title'**
+  String get reportTitleRequired;
+
+  /// No description provided for @reportDescriptionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please describe what happened'**
+  String get reportDescriptionRequired;
+
+  /// No description provided for @reportPleaseWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading screenshots…'**
+  String get reportPleaseWait;
+
+  /// No description provided for @reportUploadingScreenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading screenshot {current} of {total}…'**
+  String reportUploadingScreenshot(int current, int total);
+
+  /// No description provided for @reportMaxScreenshots.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum of {count} screenshots'**
+  String reportMaxScreenshots(int count);
+
+  /// No description provided for @reportRemoveScreenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove screenshot'**
+  String get reportRemoveScreenshot;
+
+  /// No description provided for @reportHeroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Help us improve'**
+  String get reportHeroTitle;
+
+  /// No description provided for @reportHeroSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the issue and attach screenshots if you can.'**
+  String get reportHeroSubtitle;
+
+  /// No description provided for @reportPrivacyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes app version and device type so we can reproduce the issue. No account is required.'**
+  String get reportPrivacyNote;
+
+  /// No description provided for @crashDetectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The app ran into a problem'**
+  String get crashDetectedTitle;
+
+  /// No description provided for @crashDetectedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Last time the app closed unexpectedly. Sending a report helps us fix it faster.'**
+  String get crashDetectedBody;
+
+  /// No description provided for @crashSendReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Send crash report'**
+  String get crashSendReport;
+
+  /// No description provided for @crashDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get crashDismiss;
+
+  /// No description provided for @crashDontSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t send'**
+  String get crashDontSend;
+
+  /// No description provided for @adminBugReportsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug & Crash Reports'**
+  String get adminBugReportsTitle;
+
+  /// No description provided for @adminNoBugReports.
+  ///
+  /// In en, this message translates to:
+  /// **'No reports yet'**
+  String get adminNoBugReports;
+
+  /// No description provided for @adminNoBugReportsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'When users send a bug or crash report, it will appear here.'**
+  String get adminNoBugReportsDesc;
+
+  /// No description provided for @adminOpenTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get adminOpenTab;
+
+  /// No description provided for @adminInProgressTab.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get adminInProgressTab;
+
+  /// No description provided for @adminResolvedTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved'**
+  String get adminResolvedTab;
+
+  /// No description provided for @adminMarkInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get adminMarkInProgress;
+
+  /// No description provided for @adminMarkResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve'**
+  String get adminMarkResolved;
+
+  /// No description provided for @adminReopen.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen'**
+  String get adminReopen;
+
+  /// No description provided for @adminAddNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get adminAddNotes;
+
+  /// No description provided for @adminNotesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Internal notes…'**
+  String get adminNotesHint;
+
+  /// No description provided for @adminSaveNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Save notes'**
+  String get adminSaveNotes;
+
+  /// No description provided for @adminDeviceInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Device'**
+  String get adminDeviceInfo;
+
+  /// No description provided for @adminAppVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'App version'**
+  String get adminAppVersion;
+
+  /// No description provided for @adminStackTrace.
+  ///
+  /// In en, this message translates to:
+  /// **'Crash log'**
+  String get adminStackTrace;
+
+  /// No description provided for @adminScreenshots.
+  ///
+  /// In en, this message translates to:
+  /// **'Screenshots'**
+  String get adminScreenshots;
+
+  /// No description provided for @adminDeleteReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete report'**
+  String get adminDeleteReport;
+
+  /// No description provided for @adminDeleteReportConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete this report and its screenshots?'**
+  String get adminDeleteReportConfirm;
+
+  /// No description provided for @adminReportDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Report deleted'**
+  String get adminReportDeleted;
+
+  /// No description provided for @adminReportUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Report updated'**
+  String get adminReportUpdated;
+
+  /// No description provided for @adminNoOpenReports.
+  ///
+  /// In en, this message translates to:
+  /// **'No open reports. You\'re all caught up.'**
+  String get adminNoOpenReports;
+
+  /// No description provided for @adminNoInProgressReports.
+  ///
+  /// In en, this message translates to:
+  /// **'No reports in progress.'**
+  String get adminNoInProgressReports;
+
+  /// No description provided for @adminNoResolvedReports.
+  ///
+  /// In en, this message translates to:
+  /// **'No resolved reports yet.'**
+  String get adminNoResolvedReports;
+
+  /// No description provided for @adminUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get adminUnread;
+
+  /// No description provided for @adminContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get adminContact;
+
+  /// No description provided for @about.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
+
+  /// No description provided for @aboutSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App info and developer'**
+  String get aboutSubtitle;
+
+  /// No description provided for @aboutAppName.
+  ///
+  /// In en, this message translates to:
+  /// **'Mahlete Semay'**
+  String get aboutAppName;
+
+  /// No description provided for @aboutAppTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Spiritual hymns and vocal training'**
+  String get aboutAppTagline;
+
+  /// No description provided for @aboutVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get aboutVersion;
+
+  /// No description provided for @aboutVersionLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{version} ({build})'**
+  String aboutVersionLine(String version, String build);
+
+  /// No description provided for @aboutDeveloper.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer'**
+  String get aboutDeveloper;
+
+  /// No description provided for @aboutDeveloperName.
+  ///
+  /// In en, this message translates to:
+  /// **'Hundefra Nassir'**
+  String get aboutDeveloperName;
+
+  /// No description provided for @aboutDeveloperRole.
+  ///
+  /// In en, this message translates to:
+  /// **'CEO of Eben Dev Solutions'**
+  String get aboutDeveloperRole;
+
+  /// No description provided for @aboutWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Website'**
+  String get aboutWebsite;
+
+  /// No description provided for @aboutVisitWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit website'**
+  String get aboutVisitWebsite;
+
+  /// No description provided for @aboutCouldNotOpenWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the website.'**
+  String get aboutCouldNotOpenWebsite;
 }
 
 class _AppLocalizationsDelegate

@@ -216,6 +216,33 @@ class AppLocalizationsSo extends AppLocalizations {
   String get shareApp => 'La Wadaag Abka';
 
   @override
+  String get shareAppSubtitle => 'U dir abka Android qalab kale';
+
+  @override
+  String get downloadApp => 'Soo deji Abka';
+
+  @override
+  String get downloadAppSubtitle => 'Ku rakib abka Android qalabkan';
+
+  @override
+  String get downloadAppBannerTitle => 'Hel abka Android';
+
+  @override
+  String get downloadAppBannerBody =>
+      'Soo deji Mahlete Semay si aad ugu rakibto teleefankan';
+
+  @override
+  String get downloadAppUnavailable =>
+      'Abka Android hadda lama soo dejin karo.';
+
+  @override
+  String get preparingAppShare => 'Abka waa la diyaarinayaa...';
+
+  @override
+  String get shareAppFailed =>
+      'Abka lama wadaagin karin. Fadlan isku day mar kale.';
+
+  @override
   String get notifications => 'Ogeysiisyada';
 
   @override
@@ -1891,4 +1918,252 @@ class AppLocalizationsSo extends AppLocalizations {
 
   @override
   String get onDeviceProcessingOnly => '100% Waxaa Lagu Falanqeeyaa Aaladda';
+
+  @override
+  String get reportABug => 'Soo sheeg dhibaato';
+
+  @override
+  String get reportABugSubtitle => 'Dir warbixin shil ama qalad';
+
+  @override
+  String get bugReports => 'Warbixinaha Qaladka & Shilka';
+
+  @override
+  String get userReports => 'Warbixinaha Isticmaalaha';
+
+  @override
+  String get reviewBugReportsSubtitle =>
+      'Eeg dhibaatooyinka, sawirrada, iyo diiwaanka shilka';
+
+  @override
+  String get reportTypeBug => 'Qalad';
+
+  @override
+  String get reportTypeCrash => 'Shil';
+
+  @override
+  String get reportTypeFeedback => 'Fikrad';
+
+  @override
+  String get reportTypeLabel => 'Maxaad soo sheegaysaa?';
+
+  @override
+  String get reportTitleLabel => 'Cinwaan gaaban';
+
+  @override
+  String get reportTitleHint =>
+      'tusaale: Abku wuu istaagaa marka heesaha la furo';
+
+  @override
+  String get reportDescriptionLabel => 'Maxaa dhacay?';
+
+  @override
+  String get reportDescriptionHint =>
+      'Noo sheeg waxaad samaynaysay iyo waxa khaldamay.';
+
+  @override
+  String get reportScreenshots => 'Sawirrada shaashadda';
+
+  @override
+  String get reportAddScreenshot => 'Kudar sawir';
+
+  @override
+  String get reportTakePhoto => 'Qaado sawir';
+
+  @override
+  String reportScreenshotLimit(int count) {
+    return 'Waxaad ku dari kartaa ilaa $count sawir shaashad';
+  }
+
+  @override
+  String get reportContactEmail => 'Iimeel (ikhtiyaar)';
+
+  @override
+  String get reportContactEmailHint =>
+      'Si aan kuula soo xiriirno haddii loo baahdo';
+
+  @override
+  String get reportDeviceInfo => 'Faahfaahinta aaladda waa lagu darinayaa';
+
+  @override
+  String get reportSubmit => 'Dir Warbixinta';
+
+  @override
+  String get reportSubmitting => 'Warbixinta ayaa la dirayaa…';
+
+  @override
+  String get reportSuccess => 'Mahadsanid! Warbixintaada waa la diray.';
+
+  @override
+  String get reportFailed =>
+      'Warbixinta lama diri karin. Fadlan isku day mar kale.';
+
+  @override
+  String get reportOffline =>
+      'Ma ku xirnida khadka. Ku xidh internetka si aad u dirto warbixin.';
+
+  @override
+  String get reportTitleRequired => 'Fadlan ku dar cinwaan gaaban';
+
+  @override
+  String get reportDescriptionRequired => 'Fadlan qeex waxa dhacay';
+
+  @override
+  String get reportPleaseWait => 'Sawirrada ayaa la soo rarayaa…';
+
+  @override
+  String reportUploadingScreenshot(int current, int total) {
+    return 'Sawirka $current ee $total ayaa la soo rarayaa…';
+  }
+
+  @override
+  String reportMaxScreenshots(int count) {
+    return 'Ugu badnaan $count sawir shaashad';
+  }
+
+  @override
+  String get reportRemoveScreenshot => 'Ka saar sawirka';
+
+  @override
+  String get reportHeroTitle => 'Naga caawi horumarinta';
+
+  @override
+  String get reportHeroSubtitle =>
+      'Qeex dhibaatada oo ku dar sawirro haddii aad awooddo.';
+
+  @override
+  String get reportPrivacyNote =>
+      'Waxaa ku jira nooca abka iyo nooca aaladda si aan ugu celinno dhibaatada. Akoon looma baahna.';
+
+  @override
+  String get crashDetectedTitle => 'Abku dhibaato buu la kulmay';
+
+  @override
+  String get crashDetectedBody =>
+      'Markii u dambaysay abku si lama filaan ah ayuu u xirmay. Warbixin diriddu waxay naga caawisaa in si dhakhso ah loo saxo.';
+
+  @override
+  String get crashSendReport => 'Dir warbixin shil';
+
+  @override
+  String get crashDismiss => 'Hadda maya';
+
+  @override
+  String get crashDontSend => 'Ha dirin';
+
+  @override
+  String get adminBugReportsTitle => 'Warbixinaha Qaladka & Shilka';
+
+  @override
+  String get adminNoBugReports => 'Weli warbixin ma jirto';
+
+  @override
+  String get adminNoBugReportsDesc =>
+      'Marka isticmaalayaashu soo diraan qalad ama shil, halkan ayay ka muuqan doonaan.';
+
+  @override
+  String get adminOpenTab => 'Furan';
+
+  @override
+  String get adminInProgressTab => 'Socda';
+
+  @override
+  String get adminResolvedTab => 'La xalliyay';
+
+  @override
+  String get adminMarkInProgress => 'Socda';
+
+  @override
+  String get adminMarkResolved => 'Xalli';
+
+  @override
+  String get adminReopen => 'Dib u fur';
+
+  @override
+  String get adminAddNotes => 'Qoraallo';
+
+  @override
+  String get adminNotesHint => 'Qoraallo gudaha ah…';
+
+  @override
+  String get adminSaveNotes => 'Keydi qoraallada';
+
+  @override
+  String get adminDeviceInfo => 'Aalad';
+
+  @override
+  String get adminAppVersion => 'Nooca abka';
+
+  @override
+  String get adminStackTrace => 'Diiwaanka shilka';
+
+  @override
+  String get adminScreenshots => 'Sawirrada shaashadda';
+
+  @override
+  String get adminDeleteReport => 'Tirtir warbixinta';
+
+  @override
+  String get adminDeleteReportConfirm =>
+      'Si joogto ah u tirtir warbixintan iyo sawirradeeda?';
+
+  @override
+  String get adminReportDeleted => 'Warbixinta waa la tirtiray';
+
+  @override
+  String get adminReportUpdated => 'Warbixinta waa la cusboonaysiiyay';
+
+  @override
+  String get adminNoOpenReports =>
+      'Warbixin furan ma jirto. Dhammaan waa la dhammeeyay.';
+
+  @override
+  String get adminNoInProgressReports => 'Warbixin socota ma jirto.';
+
+  @override
+  String get adminNoResolvedReports => 'Weli warbixin la xalliyay ma jirto.';
+
+  @override
+  String get adminUnread => 'Cusub';
+
+  @override
+  String get adminContact => 'Xiriir';
+
+  @override
+  String get about => 'Ku saabsan';
+
+  @override
+  String get aboutSubtitle => 'Macluumaadka abka iyo horumariyaha';
+
+  @override
+  String get aboutAppName => 'Mahlete Semay';
+
+  @override
+  String get aboutAppTagline => 'Heesaha ruuxiga iyo tababarka codka';
+
+  @override
+  String get aboutVersion => 'Nooca';
+
+  @override
+  String aboutVersionLine(String version, String build) {
+    return '$version ($build)';
+  }
+
+  @override
+  String get aboutDeveloper => 'Horumariye';
+
+  @override
+  String get aboutDeveloperName => 'Hundefra Nassir';
+
+  @override
+  String get aboutDeveloperRole => 'Maamulaha Eben Dev Solutions';
+
+  @override
+  String get aboutWebsite => 'Mareeg';
+
+  @override
+  String get aboutVisitWebsite => 'Booqo mareegta';
+
+  @override
+  String get aboutCouldNotOpenWebsite => 'Mareegta lama furi karin.';
 }

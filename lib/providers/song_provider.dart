@@ -345,6 +345,9 @@ class SongProvider extends ChangeNotifier with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
+      // Surface any catalog written by a silent FCM / WorkManager sync
+      // even if the device is now offline.
+      unawaited(_loadFromLocalDb());
       _handleSync();
     }
   }

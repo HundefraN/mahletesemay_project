@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -5,6 +6,7 @@ import '../models/activity_log_model.dart';
 import '../models/album_model.dart';
 import '../models/app_config_model.dart';
 import '../models/artist_model.dart';
+import '../models/bug_report_model.dart';
 import '../models/invitation_model.dart';
 import '../models/moderator_model.dart';
 import '../models/song_model.dart';
@@ -12,6 +14,8 @@ import '../models/suggestion_model.dart';
 import '../models/vocal_plan_model.dart';
 import '../utils/amharic_transliterator.dart';
 import '../utils/constants.dart';
+import 'push_dispatch_service.dart';
+import 'push_payload.dart';
 
 class SupabaseService {
   static final SupabaseService _instance = SupabaseService._internal();
@@ -66,6 +70,11 @@ class SupabaseService {
   Future<void> addArtist(Artist artist) async {
     try {
       await _client.from('artists').insert(artist.toSupabase());
+      unawaited(PushDispatchService.notifyContentChange(
+        entity: PushEntity.artist,
+        entityId: artist.id,
+        silent: true,
+      ));
     } catch (e) {
       debugPrint('Error adding artist: $e');
       rethrow;
@@ -101,6 +110,11 @@ class SupabaseService {
       }
 
       await _client.from('artists').update(payload).eq('id', id);
+      unawaited(PushDispatchService.notifyContentChange(
+        entity: PushEntity.artist,
+        entityId: id,
+        silent: true,
+      ));
     } catch (e) {
       debugPrint('Error updating artist: $e');
       rethrow;
@@ -112,6 +126,10 @@ class SupabaseService {
       final deletableIds = ids.where((id) => id != singlesArtistId).toList();
       if (deletableIds.isEmpty) return;
       await _client.from('artists').delete().inFilter('id', deletableIds);
+      unawaited(PushDispatchService.notifyContentChange(
+        entity: PushEntity.artist,
+        silent: true,
+      ));
     } catch (e) {
       debugPrint('Error deleting artists: $e');
       rethrow;
@@ -152,6 +170,11 @@ class SupabaseService {
   Future<void> addAlbum(Album album) async {
     try {
       await _client.from('albums').insert(album.toSupabase());
+      unawaited(PushDispatchService.notifyContentChange(
+        entity: PushEntity.album,
+        entityId: album.id,
+        silent: true,
+      ));
     } catch (e) {
       debugPrint('Error adding album: $e');
       rethrow;
@@ -183,6 +206,11 @@ class SupabaseService {
       }
 
       await _client.from('albums').update(payload).eq('id', id);
+      unawaited(PushDispatchService.notifyContentChange(
+        entity: PushEntity.album,
+        entityId: id,
+        silent: true,
+      ));
     } catch (e) {
       debugPrint('Error updating album: $e');
       rethrow;
@@ -194,6 +222,10 @@ class SupabaseService {
       final deletableIds = ids.where((id) => id != singlesAlbumId).toList();
       if (deletableIds.isEmpty) return;
       await _client.from('albums').delete().inFilter('id', deletableIds);
+      unawaited(PushDispatchService.notifyContentChange(
+        entity: PushEntity.album,
+        silent: true,
+      ));
     } catch (e) {
       debugPrint('Error deleting albums: $e');
       rethrow;
@@ -296,6 +328,14 @@ class SupabaseService {
       final payload = song.toSupabase();
       await _prepareSongPayload(payload);
       await _client.from('songs').insert(payload);
+      unawaited(PushDispatchService.notifyContentChange(
+        entity: PushEntity.song,
+        entityId: song.id,
+        silent: false,
+        title: 'New Song Available',
+        body: '"${song.title}" by ${song.artistName} is now in your library.',
+        reference: song.id,
+      ));
     } catch (e) {
       debugPrint('Error adding song: $e');
       rethrow;
@@ -335,6 +375,11 @@ class SupabaseService {
 
       await _prepareSongPayload(payload);
       await _client.from('songs').update(payload).eq('id', id);
+      unawaited(PushDispatchService.notifyContentChange(
+        entity: PushEntity.song,
+        entityId: id,
+        silent: true,
+      ));
     } catch (e) {
       debugPrint('Error updating song: $e');
       rethrow;
@@ -345,6 +390,10 @@ class SupabaseService {
     try {
       if (ids.isEmpty) return;
       await _client.from('songs').delete().inFilter('id', ids);
+      unawaited(PushDispatchService.notifyContentChange(
+        entity: PushEntity.song,
+        silent: true,
+      ));
     } catch (e) {
       debugPrint('Error deleting songs: $e');
       rethrow;
@@ -788,6 +837,64 @@ class SupabaseService {
   }
 
   // ---------------------------------------------------------------------------
+  // BUG & CRASH REPORTS
+  // ---------------------------------------------------------------------------
+
+  Future<void> submitBugReport(BugReport report) async {
+    try {
+      await _client.from('bug_reports').insert(report.toSupabase());
+    } catch (e) {
+      debugPrint('Error submitting bug report: $e');
+      rethrow;
+    }
+  }
+
+  Stream<List<BugReport>> getBugReportsStream() {
+    return _client
+        .from('bug_reports')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .map((maps) => maps.map((item) => BugReport.fromMap(item)).toList());
+  }
+
+  Future<void> updateBugReport({
+    required String id,
+    BugReportStatus? status,
+    String? adminNotes,
+    bool? isSeen,
+  }) async {
+    try {
+      final data = <String, dynamic>{
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      };
+      if (status != null) data['status'] = status.dbValue;
+      if (adminNotes != null) data['admin_notes'] = adminNotes;
+      if (isSeen != null) data['is_seen'] = isSeen;
+      await _client.from('bug_reports').update(data).eq('id', id);
+    } catch (e) {
+      debugPrint('Error updating bug report: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> markAllBugReportsAsSeen() async {
+    try {
+      await _client.from('bug_reports').update({'is_seen': true}).eq('is_seen', false);
+    } catch (e) {
+      debugPrint('Error marking bug reports as seen: $e');
+    }
+  }
+
+  Future<void> deleteBugReport(String id) async {
+    try {
+      await _client.from('bug_reports').delete().eq('id', id);
+    } catch (e) {
+      debugPrint('Error deleting bug report: $e');
+      rethrow;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // ACTIVITY LOGS
   // ---------------------------------------------------------------------------
 
@@ -1144,14 +1251,16 @@ class SupabaseService {
 
   /// Fetches the latest [AppConfigModel] from Supabase `app_config` table.
   /// Falls back to `app_settings` for `min_required_version` if `app_config` is empty or unreachable.
-  Future<AppConfigModel?> getAppConfig() async {
+  Future<AppConfigModel?> getAppConfig({
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
     try {
       final res = await _client
           .from('app_config')
           .select()
           .order('updated_at', ascending: false)
           .limit(1)
-          .timeout(const Duration(milliseconds: 2500));
+          .timeout(timeout);
 
       if (res.isNotEmpty) {
         return AppConfigModel.fromJson(res.first);
@@ -1194,7 +1303,15 @@ class SupabaseService {
 
   /// Saves or updates the release configuration in `app_config` table.
   /// Also mirrors `min_required_version` to `app_settings` for legacy consistency.
-  Future<void> saveAppConfig(AppConfigModel config, String adminId, String adminName) async {
+  ///
+  /// When [notifyUsers] is true, every registered device receives a visible
+  /// "please update" push. Push failure does not roll back the saved config.
+  Future<PushSendResult?> saveAppConfig(
+    AppConfigModel config,
+    String adminId,
+    String adminName, {
+    bool notifyUsers = true,
+  }) async {
     try {
       final data = {
         'id': config.id.isEmpty ? 'default' : config.id,
@@ -1234,6 +1351,22 @@ class SupabaseService {
         moderatorName: adminName,
         action: 'APP_RELEASE_UPDATED',
         details: 'Release updated: latest=${config.latestVersion}, min_required=${config.minRequiredVersion}, force=${config.forceUpdate}',
+      );
+
+      if (!notifyUsers) return null;
+
+      return PushDispatchService.notifyForceUpdate(
+        forceUpdate: config.forceUpdate,
+        latestVersion: config.latestVersion,
+        minRequiredVersion: config.minRequiredVersion,
+        apkUrl: config.apkUrl,
+        releaseNotes: config.releaseNotes,
+      ).timeout(
+        const Duration(seconds: 45),
+        onTimeout: () => const PushSendResult(
+          ok: false,
+          error: 'Push timed out. The release was saved.',
+        ),
       );
     } catch (e) {
       debugPrint('Error saving app_config: $e');
@@ -1288,7 +1421,12 @@ class SupabaseService {
         final updated = (current ?? const AppConfigModel(id: 'default')).copyWith(
           minRequiredVersion: sanitized,
         );
-        await saveAppConfig(updated, adminId, adminName);
+        await saveAppConfig(
+          updated,
+          adminId,
+          adminName,
+          notifyUsers: false,
+        );
       } catch (e) {
         debugPrint('Notice updating app_config in setMinRequiredVersion: $e');
       }

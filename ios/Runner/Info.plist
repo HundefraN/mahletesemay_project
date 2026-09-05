@@ -41,6 +41,8 @@
 		<key>BGTaskSchedulerPermittedIdentifiers</key>
 		<array>
 			<string>com.hundefra.mahletesemay.backgroundSync</string>
+			<string>com.hundefra.mahletesemay.periodicSync</string>
+			<string>com.hundefra.mahletesemay.immediateSync</string>
 			<string>workmanager.background.task</string>
 		</array>
 		<key>NSPhotoLibraryUsageDescription</key>

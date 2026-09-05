@@ -645,17 +645,22 @@ class _VocalRangeFinderScreenState extends State<VocalRangeFinderScreen>
             SizedBox(height: context.w(22)),
             SizedBox(
               width: double.infinity,
-              height: context.w(44),
               child: ElevatedButton.icon(
                 onPressed: _startGuidedTest,
                 icon: Icon(Icons.play_arrow_rounded, size: context.w(22)),
                 label: Text(
                   l10n.startFindingLowest,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                      fontSize: context.sp(15), fontWeight: FontWeight.bold),
+                      fontSize: context.sp(13), fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   elevation: 2,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: context.w(16),
+                    vertical: context.w(12),
+                  ),
+                  minimumSize: Size.fromHeight(context.w(48)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(context.w(12)),
                   ),

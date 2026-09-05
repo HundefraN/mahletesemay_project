@@ -210,6 +210,30 @@ class AppLocalizationsAm extends AppLocalizations {
   String get shareApp => 'መተግበሪያውን ያጋሩ';
 
   @override
+  String get shareAppSubtitle => 'የአንድሮይድ መተግበሪያውን ወደ ሌላ መሣሪያ ይላኩ';
+
+  @override
+  String get downloadApp => 'መተግበሪያውን አውርድ';
+
+  @override
+  String get downloadAppSubtitle => 'የአንድሮይድ መተግበሪያውን በዚህ መሣሪያ ላይ ይጫኑ';
+
+  @override
+  String get downloadAppBannerTitle => 'የአንድሮይድ መተግበሪያውን ያግኙ';
+
+  @override
+  String get downloadAppBannerBody => 'ማህሌተ ሰማይን በዚህ ስልክ ላይ ለመጫን ያውርዱ';
+
+  @override
+  String get downloadAppUnavailable => 'የአንድሮይድ መተግበሪያው አሁን ለማውረድ አይገኝም።';
+
+  @override
+  String get preparingAppShare => 'መተግበሪያው ለማጋራት እየተዘጋጀ ነው...';
+
+  @override
+  String get shareAppFailed => 'መተግበሪያውን ማጋራት አልተቻለም። እባክዎ እንደገና ይሞክሩ።';
+
+  @override
   String get notifications => 'ማሳወቂያዎች';
 
   @override
@@ -1826,4 +1850,248 @@ class AppLocalizationsAm extends AppLocalizations {
 
   @override
   String get onDeviceProcessingOnly => '100% በመሣሪያው ላይ የሚሰራ';
+
+  @override
+  String get reportABug => 'Report a Problem';
+
+  @override
+  String get reportABugSubtitle => 'Send a crash or bug report';
+
+  @override
+  String get bugReports => 'Bug & Crash Reports';
+
+  @override
+  String get userReports => 'User Reports';
+
+  @override
+  String get reviewBugReportsSubtitle =>
+      'Review user issues, screenshots, and crash logs';
+
+  @override
+  String get reportTypeBug => 'Bug';
+
+  @override
+  String get reportTypeCrash => 'Crash';
+
+  @override
+  String get reportTypeFeedback => 'Feedback';
+
+  @override
+  String get reportTypeLabel => 'What are you reporting?';
+
+  @override
+  String get reportTitleLabel => 'Short title';
+
+  @override
+  String get reportTitleHint => 'e.g. App freezes on lyrics';
+
+  @override
+  String get reportDescriptionLabel => 'What happened?';
+
+  @override
+  String get reportDescriptionHint =>
+      'Tell us what you were doing and what went wrong.';
+
+  @override
+  String get reportScreenshots => 'Screenshots';
+
+  @override
+  String get reportAddScreenshot => 'Add photo';
+
+  @override
+  String get reportTakePhoto => 'Take photo';
+
+  @override
+  String reportScreenshotLimit(int count) {
+    return 'You can attach up to $count screenshots';
+  }
+
+  @override
+  String get reportContactEmail => 'Contact email (optional)';
+
+  @override
+  String get reportContactEmailHint => 'So we can follow up if needed';
+
+  @override
+  String get reportDeviceInfo => 'Device details included';
+
+  @override
+  String get reportSubmit => 'Send Report';
+
+  @override
+  String get reportSubmitting => 'Sending report…';
+
+  @override
+  String get reportSuccess => 'Thank you! Your report was sent.';
+
+  @override
+  String get reportFailed => 'Could not send the report. Please try again.';
+
+  @override
+  String get reportOffline =>
+      'You\'re offline. Connect to the internet to send a report.';
+
+  @override
+  String get reportTitleRequired => 'Please add a short title';
+
+  @override
+  String get reportDescriptionRequired => 'Please describe what happened';
+
+  @override
+  String get reportPleaseWait => 'Uploading screenshots…';
+
+  @override
+  String reportUploadingScreenshot(int current, int total) {
+    return 'Uploading screenshot $current of $total…';
+  }
+
+  @override
+  String reportMaxScreenshots(int count) {
+    return 'Maximum of $count screenshots';
+  }
+
+  @override
+  String get reportRemoveScreenshot => 'Remove screenshot';
+
+  @override
+  String get reportHeroTitle => 'Help us improve';
+
+  @override
+  String get reportHeroSubtitle =>
+      'Describe the issue and attach screenshots if you can.';
+
+  @override
+  String get reportPrivacyNote =>
+      'Includes app version and device type so we can reproduce the issue. No account is required.';
+
+  @override
+  String get crashDetectedTitle => 'The app ran into a problem';
+
+  @override
+  String get crashDetectedBody =>
+      'Last time the app closed unexpectedly. Sending a report helps us fix it faster.';
+
+  @override
+  String get crashSendReport => 'Send crash report';
+
+  @override
+  String get crashDismiss => 'Not now';
+
+  @override
+  String get crashDontSend => 'Don\'t send';
+
+  @override
+  String get adminBugReportsTitle => 'Bug & Crash Reports';
+
+  @override
+  String get adminNoBugReports => 'No reports yet';
+
+  @override
+  String get adminNoBugReportsDesc =>
+      'When users send a bug or crash report, it will appear here.';
+
+  @override
+  String get adminOpenTab => 'Open';
+
+  @override
+  String get adminInProgressTab => 'In Progress';
+
+  @override
+  String get adminResolvedTab => 'Resolved';
+
+  @override
+  String get adminMarkInProgress => 'In Progress';
+
+  @override
+  String get adminMarkResolved => 'Resolve';
+
+  @override
+  String get adminReopen => 'Reopen';
+
+  @override
+  String get adminAddNotes => 'Notes';
+
+  @override
+  String get adminNotesHint => 'Internal notes…';
+
+  @override
+  String get adminSaveNotes => 'Save notes';
+
+  @override
+  String get adminDeviceInfo => 'Device';
+
+  @override
+  String get adminAppVersion => 'App version';
+
+  @override
+  String get adminStackTrace => 'Crash log';
+
+  @override
+  String get adminScreenshots => 'Screenshots';
+
+  @override
+  String get adminDeleteReport => 'Delete report';
+
+  @override
+  String get adminDeleteReportConfirm =>
+      'Permanently delete this report and its screenshots?';
+
+  @override
+  String get adminReportDeleted => 'Report deleted';
+
+  @override
+  String get adminReportUpdated => 'Report updated';
+
+  @override
+  String get adminNoOpenReports => 'No open reports. You\'re all caught up.';
+
+  @override
+  String get adminNoInProgressReports => 'No reports in progress.';
+
+  @override
+  String get adminNoResolvedReports => 'No resolved reports yet.';
+
+  @override
+  String get adminUnread => 'New';
+
+  @override
+  String get adminContact => 'Contact';
+
+  @override
+  String get about => 'About';
+
+  @override
+  String get aboutSubtitle => 'App info and developer';
+
+  @override
+  String get aboutAppName => 'Mahlete Semay';
+
+  @override
+  String get aboutAppTagline => 'Spiritual hymns and vocal training';
+
+  @override
+  String get aboutVersion => 'Version';
+
+  @override
+  String aboutVersionLine(String version, String build) {
+    return '$version ($build)';
+  }
+
+  @override
+  String get aboutDeveloper => 'Developer';
+
+  @override
+  String get aboutDeveloperName => 'Hundefra Nassir';
+
+  @override
+  String get aboutDeveloperRole => 'CEO of Eben Dev Solutions';
+
+  @override
+  String get aboutWebsite => 'Website';
+
+  @override
+  String get aboutVisitWebsite => 'Visit website';
+
+  @override
+  String get aboutCouldNotOpenWebsite => 'Could not open the website.';
 }

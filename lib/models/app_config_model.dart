@@ -31,7 +31,7 @@ class AppConfigModel {
       minRequiredVersion: json['min_required_version']?.toString().trim(),
       apkUrl: json['apk_url']?.toString().trim(),
       releaseNotes: json['release_notes']?.toString(),
-      forceUpdate: json['force_update'] == true,
+      forceUpdate: _asBool(json['force_update']),
       updatedAt: parsedDate,
     );
   }
@@ -71,5 +71,15 @@ class AppConfigModel {
   @override
   String toString() {
     return 'AppConfigModel(id: $id, latest: $latestVersion, min: $minRequiredVersion, force: $forceUpdate, url: $apkUrl)';
+  }
+
+  /// Realtime and FCM payloads may send booleans as `true`, `"true"`, `"t"`, or `1`.
+  static bool _asBool(dynamic value) {
+    if (value == true || value == 1) return true;
+    if (value is String) {
+      final normalized = value.toLowerCase().trim();
+      return normalized == 'true' || normalized == 't' || normalized == '1';
+    }
+    return false;
   }
 }

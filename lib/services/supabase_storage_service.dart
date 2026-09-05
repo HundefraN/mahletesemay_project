@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:nanoid/nanoid.dart';
 import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../config/supabase_config.dart';
 
 class SupabaseStorageService {
   static SupabaseClient get _client => Supabase.instance.client;
@@ -76,7 +79,7 @@ class SupabaseStorageService {
   }
 
   /// Uploads raw APK file bytes to Supabase storage bucket (`app-releases` by default)
-  /// and returns its full public URL. Works seamlessly on Web and Mobile.
+  /// and returns its full public URL. Reports exact byte progress via [onProgress].
   static Future<String?> uploadApkBytes(
     Uint8List bytes, {
     required String fileName,
@@ -86,16 +89,61 @@ class SupabaseStorageService {
     try {
       final sanitizedName = fileName.replaceAll(RegExp(r'[^a-zA-Z0-9_\-\.]'), '_');
       final path = 'apks/$sanitizedName';
+      final encodedPath = path.split('/').map(Uri.encodeComponent).join('/');
+      final uploadUrl = '${SupabaseConfig.url}/storage/v1/object/$bucket/$encodedPath';
 
-      await _client.storage.from(bucket).uploadBinary(
-            path,
-            bytes,
-            fileOptions: const FileOptions(
-              contentType: 'application/vnd.android.package-archive',
-              cacheControl: '3600',
-              upsert: true,
-            ),
-          );
+      final session = _client.auth.currentSession;
+      final accessToken = session?.accessToken ?? SupabaseConfig.publishableKey;
+
+      onProgress?.call(0, bytes.length);
+
+      final dio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(minutes: 2),
+          sendTimeout: const Duration(minutes: 15),
+          receiveTimeout: const Duration(minutes: 2),
+        ),
+      );
+
+      final headers = <String, dynamic>{
+        'Authorization': 'Bearer $accessToken',
+        'apikey': SupabaseConfig.publishableKey,
+        'x-upsert': 'true',
+        'cache-control': '3600',
+        'content-length': bytes.length,
+      };
+
+      Future<Response<dynamic>> send(String method) {
+        return dio.request(
+          uploadUrl,
+          data: bytes,
+          options: Options(
+            method: method,
+            headers: headers,
+            contentType: 'application/vnd.android.package-archive',
+            responseType: ResponseType.json,
+            validateStatus: (status) => status != null && status < 400,
+          ),
+          onSendProgress: (sent, total) {
+            final actualTotal = total > 0 ? total : bytes.length;
+            onProgress?.call(sent.clamp(0, actualTotal), actualTotal);
+          },
+        );
+      }
+
+      try {
+        await send('POST');
+      } on DioException catch (e) {
+        final status = e.response?.statusCode;
+        // Existing object or method mismatch: retry as an upsert PUT.
+        if (status == 400 || status == 409 || status == 405) {
+          await send('PUT');
+        } else {
+          rethrow;
+        }
+      }
+
+      onProgress?.call(bytes.length, bytes.length);
 
       final publicUrl = _client.storage.from(bucket).getPublicUrl(path);
       debugPrint('Uploaded APK to Supabase ($bucket): $publicUrl');

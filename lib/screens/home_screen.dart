@@ -20,8 +20,12 @@ import 'vocal_exercises/vocal_exercise_list_screen.dart';
 import 'vocal_range/vocal_range_finder_screen.dart';
 import 'mashup/mashup_helper_screen.dart';
 import 'settings/settings_screen.dart';
+import 'settings/report_bug_screen.dart';
 import 'tuner/guitar_tuner_screen.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../models/bug_report_model.dart';
+import '../services/crash_report_service.dart';
+import '../widgets/web_download_app_banner.dart';
 
 class HomeScreen extends StatefulWidget {
   final HomePageTab initialTab;
@@ -67,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _indicatorController.forward();
       _fabController.forward();
       _backgroundController.forward();
+      _maybePromptPendingCrash();
     });
 
     if (!kIsWeb) _checkAndShowTutorial();
@@ -78,6 +83,72 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _fabController.dispose();
     _backgroundController.dispose();
     super.dispose();
+  }
+
+  Future<void> _maybePromptPendingCrash() async {
+    if (!kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      final hasSeenTour = prefs.getBool(prefGuidedTourCompletedV2) ?? false;
+      if (!hasSeenTour) return;
+    }
+    final pending = await CrashReportService.peekForSessionPrompt();
+    if (pending == null || !mounted) return;
+
+    final l10n = AppLocalizations.of(context)!;
+    final action = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        final isDark = theme.brightness == Brightness.dark;
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          title: Text(
+            l10n.crashDetectedTitle,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          content: Text(l10n.crashDetectedBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'dismiss'),
+              child: Text(l10n.crashDismiss),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'forget'),
+              child: Text(
+                l10n.crashDontSend,
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: isDark ? const Color(0xFFDFB76C) : const Color(0xFF0A1E3F),
+                foregroundColor: isDark ? const Color(0xFF0A1E3F) : Colors.white,
+              ),
+              onPressed: () => Navigator.pop(ctx, 'send'),
+              child: Text(l10n.crashSendReport),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted) return;
+    if (action == 'forget') {
+      await CrashReportService.clearPending();
+    } else if (action == 'send') {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ReportBugScreen(
+            initialType: BugReportType.crash,
+            initialTitle: l10n.crashDetectedTitle,
+            initialDescription: pending.error,
+            initialStackTrace: pending.stackTrace,
+            clearPendingCrashOnSuccess: true,
+          ),
+        ),
+      );
+    }
   }
 
   void _showCreateSetlistDialog(BuildContext context) {
@@ -393,6 +464,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ];
 
     Widget body = _buildBody(theme, isDark);
+    if (kIsWeb) {
+      body = Column(
+        children: [
+          const WebDownloadAppBanner(),
+          Expanded(child: body),
+        ],
+      );
+    }
 
     // ── Desktop / Tablet: NavigationRail on the left ────────────────────────
     if (useRail) {

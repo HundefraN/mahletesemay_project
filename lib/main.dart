@@ -8,6 +8,7 @@ import 'package:mahlete_semay_project/screens/home_screen.dart';
 import 'package:mahlete_semay_project/screens/settings/service_reminder_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
 import 'l10n/fallback_localizations_delegate.dart';
@@ -38,6 +39,7 @@ import 'services/web_init_service.dart';
 import 'utils/web_scroll_behavior.dart';
 import 'screens/update/app_update_wrapper.dart';
 import 'services/app_update_service.dart';
+import 'services/crash_report_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
@@ -47,6 +49,7 @@ Future<void> main() async {
 
   // Synchronous, instant — safe before any async work.
   setupTimeAgoLocales();
+  CrashReportService.install();
 
   if (kIsWeb) {
     // ── Web: skip all mobile-only overhead ───────────────────────────────────
@@ -74,6 +77,9 @@ Future<void> main() async {
       NotificationService.initialize().timeout(const Duration(milliseconds: 2000), onTimeout: () {}),
       AlarmService.initialize().timeout(const Duration(milliseconds: 2000), onTimeout: () {}),
     ]);
+
+    // Must be registered before runApp so killed-state FCM can spawn the isolate.
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
     // Non-blocking background workers & push notifications
     FcmService.initialize();
@@ -184,6 +190,7 @@ class _NotificationCoordinatorState extends State<NotificationCoordinator>
     // NotificationService as soon as the handler is registered.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationService.setTapHandler(_handleNotificationTap);
+      FcmService.setTapHandler(_handleNotificationTap);
       _checkActiveRingingAlarm();
     });
 
@@ -239,7 +246,7 @@ class _NotificationCoordinatorState extends State<NotificationCoordinator>
     // app was in the background. Also check for remote app updates and active alarms.
     if (state == AppLifecycleState.resumed && mounted) {
       context.read<NotificationSettingsProvider>().refreshPermission();
-      AppUpdateService.instance.checkForUpdate();
+      AppUpdateService.instance.onAppResumed();
       _checkActiveRingingAlarm();
     }
   }
@@ -267,6 +274,8 @@ class _NotificationCoordinatorState extends State<NotificationCoordinator>
           ),
           (route) => false,
         );
+      case NotificationKind.forceUpdate:
+        unawaited(AppUpdateService.instance.checkForUpdate());
       case NotificationKind.serviceReminder:
         navigator.pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const HomeScreen()),

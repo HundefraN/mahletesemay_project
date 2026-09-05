@@ -215,6 +215,34 @@ class AppLocalizationsOm extends AppLocalizations {
   String get shareApp => 'Appicha Qoodaa';
 
   @override
+  String get shareAppSubtitle => 'Appii Android meeshaa biraatti ergi';
+
+  @override
+  String get downloadApp => 'Appicha Buusi';
+
+  @override
+  String get downloadAppSubtitle =>
+      'Appii Android kana meeshaa kana irratti fe\'i';
+
+  @override
+  String get downloadAppBannerTitle => 'Appii Android argadhu';
+
+  @override
+  String get downloadAppBannerBody =>
+      'Mahlete Semay meeshaa kana irratti fe\'uuf buusi';
+
+  @override
+  String get downloadAppUnavailable =>
+      'Appiin Android amma buufamuu hin danda\'u.';
+
+  @override
+  String get preparingAppShare => 'Appichi qoodamuuf qophaa\'aa jira...';
+
+  @override
+  String get shareAppFailed =>
+      'Appicha qooduu hin dandeenye. Irra deebi\'ii yaali.';
+
+  @override
   String get notifications => 'Beeksisa';
 
   @override
@@ -1876,4 +1904,251 @@ class AppLocalizationsOm extends AppLocalizations {
 
   @override
   String get onDeviceProcessingOnly => '100% Meeshaa Keessan Irratti Qofa';
+
+  @override
+  String get reportABug => 'Rakkoo Gabaasi';
+
+  @override
+  String get reportABugSubtitle => 'Gabaasa cufannaa ykn dogoggora ergi';
+
+  @override
+  String get bugReports => 'Gabaasawwan Dogoggoraa fi Cufannaa';
+
+  @override
+  String get userReports => 'Gabaasawwan Fayyadamaa';
+
+  @override
+  String get reviewBugReportsSubtitle =>
+      'Rakkoo fayyadamaa, suuraa screenii fi galmee cufannaa ilaali';
+
+  @override
+  String get reportTypeBug => 'Dogoggora';
+
+  @override
+  String get reportTypeCrash => 'Cufannaa';
+
+  @override
+  String get reportTypeFeedback => 'Yaada';
+
+  @override
+  String get reportTypeLabel => 'Maal gabaasaa jirta?';
+
+  @override
+  String get reportTitleLabel => 'Mata-duree gabaabaa';
+
+  @override
+  String get reportTitleHint =>
+      'fakkeenyaaf: Appichi jechoota irratti dhaabbata';
+
+  @override
+  String get reportDescriptionLabel => 'Maal ta\'e?';
+
+  @override
+  String get reportDescriptionHint =>
+      'Waan hojjechaa turtanii fi waan dogoggore nutti himaa.';
+
+  @override
+  String get reportScreenshots => 'Suuraalee screenii';
+
+  @override
+  String get reportAddScreenshot => 'Suuraa dabali';
+
+  @override
+  String get reportTakePhoto => 'Suuraa kaasi';
+
+  @override
+  String reportScreenshotLimit(int count) {
+    return 'Hanga suuraa screenii $count itti hidhuu dandeessu';
+  }
+
+  @override
+  String get reportContactEmail => 'Imeelii (filannoo)';
+
+  @override
+  String get reportContactEmailHint => 'Deebii kennuuf yoo barbanne';
+
+  @override
+  String get reportDeviceInfo => 'Odeeffannoon meeshaa ni dabalama';
+
+  @override
+  String get reportSubmit => 'Gabaasa Ergi';
+
+  @override
+  String get reportSubmitting => 'Gabaasa ergaa jira…';
+
+  @override
+  String get reportSuccess => 'Galatoomaa! Gabaasni keessan ergameera.';
+
+  @override
+  String get reportFailed =>
+      'Gabaasa erguu hin dandeenye. Irra deebi\'aa yaalaa.';
+
+  @override
+  String get reportOffline =>
+      'Sarara ala jirtu. Gabaasa erguuf interneetii qunnamaa.';
+
+  @override
+  String get reportTitleRequired => 'Mee mata-duree gabaabaa galchaa';
+
+  @override
+  String get reportDescriptionRequired => 'Mee waan ta\'e ibsaa';
+
+  @override
+  String get reportPleaseWait => 'Suuraaleen screenii olfe\'amaa jiru…';
+
+  @override
+  String reportUploadingScreenshot(int current, int total) {
+    return 'Suuraan screenii $current / $total olfe\'amaa jira…';
+  }
+
+  @override
+  String reportMaxScreenshots(int count) {
+    return 'Hangamummaan suuraa screenii $count qofa';
+  }
+
+  @override
+  String get reportRemoveScreenshot => 'Suuraa screenii haqi';
+
+  @override
+  String get reportHeroTitle => 'Fooyya\'iinsa nu gargaaraa';
+
+  @override
+  String get reportHeroSubtitle =>
+      'Rakkoo ibsaa, yoo dandeessan suuraa screenii itti hidhaa.';
+
+  @override
+  String get reportPrivacyNote =>
+      'Rakkoo irra deebi\'anii ilaaluuf version appii fi gosa meeshaa ni dabalama. Akkaawuntii hin barbaachisu.';
+
+  @override
+  String get crashDetectedTitle => 'Appichi rakkoo mudateera';
+
+  @override
+  String get crashDetectedBody =>
+      'Yeroo dhumaa appichi tasumaan cufe. Gabaasa erguu rakkoo saffisaan furuuf nu gargaara.';
+
+  @override
+  String get crashSendReport => 'Gabaasa cufannaa ergi';
+
+  @override
+  String get crashDismiss => 'Amma miti';
+
+  @override
+  String get crashDontSend => 'Hin ergin';
+
+  @override
+  String get adminBugReportsTitle => 'Gabaasawwan Dogoggoraa fi Cufannaa';
+
+  @override
+  String get adminNoBugReports => 'Hanga ammaatti gabaasni hin jiru';
+
+  @override
+  String get adminNoBugReportsDesc =>
+      'Yeroo fayyadamaan dogoggora ykn cufannaa ergu asitti mul\'ata.';
+
+  @override
+  String get adminOpenTab => 'Banaa';
+
+  @override
+  String get adminInProgressTab => 'Adeemsa irra';
+
+  @override
+  String get adminResolvedTab => 'Furameera';
+
+  @override
+  String get adminMarkInProgress => 'Adeemsa irra';
+
+  @override
+  String get adminMarkResolved => 'Furi';
+
+  @override
+  String get adminReopen => 'Irra deebi\'ii bani';
+
+  @override
+  String get adminAddNotes => 'Yaadannoo';
+
+  @override
+  String get adminNotesHint => 'Yaadannoo keessoo…';
+
+  @override
+  String get adminSaveNotes => 'Yaadannoo kuusi';
+
+  @override
+  String get adminDeviceInfo => 'Meeshaa';
+
+  @override
+  String get adminAppVersion => 'Version appii';
+
+  @override
+  String get adminStackTrace => 'Galmee cufannaa';
+
+  @override
+  String get adminScreenshots => 'Suuraalee screenii';
+
+  @override
+  String get adminDeleteReport => 'Gabaasa haqi';
+
+  @override
+  String get adminDeleteReportConfirm =>
+      'Gabaasa kana fi suuraalee screenii isaa dhaabbataatti haquu?';
+
+  @override
+  String get adminReportDeleted => 'Gabaasni haqameera';
+
+  @override
+  String get adminReportUpdated => 'Gabaasni haaromfameera';
+
+  @override
+  String get adminNoOpenReports => 'Gabaasa banaa hin jiru. Hundi xumurameera.';
+
+  @override
+  String get adminNoInProgressReports => 'Gabaasni adeemsa irra jiru hin jiru.';
+
+  @override
+  String get adminNoResolvedReports =>
+      'Hanga ammaatti gabaasni furame hin jiru.';
+
+  @override
+  String get adminUnread => 'Haaraa';
+
+  @override
+  String get adminContact => 'Qunnamtii';
+
+  @override
+  String get about => 'Waa\'ee';
+
+  @override
+  String get aboutSubtitle => 'Odeeffannoo appichaa fi qopheessaa';
+
+  @override
+  String get aboutAppName => 'Mahlete Semay';
+
+  @override
+  String get aboutAppTagline => 'Faarfannaa fi leenjii sagalee';
+
+  @override
+  String get aboutVersion => 'Version';
+
+  @override
+  String aboutVersionLine(String version, String build) {
+    return '$version ($build)';
+  }
+
+  @override
+  String get aboutDeveloper => 'Qopheessaa';
+
+  @override
+  String get aboutDeveloperName => 'Hundefra Nassir';
+
+  @override
+  String get aboutDeveloperRole => 'CEO Eben Dev Solutions';
+
+  @override
+  String get aboutWebsite => 'Marsariitii';
+
+  @override
+  String get aboutVisitWebsite => 'Marsariitii daawwadhu';
+
+  @override
+  String get aboutCouldNotOpenWebsite => 'Marsariitiin banamuu hin dandeenye.';
 }

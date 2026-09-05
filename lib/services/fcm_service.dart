@@ -1,20 +1,68 @@
 import 'dart:io';
+
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../config/supabase_config.dart';
+import '../firebase_options.dart';
+import '../models/app_config_model.dart';
+import '../utils/constants.dart';
+import 'app_update_service.dart';
 import 'background_sync_service.dart';
+import 'notification_service.dart';
+import 'push_payload.dart';
 import 'supabase_service.dart';
 
+/// Must be a top-level function: FCM runs this in a separate isolate when the
+/// app is in the background or killed. Firebase + Supabase must be created
+/// again here — they do not exist in this isolate.
 @pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('Handling background message: ${message.messageId}');
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  debugPrint(
+    'FCM background message ${message.messageId} '
+    'type=${message.data['type']} silent=${message.data['silent']}',
+  );
+
   try {
-    WidgetsFlutterBinding.ensureInitialized();
-    // Synchronize SQLite cache in background when push notification arrives while app is closed
-    await BackgroundSyncService.performBackgroundSync();
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } catch (e) {
+      debugPrint('FCM background: Firebase init notice ($e)');
+    }
+
+    try {
+      await dotenv.load();
+    } catch (_) {
+      // Compile-time / hardcoded Supabase fallbacks still apply.
+    }
+
+    try {
+      await Supabase.initialize(
+        url: SupabaseConfig.url,
+        publishableKey: SupabaseConfig.publishableKey,
+      );
+    } catch (e) {
+      debugPrint('FCM background: Supabase init notice ($e)');
+    }
+
+    try {
+      await NotificationService.initialize();
+    } catch (e) {
+      debugPrint('FCM background: NotificationService init notice ($e)');
+    }
+
+    await FcmService.handleIncomingMessage(message, fromBackground: true);
   } catch (e, stack) {
-    debugPrint('FCM background sync error: $e\n$stack');
+    debugPrint('FCM background handler error: $e\n$stack');
   }
 }
 
@@ -23,31 +71,144 @@ class FcmService {
   static final SupabaseService _supabaseService = SupabaseService();
   static final DeviceInfoPlugin _deviceInfoPlugin = DeviceInfoPlugin();
 
+  static void Function(NotificationPayload payload)? _tapHandler;
+  static bool _handlersBound = false;
+
+  /// Routes a push tap through the same navigator path as local notifications.
+  static void setTapHandler(void Function(NotificationPayload payload) handler) {
+    _tapHandler = handler;
+  }
+
   static Future<void> initialize() async {
     try {
-      if (!kIsWeb) {
-        FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      if (kIsWeb) {
+        _messaging.onTokenRefresh.listen((newToken) {
+          _saveTokenToSupabase(newToken);
+        });
+        return;
       }
 
-      // Listen for token refreshments
-      _messaging.onTokenRefresh.listen((newToken) {
-        debugPrint('FCM Token refreshed: $newToken');
-        _saveTokenToSupabase(newToken);
-      });
+      await _messaging.setForegroundNotificationPresentationOptions(
+        alert: false,
+        badge: true,
+        sound: false,
+      );
 
-      // Handle foreground notifications
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        debugPrint('Received foreground FCM message: ${message.notification?.title}');
-      });
+      if (!_handlersBound) {
+        _handlersBound = true;
 
-      // On mobile (iOS & Android): sync initial token asynchronously.
-      // On Web: never ask for permissions on startup; permission is requested only on user action.
-      if (!kIsWeb) {
-        _syncInitialToken();
+        _messaging.onTokenRefresh.listen((newToken) {
+          debugPrint('FCM Token refreshed: $newToken');
+          _saveTokenToSupabase(newToken);
+        });
+
+        FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+          debugPrint(
+            'FCM foreground message ${message.messageId} '
+            'title=${message.notification?.title}',
+          );
+          handleIncomingMessage(message, fromBackground: false);
+        });
+
+        FirebaseMessaging.onMessageOpenedApp.listen(_dispatchTap);
+
+        final initial = await _messaging.getInitialMessage();
+        if (initial != null) {
+          _dispatchTap(initial);
+        }
       }
+
+      _syncInitialToken();
     } catch (e) {
       debugPrint('Error initializing FCM service: $e');
     }
+  }
+
+  /// Syncs the SQLite cache for every incoming push. Shows a local
+  /// notification only when the payload is visible and the OS did not
+  /// already display one (foreground, or data-only).
+  static Future<void> handleIncomingMessage(
+    RemoteMessage message, {
+    required bool fromBackground,
+  }) async {
+    final payload = PushPayload.fromRemoteMessage(message);
+
+    if (payload.isForceUpdate) {
+      if (fromBackground) {
+        return;
+      }
+
+      try {
+        final latest = payload.latestVersion;
+        if (latest != null && latest.isNotEmpty) {
+          await AppUpdateService.instance.applyRemoteConfig(
+            AppConfigModel(
+              id: 'default',
+              latestVersion: latest,
+              minRequiredVersion: payload.minRequiredVersion ?? latest,
+              apkUrl: payload.apkUrl,
+              forceUpdate: payload.forceUpdate ?? true,
+            ),
+          );
+        } else {
+          await AppUpdateService.instance.checkForUpdate();
+        }
+      } catch (e) {
+        debugPrint('FCM: apply force-update config failed ($e)');
+      }
+
+      // Foreground FCM alerts are disabled, so show a local tray reminder.
+      final title = payload.title;
+      if (title != null && title.isNotEmpty) {
+        await NotificationService.showForceUpdateNotification(
+          title: title,
+          body: payload.body ?? '',
+        );
+      }
+      return;
+    }
+
+    await BackgroundSyncService.performBackgroundSync(
+      showNotifications: false,
+    );
+
+    if (payload.isSilentSync) {
+      return;
+    }
+
+    final osDisplayedNotification =
+        fromBackground && message.notification != null;
+    if (osDisplayedNotification) {
+      return;
+    }
+
+    final title = payload.title;
+    final body = payload.body;
+    if (title == null || title.isEmpty) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final alertsEnabled = prefs.getBool(prefNewContentAlertsEnabled) ?? true;
+    if (!alertsEnabled) {
+      return;
+    }
+
+    await NotificationService.showNewContentNotification(
+      title: title,
+      body: body ?? '',
+      songId: payload.reference,
+    );
+  }
+
+  static void _dispatchTap(RemoteMessage message) {
+    final payload = PushPayload.fromRemoteMessage(message).toNotificationPayload();
+    final handler = _tapHandler;
+    if (handler != null) {
+      handler(payload);
+      return;
+    }
+    NotificationService.handleRemoteTap(payload);
   }
 
   static void _syncInitialToken() {

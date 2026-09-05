@@ -1,11 +1,14 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../config/supabase_config.dart';
+import '../firebase_options.dart';
 import '../services/firebase_service.dart';
 import '../services/local_db_service.dart';
 import '../services/notification_service.dart';
@@ -23,6 +26,18 @@ void callbackDispatcher() {
     debugPrint('BackgroundSync: executing worker task "$task"');
 
     try {
+      try {
+        await dotenv.load();
+      } catch (_) {}
+
+      try {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+      } catch (e) {
+        debugPrint('BackgroundSync: Firebase init notice ($e)');
+      }
+
       // 1. Initialize Supabase in the background isolate if needed
       try {
         await Supabase.initialize(
@@ -101,8 +116,12 @@ class BackgroundSyncService {
   }
 
   /// Worker logic: checks for remote changes, updates SQLite cache, and raises
-  /// a high-priority local notification if new songs were pulled down.
-  static Future<bool> performBackgroundSync() async {
+  /// a local notification if new songs were pulled down and [showNotifications]
+  /// is true. Silent FCM wakes call this with notifications off so the OS
+  /// (or a paired visible push) owns the tray item.
+  static Future<bool> performBackgroundSync({
+    bool showNotifications = true,
+  }) async {
     try {
       final localDb = LocalDbService();
       final firebaseService = FirebaseService();
@@ -145,7 +164,7 @@ class BackgroundSyncService {
       }
 
       // Check if new songs were added that were not in the local database
-      if (existingSongIds.isNotEmpty) {
+      if (showNotifications && existingSongIds.isNotEmpty) {
         final newSongs = remoteSongs.where((s) => !existingSongIds.contains(s.id)).toList();
 
         if (newSongs.isNotEmpty) {

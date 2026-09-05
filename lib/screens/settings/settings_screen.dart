@@ -7,12 +7,15 @@ import 'package:mahlete_semay_project/screens/admin/portal_home_screen.dart';
 import 'package:mahlete_semay_project/screens/auth/login_screen.dart';
 import 'package:mahlete_semay_project/screens/auth/waiting_for_approval_screen.dart';
 import 'package:mahlete_semay_project/screens/lyrics/suggest_lyrics_screen.dart';
+import 'package:mahlete_semay_project/screens/settings/about_screen.dart';
 import 'package:mahlete_semay_project/screens/settings/notification_settings_screen.dart';
+import 'package:mahlete_semay_project/screens/settings/report_bug_screen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:mahlete_semay_project/widgets/custom_snackbar.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
-import 'package:share_plus/share_plus.dart';
 import '../../providers/auth_proveider.dart';
+import '../../services/app_distribution_service.dart';
 import '../../providers/theme_provider.dart';
 import 'package:mahlete_semay_project/providers/notification_settings_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -29,6 +32,9 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  String? _appVersion;
+  bool _sharingApp = false;
+  bool _downloadingApp = false;
 
   @override
   void initState() {
@@ -47,6 +53,25 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     );
 
     _animationController.forward();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (!mounted) return;
+      setState(() {
+        _appVersion = info.buildNumber.isEmpty
+            ? info.version
+            : '${info.version} (${info.buildNumber})';
+      });
+    } catch (_) {
+      // Footer falls back to the app name only.
+    }
+  }
+
+  void _openAbout() {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
   }
 
   @override
@@ -64,10 +89,73 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     return l10n.dailyReminderAt(settings.dailyReminderTime.format(context));
   }
 
-  Future<void> _shareApp() {
-    const String appUrl = "https://play.google.com/store/apps/details?id=your.package.name";
-    const String message = "Check out Mahlete Semay, the ultimate app for worship singers! Download it here: $appUrl";
-    return SharePlus.instance.share(ShareParams(text: message));
+  Future<void> _downloadAndroidApp() async {
+    if (_downloadingApp || _sharingApp) return;
+    setState(() => _downloadingApp = true);
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await AppDistributionService.instance.downloadAndroidApp();
+    } on AppDistributionException {
+      if (mounted) {
+        CustomSnackbar.show(context, l10n.downloadAppUnavailable, isError: true);
+      }
+    } catch (_) {
+      if (mounted) {
+        CustomSnackbar.show(context, l10n.downloadAppUnavailable, isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _downloadingApp = false);
+    }
+  }
+
+  Future<void> _shareApp() async {
+    if (_sharingApp || _downloadingApp) return;
+    setState(() => _sharingApp = true);
+    final l10n = AppLocalizations.of(context)!;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return PopScope(
+          canPop: false,
+          child: AlertDialog(
+            content: Row(
+              children: [
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+                const SizedBox(width: 16),
+                Expanded(child: Text(l10n.preparingAppShare)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    var dialogOpen = true;
+    void closeDialog() {
+      if (!dialogOpen || !mounted) return;
+      dialogOpen = false;
+      final navigator = Navigator.of(context, rootNavigator: true);
+      if (navigator.canPop()) navigator.pop();
+    }
+
+    try {
+      await AppDistributionService.instance.shareAndroidApp(onPrepared: closeDialog);
+    } on AppDistributionException {
+      if (mounted) {
+        CustomSnackbar.show(context, l10n.downloadAppUnavailable, isError: true);
+      }
+    } catch (_) {
+      if (mounted) {
+        CustomSnackbar.show(context, l10n.shareAppFailed, isError: true);
+      }
+    } finally {
+      closeDialog();
+      if (mounted) setState(() => _sharingApp = false);
+    }
   }
 
   Future<void> _showExitDialog() async {
@@ -327,9 +415,44 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                               ),
                               _buildDivider(),
                               _buildSettingsTile(
+                                icon: Icon(Icons.bug_report_outlined, size: 20, color: theme.colorScheme.error),
+                                title: l10n.reportABug,
+                                subtitle: l10n.reportABugSubtitle,
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const ReportBugScreen()),
+                                ),
+                                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                              ),
+                              if (kIsWeb) ...[
+                                _buildDivider(),
+                                _buildSettingsTile(
+                                  icon: Icon(Icons.android_rounded, size: 20, color: theme.colorScheme.primary),
+                                  title: l10n.downloadApp,
+                                  subtitle: l10n.downloadAppSubtitle,
+                                  onTap: _downloadAndroidApp,
+                                  trailing: _downloadingApp
+                                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                      : const Icon(Icons.download_rounded, size: 18),
+                                ),
+                              ],
+                              _buildDivider(),
+                              _buildSettingsTile(
                                 icon: Icon(Icons.share_rounded, size: 20, color: theme.colorScheme.primary),
                                 title: l10n.shareApp,
+                                subtitle: l10n.shareAppSubtitle,
                                 onTap: _shareApp,
+                                trailing: _sharingApp
+                                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                    : const Icon(Icons.ios_share_rounded, size: 18),
+                              ),
+                              _buildDivider(),
+                              _buildSettingsTile(
+                                icon: Icon(Icons.info_outline_rounded, size: 20, color: theme.colorScheme.primary),
+                                title: l10n.about,
+                                subtitle: l10n.aboutSubtitle,
+                                onTap: _openAbout,
+                                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                               ),
                             ],
                           ),
@@ -367,27 +490,36 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                             ),
                           const SizedBox(height: 20),
                           Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.asset(
-                                    'assets/logo/logo.png',
-                                    width: 28,
-                                    height: 28,
-                                    fit: BoxFit.cover,
-                                  ),
+                            child: InkWell(
+                              onTap: _openAbout,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.asset(
+                                        'assets/logo/logo.png',
+                                        width: 28,
+                                        height: 28,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      _appVersion == null
+                                          ? l10n.aboutAppName
+                                          : '${l10n.aboutAppName} v$_appVersion',
+                                      style: TextStyle(
+                                        color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  'Mahlete Semay v1.0.0',
-                                  style: TextStyle(
-                                    color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ],

@@ -1,8 +1,6 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../../services/app_update_service.dart';
-import '../../services/supabase_service.dart';
 import 'app_update_lock_screen.dart';
 
 /// App-level root wrapper that monitors remote release configuration
@@ -18,29 +16,20 @@ class AppUpdateWrapper extends StatefulWidget {
 
 class _AppUpdateWrapperState extends State<AppUpdateWrapper>
     with WidgetsBindingObserver {
-  StreamSubscription? _configStreamSub;
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // 1. Initial check when wrapper mounts
+    // Live monitoring: Realtime + push-triggered apply + foreground poll.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      AppUpdateService.instance.checkForUpdate();
-    });
-
-    // 2. Realtime listener for live backend updates
-    _configStreamSub = SupabaseService().getAppConfigStream().listen((_) {
-      if (mounted) {
-        AppUpdateService.instance.checkForUpdate();
-      }
+      AppUpdateService.instance.startMonitoring();
     });
   }
 
   @override
   void dispose() {
-    _configStreamSub?.cancel();
+    AppUpdateService.instance.pauseBackgroundPolling();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -48,10 +37,12 @@ class _AppUpdateWrapperState extends State<AppUpdateWrapper>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    // Re-verify version whenever the app returns from the background
+    // After Install-unknown-apps settings, continue with the existing APK.
     if (state == AppLifecycleState.resumed && mounted) {
-      debugPrint('[AppUpdateWrapper] App resumed from background. Re-checking version...');
-      AppUpdateService.instance.checkForUpdate();
+      debugPrint('[AppUpdateWrapper] App resumed from background. Continuing update flow...');
+      AppUpdateService.instance.onAppResumed();
+    } else if (state == AppLifecycleState.paused) {
+      AppUpdateService.instance.pauseBackgroundPolling();
     }
   }
 

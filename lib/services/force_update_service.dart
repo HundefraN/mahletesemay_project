@@ -67,12 +67,95 @@ class ForceUpdateService {
     }
   }
 
+  /// Reads the `+build` suffix from a version string such as `1.0.2+4`.
+  static int? parseBuildNumber(String? raw, {String? fallback}) {
+    if (raw != null) {
+      final plus = raw.trim().split('+');
+      if (plus.length > 1) {
+        final fromString = int.tryParse(plus.last.trim());
+        if (fromString != null) return fromString;
+      }
+      final parsed = parseVersion(raw);
+      if (parsed != null && parsed.build.isNotEmpty) {
+        final first = parsed.build.first;
+        if (first is int) return first;
+        final fromBuild = int.tryParse(first.toString());
+        if (fromBuild != null) return fromBuild;
+      }
+    }
+    if (fallback != null && fallback.trim().isNotEmpty) {
+      return int.tryParse(fallback.trim());
+    }
+    return null;
+  }
+
+  /// Compares two versions, using Android `versionCode` / pubspec `+build`
+  /// when the marketing versions are equal.
+  static int compareVersions({
+    required Version left,
+    int? leftBuild,
+    required Version right,
+    int? rightBuild,
+  }) {
+    final semver = left.compareTo(right);
+    if (semver != 0) return semver;
+    return (leftBuild ?? 0).compareTo(rightBuild ?? 0);
+  }
+
+  /// Single source of truth for the lock screen.
+  ///
+  /// A user who is already on [latestVersion] (or newer) is never locked,
+  /// even if `force_update` is still enabled in admin.
+  static bool isUpdateRequired({
+    required String? installedVersion,
+    String? installedBuild,
+    required String? minRequiredVersion,
+    required String? latestVersion,
+    required bool forceUpdate,
+  }) {
+    final installed = parseVersion(installedVersion);
+    if (installed == null) return false;
+
+    final installedBuildNo = parseBuildNumber(
+      installedVersion,
+      fallback: installedBuild,
+    );
+    final minRequired = parseVersion(minRequiredVersion);
+    final minBuild = parseBuildNumber(minRequiredVersion);
+    final latest = parseVersion(latestVersion);
+    final latestBuild = parseBuildNumber(latestVersion);
+
+    if (minRequired != null &&
+        compareVersions(
+              left: installed,
+              leftBuild: installedBuildNo,
+              right: minRequired,
+              rightBuild: minBuild,
+            ) <
+            0) {
+      return true;
+    }
+
+    // Force update only locks devices that are still behind the published latest.
+    if (forceUpdate && latest != null) {
+      return compareVersions(
+            left: installed,
+            leftBuild: installedBuildNo,
+            right: latest,
+            rightBuild: latestBuild,
+          ) <
+          0;
+    }
+
+    return false;
+  }
+
   /// Performs the version comparison.
   ///
   /// Returns [ForceUpdateResult.updateRequired] == `false` when:
   /// - The backend column is missing, null, or disabled (graceful degradation).
   /// - The version strings cannot be parsed.
-  /// - The installed version is greater than or equal to the minimum.
+  /// - The installed version is greater than or equal to the minimum / latest.
   Future<ForceUpdateResult> checkForUpdate() async {
     if (kIsWeb) {
       return const ForceUpdateResult(updateRequired: false);
@@ -87,44 +170,30 @@ class ForceUpdateService {
         return const ForceUpdateResult(updateRequired: false);
       }
 
-      final minRequiredVersion = parseVersion(minVersionString);
-      final latestVersion = parseVersion(latestVersionString);
-
       // 2. Read the installed app version from the native platform.
       final packageInfo = await PackageInfo.fromPlatform();
-      final installedVersionString = packageInfo.version; // e.g. "1.0.0"
-      final installedVersion = parseVersion(installedVersionString);
+      final installedVersionString = packageInfo.version;
+      final installedDisplay = packageInfo.buildNumber.isNotEmpty
+          ? '${packageInfo.version}+${packageInfo.buildNumber}'
+          : packageInfo.version;
 
-      if (installedVersion == null) {
-        debugPrint(
-          '[ForceUpdate] Could not parse installed version: $installedVersionString',
-        );
-        return const ForceUpdateResult(updateRequired: false);
-      }
-
-      // 3. Evaluate update requirement
-      bool needsUpdate = false;
-      if (minRequiredVersion != null && installedVersion < minRequiredVersion) {
-        needsUpdate = true;
-      }
-      if (config?.forceUpdate == true) {
-        if (latestVersion != null && installedVersion < latestVersion) {
-          needsUpdate = true;
-        } else if (minRequiredVersion != null && installedVersion < minRequiredVersion) {
-          needsUpdate = true;
-        } else {
-          needsUpdate = true;
-        }
-      }
+      final needsUpdate = isUpdateRequired(
+        installedVersion: installedVersionString,
+        installedBuild: packageInfo.buildNumber,
+        minRequiredVersion: minVersionString,
+        latestVersion: latestVersionString,
+        forceUpdate: config?.forceUpdate ?? false,
+      );
 
       debugPrint(
-        '[ForceUpdate] Version check: installed=$installedVersion (raw: $installedVersionString), '
-        'min_required=$minRequiredVersion (raw: $minVersionString), needsUpdate=$needsUpdate',
+        '[ForceUpdate] Version check: installed=$installedDisplay, '
+        'min_required=$minVersionString, latest=$latestVersionString, '
+        'force=${config?.forceUpdate} -> needsUpdate=$needsUpdate',
       );
 
       return ForceUpdateResult(
         updateRequired: needsUpdate,
-        installedVersion: installedVersionString,
+        installedVersion: installedDisplay,
         minRequiredVersion: minVersionString,
       );
     } catch (e, st) {

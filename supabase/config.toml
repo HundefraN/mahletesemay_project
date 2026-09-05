@@ -1,0 +1,5 @@
+# Minimal config so `supabase functions deploy send-push` works from this repo.
+project_id = "onsvnudakxkrqazrufar"
+
+[functions.send-push]
+verify_jwt = true

@@ -19,6 +19,7 @@ enum NotificationKind {
   serviceAlarmOverlay('service_alarm_overlay'),
   practiceContinuation('practice_continuation'),
   newContent('new_content'),
+  forceUpdate('force_update'),
   test('test');
 
   const NotificationKind(this.wireName);
@@ -164,6 +165,16 @@ class NotificationService {
     playSound: true,
   );
 
+  static const AndroidNotificationChannel _appUpdateChannel =
+      AndroidNotificationChannel(
+    'app_updates_v1',
+    'App Updates',
+    description: 'Reminders to install a new version of Mahlete Semay.',
+    importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
+  );
+
   /// Channels shipped by earlier builds.
   static const List<String> _retiredChannelIds = <String>[
     'daily_reminder_channel_id',
@@ -182,6 +193,7 @@ class NotificationService {
   static const int _serviceIdBase = 1000000;
   static const int _contentIdBase = 2000000;
   static const int _contentIdSpan = 1000;
+  static const int forceUpdateId = 3000001;
 
   static bool _initialized = false;
   static void Function(NotificationPayload payload)? _tapHandler;
@@ -260,6 +272,7 @@ class NotificationService {
         _alarmChannel,
         _practiceChannel,
         _contentChannel,
+        _appUpdateChannel,
       ].map((channel) => android.createNotificationChannel(channel)),
     ]);
   }
@@ -299,6 +312,11 @@ class NotificationService {
     }
     handler(payload);
   }
+
+  /// Used by FCM tap routing (`onMessageOpenedApp` / `getInitialMessage`) so
+  /// remote and local notifications share the same navigator path.
+  static void handleRemoteTap(NotificationPayload? payload) =>
+      _dispatchTap(payload);
 
   static AndroidFlutterLocalNotificationsPlugin? get _androidPlugin =>
       _plugin.resolvePlatformSpecificImplementation<
@@ -607,6 +625,19 @@ class NotificationService {
       body: body,
       when: tz.TZDateTime.now(tz.local).add(delay),
       payload: const NotificationPayload(NotificationKind.practiceContinuation),
+    );
+  }
+
+  static Future<void> showForceUpdateNotification({
+    required String title,
+    required String body,
+  }) async {
+    await _show(
+      id: forceUpdateId,
+      channel: _appUpdateChannel,
+      title: title,
+      body: body,
+      payload: const NotificationPayload(NotificationKind.forceUpdate),
     );
   }
 

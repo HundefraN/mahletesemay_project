@@ -15,8 +15,10 @@ import '../../admin/manage_general_exercises_screen.dart';
 import '../../admin/manage_invite_codes_screen.dart';
 import '../../admin/manage_moderators_screen.dart';
 import '../../admin/manage_songs_screen.dart';
+import '../../admin/review_bug_reports_screen.dart';
 import '../../admin/review_suggestion_screen.dart';
 import '../../admin/widgets/admin_ui_kit.dart';
+import '../../models/bug_report_model.dart';
 import '../../models/suggestion_model.dart';
 import '../../providers/auth_proveider.dart';
 import '../../providers/song_provider.dart';
@@ -333,6 +335,33 @@ class PortalHomeScreen extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 24),
+                  AdminSectionHeader(
+                    title: AppLocalizations.of(context)?.userReports ??
+                        'User Reports',
+                    icon: Icons.support_agent_rounded,
+                  ),
+                  const SizedBox(height: 4),
+                  _buildModernListTile(
+                    context,
+                    title: AppLocalizations.of(context)?.bugReports ??
+                        'Bug & Crash Reports',
+                    subtitle: AppLocalizations.of(context)
+                            ?.reviewBugReportsSubtitle ??
+                        'Review user issues, screenshots, and crash logs',
+                    icon: Icons.bug_report_rounded,
+                    accentColor: AdminUiKit.roseRed,
+                    badgeStream: firebaseService.getBugReportsStream().map(
+                          (list) => list
+                              .where((r) => r.status == BugReportStatus.open)
+                              .length,
+                        ),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const ReviewBugReportsScreen()),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   AdminSectionHeader(
