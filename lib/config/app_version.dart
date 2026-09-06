@@ -5,7 +5,7 @@
 /// sideload or split-APK rebuild; this value is the source of truth for the
 /// force-update lock.
 class AppVersion {
-  static const String name = '1.0.6';
-  static const String buildNumber = '8';
+  static const String name = '1.0.7';
+  static const String buildNumber = '9';
   static const String full = '$name+$buildNumber';
 }
