@@ -40,6 +40,7 @@ import 'utils/web_scroll_behavior.dart';
 import 'screens/update/app_update_wrapper.dart';
 import 'services/app_update_service.dart';
 import 'services/crash_report_service.dart';
+import 'services/usage_analytics_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
@@ -56,6 +57,7 @@ Future<void> main() async {
     // No FlutterNativeSplash, no NotificationService, no FcmService.
     // Just initialize Supabase + Firebase (required by providers) and go.
     await WebInitService.instance.initialize();
+    unawaited(UsageAnalyticsService.instance.recordVisit());
     runApp(const MyApp());
   } else {
     // ── Mobile: keep the existing blocking flow ─────────────────────────────
@@ -84,6 +86,15 @@ Future<void> main() async {
     // Non-blocking background workers & push notifications
     FcmService.initialize();
     unawaited(BackgroundSyncService.initialize());
+    unawaited(UsageAnalyticsService.instance.recordVisit());
+
+    // Local version + last known release, so an already-updated device never
+    // flashes the lock screen while the first network check is in flight.
+    try {
+      await AppUpdateService.instance.hydrate();
+    } catch (e, st) {
+      debugPrint('[main] AppUpdateService.hydrate failed: $e\n$st');
+    }
 
     runApp(const MyApp());
   }
@@ -150,7 +161,9 @@ class MyApp extends StatelessWidget {
                   onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
                   behavior: HitTestBehavior.translucent,
                   child: RepairModeWrapper(
-                    child: AppUpdateWrapper(child: child!),
+                    child: AppUpdateWrapper(
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                   ),
                 );
               },
@@ -247,6 +260,7 @@ class _NotificationCoordinatorState extends State<NotificationCoordinator>
     if (state == AppLifecycleState.resumed && mounted) {
       context.read<NotificationSettingsProvider>().refreshPermission();
       AppUpdateService.instance.onAppResumed();
+      unawaited(UsageAnalyticsService.instance.recordVisit());
       _checkActiveRingingAlarm();
     }
   }

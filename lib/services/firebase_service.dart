@@ -7,6 +7,7 @@ import '../models/invitation_model.dart';
 import '../models/moderator_model.dart';
 import '../models/song_model.dart';
 import '../models/suggestion_model.dart';
+import '../models/vocal_plan_catalog.dart';
 import '../models/vocal_plan_model.dart';
 import 'supabase_service.dart';
 
@@ -40,8 +41,9 @@ class FirebaseService {
 
   Stream<List<VocalExerciseDay>> getVocalPlanDaysStream(String planId) => _supabase.getVocalPlanDaysStream(planId);
   Future<List<VocalExerciseDay>> getVocalPlanDays(String planId) => _supabase.getVocalPlanDays(planId);
+  Future<Map<String, VocalPlanDayStats>> getVocalPlanDayStats() => _supabase.getVocalPlanDayStats();
   Future<void> addVocalExerciseDay(String planId, VocalExerciseDay exerciseDay) => _supabase.addVocalExerciseDay(planId, exerciseDay);
-  Future<void> updateVocalExerciseDay(String planId, String dayId, Map<String, dynamic> data) => _supabase.updateVocalExerciseDay(planId, dayId, data);
+  Future<void> updateVocalExerciseDay(String planId, String dayId, VocalExerciseDay day) => _supabase.updateVocalExerciseDay(planId, dayId, day);
   Future<void> deleteVocalExerciseDay(String planId, String dayId) => _supabase.deleteVocalExerciseDay(planId, dayId);
 
   Stream<List<VocalExerciseDay>> getGeneralExercisesStream() => _supabase.getGeneralExercisesStream();

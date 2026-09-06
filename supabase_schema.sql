@@ -82,11 +82,15 @@ CREATE TABLE IF NOT EXISTS public.vocal_plan_days (
     plan_id TEXT NOT NULL,
     day_number INTEGER NOT NULL DEFAULT 0,
     title TEXT NOT NULL DEFAULT '',
+    english_title TEXT NOT NULL DEFAULT '',
     description TEXT NOT NULL DEFAULT '',
     audio_url TEXT,
     is_rest_day BOOLEAN NOT NULL DEFAULT FALSE,
+    search_keywords TEXT[] NOT NULL DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::TEXT, now())
 );
+ALTER TABLE public.vocal_plan_days ADD COLUMN IF NOT EXISTS english_title TEXT NOT NULL DEFAULT '';
+ALTER TABLE public.vocal_plan_days ADD COLUMN IF NOT EXISTS search_keywords TEXT[] NOT NULL DEFAULT '{}';
 
 -- General Exercises Table
 CREATE TABLE IF NOT EXISTS public.general_exercises (
@@ -198,6 +202,7 @@ CREATE INDEX IF NOT EXISTS idx_artists_search_keywords ON public.artists USING G
 CREATE INDEX IF NOT EXISTS idx_albums_search_keywords ON public.albums USING GIN (search_keywords);
 CREATE INDEX IF NOT EXISTS idx_songs_search_keywords ON public.songs USING GIN (search_keywords);
 CREATE INDEX IF NOT EXISTS idx_general_exercises_search_keywords ON public.general_exercises USING GIN (search_keywords);
+CREATE INDEX IF NOT EXISTS idx_vocal_plan_days_search_keywords ON public.vocal_plan_days USING GIN (search_keywords);
 
 -- ==============================================================================
 -- RPC FUNCTIONS

@@ -68,44 +68,173 @@ class ForceUpdateService {
   }
 
   /// Reads the `+build` suffix from a version string such as `1.0.2+4`.
+  ///
+  /// `flutter build apk --split-per-abi` rewrites Android versionCode to
+  /// `abiIndex * 1000 + pubspecBuild` (armeabi-v7a → 1005 for `+5`).
   static int? parseBuildNumber(String? raw, {String? fallback}) {
+    int? parsed;
     if (raw != null) {
       final plus = raw.trim().split('+');
       if (plus.length > 1) {
-        final fromString = int.tryParse(plus.last.trim());
-        if (fromString != null) return fromString;
+        parsed = int.tryParse(plus.last.trim());
       }
-      final parsed = parseVersion(raw);
-      if (parsed != null && parsed.build.isNotEmpty) {
-        final first = parsed.build.first;
-        if (first is int) return first;
-        final fromBuild = int.tryParse(first.toString());
-        if (fromBuild != null) return fromBuild;
+      if (parsed == null) {
+        final version = parseVersion(raw);
+        if (version != null && version.build.isNotEmpty) {
+          final first = version.build.first;
+          parsed = first is int ? first : int.tryParse(first.toString());
+        }
       }
     }
-    if (fallback != null && fallback.trim().isNotEmpty) {
-      return int.tryParse(fallback.trim());
+    parsed ??= (fallback != null && fallback.trim().isNotEmpty)
+        ? int.tryParse(fallback.trim())
+        : null;
+    return _normalizeSplitAbiBuild(parsed);
+  }
+
+  /// Strips the ABI prefix Flutter adds for split APKs (1xxx / 2xxx / 4xxx).
+  static int? _normalizeSplitAbiBuild(int? build) {
+    if (build == null) return null;
+    final abiIndex = build ~/ 1000;
+    if (abiIndex == 1 || abiIndex == 2 || abiIndex == 3 || abiIndex == 4) {
+      return build % 1000;
     }
-    return null;
+    return build;
   }
 
   /// Compares two versions, using Android `versionCode` / pubspec `+build`
   /// when the marketing versions are equal.
+  ///
+  /// pub_semver treats `1.0.5` as older than `1.0.5+7`. The app often parses
+  /// those separately (`version` + `buildNumber`), so build must not decide
+  /// the marketing comparison.
   static int compareVersions({
     required Version left,
     int? leftBuild,
     required Version right,
     int? rightBuild,
   }) {
-    final semver = left.compareTo(right);
-    if (semver != 0) return semver;
+    final marketing = Version(
+      left.major,
+      left.minor,
+      left.patch,
+      pre: left.preRelease.isEmpty ? null : left.preRelease.join('.'),
+    ).compareTo(
+      Version(
+        right.major,
+        right.minor,
+        right.patch,
+        pre: right.preRelease.isEmpty ? null : right.preRelease.join('.'),
+      ),
+    );
+    if (marketing != 0) return marketing;
     return (leftBuild ?? 0).compareTo(rightBuild ?? 0);
+  }
+
+  static bool _isSameMarketingVersion(Version left, Version right) {
+    return left.major == right.major &&
+        left.minor == right.minor &&
+        left.patch == right.patch &&
+        listEquals(left.preRelease, right.preRelease);
+  }
+
+  /// True when [installedVersion] is the same release or newer than [targetVersion].
+  ///
+  /// Same `major.minor.patch` with a missing `+build` on either side is treated
+  /// as current. Admin fields and PackageInfo often disagree on build after
+  /// an APK install, which previously left updated users stuck on the lock.
+  static bool isInstalledAtLeast({
+    required String? installedVersion,
+    String? installedBuild,
+    required String? targetVersion,
+  }) {
+    final installed = parseVersion(installedVersion);
+    final target = parseVersion(targetVersion);
+    if (installed == null || target == null) return false;
+
+    final leftBuild = parseBuildNumber(
+      installedVersion,
+      fallback: installedBuild,
+    );
+    final rightBuild = parseBuildNumber(targetVersion);
+
+    if (compareVersions(
+          left: installed,
+          leftBuild: leftBuild,
+          right: target,
+          rightBuild: rightBuild,
+        ) >=
+        0) {
+      return true;
+    }
+
+    if (_isSameMarketingVersion(installed, target) &&
+        ((leftBuild ?? 0) == 0 || (rightBuild ?? 0) == 0)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /// Formats a version for UI (`v1.0.6+8`) without stacking extra `v` prefixes.
+  static String formatDisplay(String? raw, {String fallback = '—'}) {
+    final canonical = formatCanonical(raw);
+    if (canonical.isEmpty) return fallback;
+    return 'v$canonical';
+  }
+
+  /// `1.0.6+8` with ABI prefixes stripped and a leading `v` removed.
+  static String formatCanonical(String? raw, {String? build}) {
+    final parsed = parseVersion(raw);
+    if (parsed == null) {
+      return (raw ?? '').trim().replaceFirst(RegExp(r'^[vV]'), '');
+    }
+    final normalizedBuild = parseBuildNumber(raw, fallback: build);
+    if (normalizedBuild != null && normalizedBuild > 0) {
+      return '${parsed.major}.${parsed.minor}.${parsed.patch}+$normalizedBuild';
+    }
+    return '${parsed.major}.${parsed.minor}.${parsed.patch}';
+  }
+
+  /// Returns the newer of [a] and [b]. Empty / unparsable values lose.
+  static String? selectNewerVersion(String? a, String? b) {
+    final left = (a ?? '').trim();
+    final right = (b ?? '').trim();
+    if (left.isEmpty) return right.isEmpty ? null : right;
+    if (right.isEmpty) return left;
+    if (isInstalledAtLeast(installedVersion: left, targetVersion: right)) {
+      return formatCanonical(left);
+    }
+    return formatCanonical(right);
+  }
+
+  /// Identity of the running binary: the newer of compile-time pubspec
+  /// version and what Android PackageManager reports.
+  ///
+  /// Sideloaded / split APKs often keep a stale `versionName` (e.g. `1.0.3+5`)
+  /// even after the 1.0.6 code is what is executing. The compiled constant
+  /// must win in that case or the lock screen never clears.
+  static String resolveRunningVersion({
+    required String compileTimeVersion,
+    String? compileTimeBuild,
+    String? platformVersion,
+    String? platformBuild,
+  }) {
+    final compiled = formatCanonical(
+      compileTimeVersion,
+      build: compileTimeBuild,
+    );
+    final platform = formatCanonical(
+      platformVersion,
+      build: platformBuild,
+    );
+    return selectNewerVersion(compiled, platform) ?? compiled;
   }
 
   /// Single source of truth for the lock screen.
   ///
   /// A user who is already on [latestVersion] (or newer) is never locked,
-  /// even if `force_update` is still enabled in admin.
+  /// even if `min_required_version` is higher or `force_update` is still on.
   static bool isUpdateRequired({
     required String? installedVersion,
     String? installedBuild,
@@ -116,38 +245,26 @@ class ForceUpdateService {
     final installed = parseVersion(installedVersion);
     if (installed == null) return false;
 
-    final installedBuildNo = parseBuildNumber(
-      installedVersion,
-      fallback: installedBuild,
-    );
-    final minRequired = parseVersion(minRequiredVersion);
-    final minBuild = parseBuildNumber(minRequiredVersion);
-    final latest = parseVersion(latestVersion);
-    final latestBuild = parseBuildNumber(latestVersion);
+    // Already on the published latest → never lock.
+    if (isInstalledAtLeast(
+      installedVersion: installedVersion,
+      installedBuild: installedBuild,
+      targetVersion: latestVersion,
+    )) {
+      return false;
+    }
 
-    if (minRequired != null &&
-        compareVersions(
-              left: installed,
-              leftBuild: installedBuildNo,
-              right: minRequired,
-              rightBuild: minBuild,
-            ) <
-            0) {
+    if (!isInstalledAtLeast(
+          installedVersion: installedVersion,
+          installedBuild: installedBuild,
+          targetVersion: minRequiredVersion,
+        ) &&
+        parseVersion(minRequiredVersion) != null) {
       return true;
     }
 
     // Force update only locks devices that are still behind the published latest.
-    if (forceUpdate && latest != null) {
-      return compareVersions(
-            left: installed,
-            leftBuild: installedBuildNo,
-            right: latest,
-            rightBuild: latestBuild,
-          ) <
-          0;
-    }
-
-    return false;
+    return forceUpdate && parseVersion(latestVersion) != null;
   }
 
   /// Performs the version comparison.
@@ -178,7 +295,7 @@ class ForceUpdateService {
           : packageInfo.version;
 
       final needsUpdate = isUpdateRequired(
-        installedVersion: installedVersionString,
+        installedVersion: installedDisplay,
         installedBuild: packageInfo.buildNumber,
         minRequiredVersion: minVersionString,
         latestVersion: latestVersionString,

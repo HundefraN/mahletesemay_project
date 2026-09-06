@@ -116,7 +116,7 @@ class PushDispatchService {
       return result;
     } catch (e) {
       debugPrint('PushDispatch: force-update send-push invoke failed ($e)');
-      return PushSendResult(ok: false, error: e.toString());
+      return PushSendResult(ok: false, error: _humanizeInvokeError(e));
     }
   }
 
@@ -129,6 +129,16 @@ class PushDispatchService {
       }
     }
     return null;
+  }
+
+  static String _humanizeInvokeError(Object error) {
+    try {
+      final details = (error as dynamic).details;
+      if (details is Map && details['error'] != null) {
+        return details['error'].toString();
+      }
+    } catch (_) {}
+    return error.toString();
   }
 
   static PushSendResult _parseInvokeResult(dynamic data) {

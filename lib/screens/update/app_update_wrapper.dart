@@ -21,10 +21,11 @@ class _AppUpdateWrapperState extends State<AppUpdateWrapper>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // Live monitoring: Realtime + push-triggered apply + foreground poll.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      AppUpdateService.instance.startMonitoring();
-    });
+    if (!kIsWeb) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        AppUpdateService.instance.startMonitoring();
+      });
+    }
   }
 
   @override
@@ -39,7 +40,7 @@ class _AppUpdateWrapperState extends State<AppUpdateWrapper>
     super.didChangeAppLifecycleState(state);
     // After Install-unknown-apps settings, continue with the existing APK.
     if (state == AppLifecycleState.resumed && mounted) {
-      debugPrint('[AppUpdateWrapper] App resumed from background. Continuing update flow...');
+      debugPrint('[AppUpdateWrapper] App resumed. Rechecking installed version...');
       AppUpdateService.instance.onAppResumed();
     } else if (state == AppLifecycleState.paused) {
       AppUpdateService.instance.pauseBackgroundPolling();

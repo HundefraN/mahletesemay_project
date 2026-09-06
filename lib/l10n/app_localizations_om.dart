@@ -992,7 +992,7 @@ class AppLocalizationsOm extends AppLocalizations {
 
   @override
   String get liveMetricsSubtitle =>
-      'Tiraafika kallattii, chaartii ilaalamu fi safartuulee deetaabeezii';
+      'Fe\'iinsa appii, daawwanna weebsaayitii fi safartuulee qabiyyee';
 
   @override
   String get appAnalyticsTooltip => 'Xiinxala Appii';
@@ -1147,6 +1147,39 @@ class AppLocalizationsOm extends AppLocalizations {
 
   @override
   String get totalSongViews => 'Waliigala Daawwannaawwan Faaruu';
+
+  @override
+  String get audienceOverview => 'Dhaggeeffattoota';
+
+  @override
+  String get appInstalls => 'Fe\'iinsa Appii';
+
+  @override
+  String get websiteVisitors => 'Daawwattoota Weebsaayitii';
+
+  @override
+  String get websiteVisits => 'Daawwanna Weebsaayitii';
+
+  @override
+  String get installsToday => 'Fe\'iinsa har\'aa';
+
+  @override
+  String get visitsToday => 'Daawwanna har\'aa';
+
+  @override
+  String get trafficLast7Days => 'Tiraafika (Guyyoota 7 Darban)';
+
+  @override
+  String get noAudienceDataYet =>
+      'Hamma yoonaatti daataa dhaggeeffattootaa hin jiru';
+
+  @override
+  String get noAudienceDataDesc =>
+      'Lakkoofsi fe\'iinsaa fi daawwannaa namoonni app ykn weebsaayitii yeroo banan mul\'ata.';
+
+  @override
+  String get audienceSubtitle =>
+      'Meeshaalee app fe\'an fi browzerota weebsaayitii daawwatan';
 
   @override
   String get songsAdded7Days => 'Faaruulee Dabalaman (Guyyoota 7 Darban)';
@@ -2151,4 +2184,137 @@ class AppLocalizationsOm extends AppLocalizations {
 
   @override
   String get aboutCouldNotOpenWebsite => 'Marsariitiin banamuu hin dandeenye.';
+
+  @override
+  String get vocalPlansOverview => 'Haguuggii sirna barnootaa';
+
+  @override
+  String vocalPlansPublishedCount(int published, int expected) {
+    return 'Guyyaawwan $published keessaa $expected maxxanfameera';
+  }
+
+  @override
+  String vocalPlansCompleteCount(int complete, int total) {
+    return 'Karoora $complete keessaa $total xumurameera';
+  }
+
+  @override
+  String planDaysProgress(int current, int expected) {
+    return 'Guyyaa $current keessaa $expected';
+  }
+
+  @override
+  String planDaysCount(int count) {
+    return 'Guyyaawwan $count';
+  }
+
+  @override
+  String get planStatusComplete => 'Xumurame';
+
+  @override
+  String get planStatusInProgress => 'Adeemsa irra';
+
+  @override
+  String get planStatusEmpty => 'Duwwaa';
+
+  @override
+  String restDaysCount(int count) {
+    return 'Boqonnaa $count';
+  }
+
+  @override
+  String get searchPlanDaysHint =>
+      'Guyyaa mata duree ykn lakkoofsaan barbaadi...';
+
+  @override
+  String get noMatchingPlanDays =>
+      'Guyyaan barbaacha keessan wajjin walsimu hin jiru';
+
+  @override
+  String missingDaysWarning(String days) {
+    return 'Guyyaawwan hanqatan: $days';
+  }
+
+  @override
+  String duplicateDaysWarning(String days) {
+    return 'Lakkoofsa guyyaa irra deebi\'an: $days';
+  }
+
+  @override
+  String get dayNumberInvalid => 'Lakkoofsa guyyaa 1 ykn isaa ol galchi';
+
+  @override
+  String dayNumberDuplicate(int number) {
+    return 'Guyyaan $number karoora kana keessatti duraan jira';
+  }
+
+  @override
+  String dayNumberOutOfRange(int max) {
+    return 'Karooraan kun guyyaa 1–$max fayyadama';
+  }
+
+  @override
+  String get discardUnsavedVocalDay => 'Jijjiirama hin olkaafamne gatamuu?';
+
+  @override
+  String get failedToLoadVocalPlans =>
+      'Adeemsa karoora sagalee fe\'uun hin dandeenye';
+
+  @override
+  String get duplicateDayBadge => 'IRRA DEEBI\'AA';
+
+  @override
+  String get missingAudioBadge => 'SAGALEE HIN JIRU';
+
+  @override
+  String get replaceAudio => 'Bakka buusi';
+
+  @override
+  String get removeAudio => 'Haqi';
+
+  @override
+  String get previewAudio => 'Dhaggeeffadhu';
+
+  @override
+  String get pausePreview => 'Dhaabi';
+
+  @override
+  String get previouslyUploadedAudio => 'Duraan ol fe\'ame';
+
+  @override
+  String get audioPendingReplacement => 'Yeroo olkaa\'amu ni jijjiirama';
+
+  @override
+  String get audioMarkedForRemoval => 'Yeroo olkaa\'amu ni haqama';
+
+  @override
+  String get keepExistingAudio => 'Sagalee jiru eegi';
+
+  @override
+  String get preparingAudioUpload => 'Ol fe\'iinsa sagalee qopheessaa...';
+
+  @override
+  String uploadingAudioProgress(String uploaded, String total, String percent) {
+    return '$uploaded keessaa $total ol fe\'aa · $percent%';
+  }
+
+  @override
+  String get savingVocalDrill => 'Shaakala sagalee olkaa\'aa...';
+
+  @override
+  String get audioUploadComplete => 'Ol fe\'iinsi xumurameera';
+
+  @override
+  String get confirmRemoveAudioTitle => 'Sagaleen haqamuu?';
+
+  @override
+  String get confirmRemoveAudioBody =>
+      'Sagaleen kun shaakala irraa ni hiikama. Shaakalichi sagalee yoo barbaade olkaa\'uu dura bakka bu\'aa ol fe\'i.';
+
+  @override
+  String get replacementAudioSelected => 'Bakka bu\'aan filameera';
+
+  @override
+  String get audioPreviewFailed =>
+      'Faayilii sagalee kana taphachiisuun hin dandeenye';
 }

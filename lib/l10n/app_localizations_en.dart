@@ -979,7 +979,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get liveMetricsSubtitle =>
-      'Live traffic, view charts, and database metrics';
+      'App installs, website visits, and content metrics';
 
   @override
   String get appAnalyticsTooltip => 'App Analytics';
@@ -1132,6 +1132,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get totalSongViews => 'Total Song Views';
+
+  @override
+  String get audienceOverview => 'Audience';
+
+  @override
+  String get appInstalls => 'App Installs';
+
+  @override
+  String get websiteVisitors => 'Website Visitors';
+
+  @override
+  String get websiteVisits => 'Website Visits';
+
+  @override
+  String get installsToday => 'Installs today';
+
+  @override
+  String get visitsToday => 'Visits today';
+
+  @override
+  String get trafficLast7Days => 'Traffic (Last 7 Days)';
+
+  @override
+  String get noAudienceDataYet => 'No audience data yet';
+
+  @override
+  String get noAudienceDataDesc =>
+      'Install and visit counts appear after people open the app or website.';
+
+  @override
+  String get audienceSubtitle =>
+      'Unique devices that installed the app and browsers that visited the website';
 
   @override
   String get songsAdded7Days => 'Songs Added (Last 7 Days)';
@@ -1991,7 +2023,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportPrivacyNote =>
-      'Includes app version and device type so we can reproduce the issue. No account is required.';
+      'Includes app version and device type so we can reproduce the issue.';
 
   @override
   String get crashDetectedTitle => 'The app ran into a problem';
@@ -2123,4 +2155,134 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutCouldNotOpenWebsite => 'Could not open the website.';
+
+  @override
+  String get vocalPlansOverview => 'Curriculum coverage';
+
+  @override
+  String vocalPlansPublishedCount(int published, int expected) {
+    return '$published of $expected days published';
+  }
+
+  @override
+  String vocalPlansCompleteCount(int complete, int total) {
+    return '$complete of $total plans complete';
+  }
+
+  @override
+  String planDaysProgress(int current, int expected) {
+    return '$current of $expected days';
+  }
+
+  @override
+  String planDaysCount(int count) {
+    return '$count days';
+  }
+
+  @override
+  String get planStatusComplete => 'Complete';
+
+  @override
+  String get planStatusInProgress => 'In progress';
+
+  @override
+  String get planStatusEmpty => 'Empty';
+
+  @override
+  String restDaysCount(int count) {
+    return '$count rest';
+  }
+
+  @override
+  String get searchPlanDaysHint => 'Search days by title or number...';
+
+  @override
+  String get noMatchingPlanDays => 'No days match your search';
+
+  @override
+  String missingDaysWarning(String days) {
+    return 'Missing days: $days';
+  }
+
+  @override
+  String duplicateDaysWarning(String days) {
+    return 'Duplicate day numbers: $days';
+  }
+
+  @override
+  String get dayNumberInvalid => 'Enter a day number of 1 or higher';
+
+  @override
+  String dayNumberDuplicate(int number) {
+    return 'Day $number already exists in this plan';
+  }
+
+  @override
+  String dayNumberOutOfRange(int max) {
+    return 'This plan uses days 1–$max';
+  }
+
+  @override
+  String get discardUnsavedVocalDay =>
+      'Discard unsaved changes to this vocal drill?';
+
+  @override
+  String get failedToLoadVocalPlans => 'Failed to load vocal plan progress';
+
+  @override
+  String get duplicateDayBadge => 'DUPLICATE';
+
+  @override
+  String get missingAudioBadge => 'NO AUDIO';
+
+  @override
+  String get replaceAudio => 'Replace';
+
+  @override
+  String get removeAudio => 'Remove';
+
+  @override
+  String get previewAudio => 'Preview';
+
+  @override
+  String get pausePreview => 'Pause';
+
+  @override
+  String get previouslyUploadedAudio => 'Previously uploaded';
+
+  @override
+  String get audioPendingReplacement => 'Ready to replace on save';
+
+  @override
+  String get audioMarkedForRemoval => 'Will be removed when you save';
+
+  @override
+  String get keepExistingAudio => 'Keep existing audio';
+
+  @override
+  String get preparingAudioUpload => 'Preparing audio upload...';
+
+  @override
+  String uploadingAudioProgress(String uploaded, String total, String percent) {
+    return 'Uploading $uploaded of $total · $percent%';
+  }
+
+  @override
+  String get savingVocalDrill => 'Saving vocal drill...';
+
+  @override
+  String get audioUploadComplete => 'Upload complete';
+
+  @override
+  String get confirmRemoveAudioTitle => 'Remove audio?';
+
+  @override
+  String get confirmRemoveAudioBody =>
+      'This audio will be detached from the drill. Upload a replacement before saving if the exercise still needs audio.';
+
+  @override
+  String get replacementAudioSelected => 'Replacement selected';
+
+  @override
+  String get audioPreviewFailed => 'Could not play this audio file';
 }

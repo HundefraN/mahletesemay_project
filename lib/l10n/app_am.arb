@@ -353,6 +353,16 @@
   "totalArtists": "ጠቅላላ አርቲስቶች",
   "totalAlbums": "ጠቅላላ አልበሞች",
   "totalSongViews": "ጠቅላላ የመዝሙር እይታዎች",
+  "audienceOverview": "Audience",
+  "appInstalls": "App Installs",
+  "websiteVisitors": "Website Visitors",
+  "websiteVisits": "Website Visits",
+  "installsToday": "Installs today",
+  "visitsToday": "Visits today",
+  "trafficLast7Days": "Traffic (Last 7 Days)",
+  "noAudienceDataYet": "No audience data yet",
+  "noAudienceDataDesc": "Install and visit counts appear after people open the app or website.",
+  "audienceSubtitle": "Unique devices that installed the app and browsers that visited the website",
   "songsAdded7Days": "የተጨመሩ መዝሙራት (ባለፉት 7 ቀናት)",
   "artistDistributionBreakdown": "የአርቲስቶች ስርጭት ክፍፍል",
   "top5ViewedSongs": "በጣም የታዩ ምርጥ 5 መዝሙራት",
@@ -587,5 +597,96 @@
   "enableNotifications": "ማሳወቂያዎችን አንቃ",
   "allowAccess": "ፈቃድ ስጥ",
   "allPermissionsGranted": "ሁሉም ፈቃዶች ተሰጥተዋል!",
-  "onDeviceProcessingOnly": "100% በመሣሪያው ላይ የሚሰራ"
+  "onDeviceProcessingOnly": "100% በመሣሪያው ላይ የሚሰራ",
+  "vocalPlansOverview": "የስርአተ-ትምህርት ሽፋን",
+  "vocalPlansPublishedCount": "{published} ከ {expected} ቀናት ታትመዋል",
+  "@vocalPlansPublishedCount": {
+    "placeholders": {
+      "published": { "type": "int" },
+      "expected": { "type": "int" }
+    }
+  },
+  "vocalPlansCompleteCount": "{complete} ከ {total} እቅዶች ተሟልተዋል",
+  "@vocalPlansCompleteCount": {
+    "placeholders": {
+      "complete": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "planDaysProgress": "{current} ከ {expected} ቀናት",
+  "@planDaysProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "expected": { "type": "int" }
+    }
+  },
+  "planDaysCount": "{count} ቀናት",
+  "@planDaysCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "planStatusComplete": "ተሟልቷል",
+  "planStatusInProgress": "በሂደት ላይ",
+  "planStatusEmpty": "ባዶ",
+  "restDaysCount": "{count} እረፍት",
+  "@restDaysCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "searchPlanDaysHint": "ቀናትን በርዕስ ወይም በቁጥር ፈልግ...",
+  "noMatchingPlanDays": "ከፍለጋዎ ጋር የሚዛመድ ቀን የለም",
+  "missingDaysWarning": "የጎደሉ ቀናት: {days}",
+  "@missingDaysWarning": {
+    "placeholders": {
+      "days": { "type": "String" }
+    }
+  },
+  "duplicateDaysWarning": "ተደጋጋሚ የቀን ቁጥሮች: {days}",
+  "@duplicateDaysWarning": {
+    "placeholders": {
+      "days": { "type": "String" }
+    }
+  },
+  "dayNumberInvalid": "1 ወይም ከዚያ በላይ የሆነ የቀን ቁጥር ያስገቡ",
+  "dayNumberDuplicate": "ቀን {number} በዚህ እቅድ ውስጥ አስቀድሞ አለ",
+  "@dayNumberDuplicate": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "dayNumberOutOfRange": "ይህ እቅድ ከ 1–{max} ቀናት ይጠቀማል",
+  "@dayNumberOutOfRange": {
+    "placeholders": {
+      "max": { "type": "int" }
+    }
+  },
+  "discardUnsavedVocalDay": "ያልተቀመጡ ለውጦች ይጣሉ?",
+  "failedToLoadVocalPlans": "የድምፅ እቅድ ሂደትን መጫን አልተሳካም",
+  "duplicateDayBadge": "ተደጋጋሚ",
+  "missingAudioBadge": "ድምፅ የለም",
+  "replaceAudio": "ቀይር",
+  "removeAudio": "አስወግድ",
+  "previewAudio": "አጫውት",
+  "pausePreview": "ቆም",
+  "previouslyUploadedAudio": "ቀድሞ የተጫነ",
+  "audioPendingReplacement": "ሲቀመጥ ይቀየራል",
+  "audioMarkedForRemoval": "ሲቀመጥ ይወገዳል",
+  "keepExistingAudio": "ያለውን ድምጽ አቆይ",
+  "preparingAudioUpload": "የድምጽ መጫን በመዘጋጀት ላይ...",
+  "uploadingAudioProgress": "{uploaded} ከ {total} በመጫን ላይ · {percent}%",
+  "@uploadingAudioProgress": {
+    "placeholders": {
+      "uploaded": { "type": "String" },
+      "total": { "type": "String" },
+      "percent": { "type": "String" }
+    }
+  },
+  "savingVocalDrill": "የድምጽ ልምምድ በማስቀመጥ ላይ...",
+  "audioUploadComplete": "መጫን ተጠናቋል",
+  "confirmRemoveAudioTitle": "ድምጽ ይወገድ?",
+  "confirmRemoveAudioBody": "ይህ ድምጽ ከልምምዱ ይላቀቃል። ልምምዱ ድምጽ ከፈለገ ከማስቀመጥዎ በፊት አዲስ ይጫኑ።",
+  "replacementAudioSelected": "የመተኪያ ተመርጧል",
+  "audioPreviewFailed": "ይህን የድምጽ ፋይል ማጫወት አልተቻለም"
 }

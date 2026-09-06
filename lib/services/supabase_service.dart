@@ -11,6 +11,7 @@ import '../models/invitation_model.dart';
 import '../models/moderator_model.dart';
 import '../models/song_model.dart';
 import '../models/suggestion_model.dart';
+import '../models/vocal_plan_catalog.dart';
 import '../models/vocal_plan_model.dart';
 import '../utils/amharic_transliterator.dart';
 import '../utils/constants.dart';
@@ -426,34 +427,69 @@ class SupabaseService {
           .select()
           .eq('plan_id', planId)
           .order('day_number', ascending: true);
-      return (response as List).map((item) => VocalExerciseDay.fromMap(item as Map<String, dynamic>)).toList();
+      return (response as List)
+          .map((item) => VocalExerciseDay.fromMap(item as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       debugPrint('Error getting vocal plan days: $e');
-      return [];
+      rethrow;
+    }
+  }
+
+  Future<Map<String, VocalPlanDayStats>> getVocalPlanDayStats() async {
+    try {
+      final response = await _client
+          .from('vocal_plan_days')
+          .select('plan_id, day_number, is_rest_day');
+
+      final dayNumbers = <String, List<int>>{};
+      final restCounts = <String, int>{};
+
+      for (final planId in VocalPlanCatalog.planIds) {
+        dayNumbers[planId] = [];
+        restCounts[planId] = 0;
+      }
+
+      for (final raw in response as List) {
+        final row = raw as Map<String, dynamic>;
+        final planId = row['plan_id']?.toString() ?? '';
+        if (planId.isEmpty) continue;
+        final dayNumber = row['day_number'] is int
+            ? row['day_number'] as int
+            : int.tryParse(row['day_number']?.toString() ?? '') ?? 0;
+        dayNumbers.putIfAbsent(planId, () => []).add(dayNumber);
+        final isRest = row['is_rest_day'] == true;
+        if (isRest) {
+          restCounts[planId] = (restCounts[planId] ?? 0) + 1;
+        }
+      }
+
+      return {
+        for (final entry in dayNumbers.entries)
+          entry.key: VocalPlanDayStats(
+            planId: entry.key,
+            dayNumbers: List<int>.from(entry.value)..sort(),
+            restDayCount: restCounts[entry.key] ?? 0,
+          ),
+      };
+    } catch (e) {
+      debugPrint('Error getting vocal plan day stats: $e');
+      rethrow;
     }
   }
 
   Stream<List<VocalExerciseDay>> getVocalPlanDaysStream(String planId) async* {
-    try {
-      final initial = await getVocalPlanDays(planId);
-      yield initial;
-    } catch (e) {
-      debugPrint('Error in initial getVocalPlanDays: $e');
-    }
+    yield await getVocalPlanDays(planId);
 
-    try {
-      yield* _client
-          .from('vocal_plan_days')
-          .stream(primaryKey: ['id'])
-          .eq('plan_id', planId)
-          .order('day_number', ascending: true)
-          .map((maps) => maps.map((item) => VocalExerciseDay.fromMap(item)).toList())
-          .handleError((e) {
-            debugPrint('Realtime stream error for vocal_plan_days: $e');
-          });
-    } catch (e) {
-      debugPrint('Error subscribing to vocal_plan_days stream: $e');
-    }
+    yield* _client
+        .from('vocal_plan_days')
+        .stream(primaryKey: ['id'])
+        .eq('plan_id', planId)
+        .order('day_number', ascending: true)
+        .map((maps) => maps.map((item) => VocalExerciseDay.fromMap(item)).toList())
+        .handleError((e) {
+          debugPrint('Realtime stream error for vocal_plan_days: $e');
+        });
   }
 
   Future<void> addVocalExerciseDay(String planId, VocalExerciseDay exerciseDay) async {
@@ -465,13 +501,14 @@ class SupabaseService {
     }
   }
 
-  Future<void> updateVocalExerciseDay(String planId, String dayId, Map<String, dynamic> data) async {
+  Future<void> updateVocalExerciseDay(
+    String planId,
+    String dayId,
+    VocalExerciseDay day,
+  ) async {
     try {
-      final payload = Map<String, dynamic>.from(data);
+      final payload = day.toSupabase(planId);
       payload.remove('id');
-      if (payload.containsKey('dayNumber')) payload['day_number'] = payload.remove('dayNumber');
-      if (payload.containsKey('audioUrl')) payload['audio_url'] = payload.remove('audioUrl');
-      if (payload.containsKey('isRestDay')) payload['is_rest_day'] = payload.remove('isRestDay');
       await _client.from('vocal_plan_days').update(payload).eq('id', dayId);
     } catch (e) {
       debugPrint('Error updating vocal exercise day: $e');

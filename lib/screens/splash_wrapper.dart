@@ -9,7 +9,6 @@ import '../utils/constants.dart';
 import 'home_screen.dart';
 import 'onboarding/language_selection_screen.dart';
 import 'onboarding/onboarding_screen.dart';
-import 'update/app_update_lock_screen.dart';
 
 /// ──────────────────────────────────────────────────────────────────────────────
 /// SplashWrapper — app initialization gate
@@ -18,17 +17,17 @@ import 'update/app_update_lock_screen.dart';
 /// This widget is the first screen shown after the native splash. It resolves
 /// several asynchronous checks in order:
 ///
-/// 1. **Force update check** — queries the backend for `min_required_version`
-///    and compares it against the installed version. If an update is required,
-///    an un-dismissible dialog blocks the user (see [ForceUpdateDialog]).
+/// 1. **Language Selection** — first-run language picker (EN / AM / OM).
 ///
-/// 2. **Language Selection** — first-run language picker (EN / AM / OM).
+/// 2. **Permissions** — first-run professional permission request screen (Mobile only).
 ///
-/// 3. **Permissions** — first-run professional permission request screen (Mobile only).
+/// 3. **Onboarding** — modern 2026 onboarding carousel (Mobile only).
 ///
-/// 4. **Onboarding** — modern 2026 onboarding carousel (Mobile only).
+/// 4. **HomeScreen** — the main app.
 ///
-/// 5. **HomeScreen** — the main app.
+/// Mandatory updates are handled exclusively by [AppUpdateWrapper] so this
+/// one-shot future can never freeze the user on the lock screen after they
+/// already installed the new version.
 /// ──────────────────────────────────────────────────────────────────────────────
 class SplashWrapper extends StatefulWidget {
   const SplashWrapper({super.key});
@@ -39,7 +38,6 @@ class SplashWrapper extends StatefulWidget {
 
 enum AppStatus {
   checking,
-  needsUpdate,
   needsLanguage,
   needsPermissions,
   needsOnboarding,
@@ -70,17 +68,8 @@ class _SplashWrapperState extends State<SplashWrapper> {
       return AppStatus.ready;
     }
 
-    // ── Mobile path ─────────────────────────────────────────────────────────
-
-    // Trigger update check asynchronously in background so splash is never delayed.
-    // AppUpdateWrapper mounted at MaterialApp root will immediately show AppUpdateLockScreen
-    // if an update is found to be required.
+    // Kick the update check; AppUpdateWrapper is the only lock surface.
     unawaited(AppUpdateService.instance.checkForUpdate());
-
-    // If a mandatory update is already marked as required, block immediately
-    if (AppUpdateService.instance.isUpdateRequired) {
-      return AppStatus.needsUpdate;
-    }
 
     // ── Local preferences (language / permissions / onboarding) ──────────
     final prefs = await SharedPreferences.getInstance();
@@ -111,11 +100,6 @@ class _SplashWrapperState extends State<SplashWrapper> {
         if (snapshot.connectionState == ConnectionState.done) {
           final status = snapshot.data;
           switch (status) {
-            // Force update: show production non-dismissible AppUpdateLockScreen
-            case AppStatus.needsUpdate:
-              return AppUpdateLockScreen(
-                config: AppUpdateService.instance.currentConfig,
-              );
             case AppStatus.needsLanguage:
               return const LanguageSelectionScreen();
             case AppStatus.needsPermissions:

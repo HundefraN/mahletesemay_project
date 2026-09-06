@@ -11,7 +11,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/supabase_config.dart';
 import '../firebase_options.dart';
-import '../models/app_config_model.dart';
 import '../utils/constants.dart';
 import 'app_update_service.dart';
 import 'background_sync_service.dart';
@@ -139,20 +138,12 @@ class FcmService {
       }
 
       try {
-        final latest = payload.latestVersion;
-        if (latest != null && latest.isNotEmpty) {
-          await AppUpdateService.instance.applyRemoteConfig(
-            AppConfigModel(
-              id: 'default',
-              latestVersion: latest,
-              minRequiredVersion: payload.minRequiredVersion ?? latest,
-              apkUrl: payload.apkUrl,
-              forceUpdate: payload.forceUpdate ?? true,
-            ),
-          );
-        } else {
-          await AppUpdateService.instance.checkForUpdate();
-        }
+        await AppUpdateService.instance.applyPartialRemoteConfig(
+          latestVersion: payload.latestVersion,
+          minRequiredVersion: payload.minRequiredVersion,
+          apkUrl: payload.apkUrl,
+          forceUpdate: payload.forceUpdate,
+        );
       } catch (e) {
         debugPrint('FCM: apply force-update config failed ($e)');
       }

@@ -993,7 +993,7 @@ class AppLocalizationsSo extends AppLocalizations {
 
   @override
   String get liveMetricsSubtitle =>
-      'Dhaqdhaqaaqa tooska ah, jaantusyada daawashada, iyo xogta kaydka';
+      'Rakibaadda app-ka, booqashooyinka websaytka, iyo cabbirada nuxurka';
 
   @override
   String get appAnalyticsTooltip => 'Falanqaynta Abka';
@@ -1150,6 +1150,39 @@ class AppLocalizationsSo extends AppLocalizations {
 
   @override
   String get totalSongViews => 'Wadarta Daawashada Heesaha';
+
+  @override
+  String get audienceOverview => 'Dhagaystayaasha';
+
+  @override
+  String get appInstalls => 'Rakibaadda App-ka';
+
+  @override
+  String get websiteVisitors => 'Booqdayaasha Websaytka';
+
+  @override
+  String get websiteVisits => 'Booqashooyinka Websaytka';
+
+  @override
+  String get installsToday => 'Rakibaadaha maanta';
+
+  @override
+  String get visitsToday => 'Booqashooyinka maanta';
+
+  @override
+  String get trafficLast7Days =>
+      'Taraafigga (7-dii Maalmood ee La Soo Dhaafay)';
+
+  @override
+  String get noAudienceDataYet => 'Weli ma jirto xog dhagaystayaal';
+
+  @override
+  String get noAudienceDataDesc =>
+      'Tirada rakibaadda iyo booqashada waxay muuqanayaan marka dadku furan app-ka ama websaytka.';
+
+  @override
+  String get audienceSubtitle =>
+      'Aaladaha app-ka ku rakibay iyo biraawsarrada websaytka booqday';
 
   @override
   String get songsAdded7Days =>
@@ -2166,4 +2199,135 @@ class AppLocalizationsSo extends AppLocalizations {
 
   @override
   String get aboutCouldNotOpenWebsite => 'Mareegta lama furi karin.';
+
+  @override
+  String get vocalPlansOverview => 'Daboolka manhajka';
+
+  @override
+  String vocalPlansPublishedCount(int published, int expected) {
+    return '$published ka mid ah $expected maalmood ayaa la daabacay';
+  }
+
+  @override
+  String vocalPlansCompleteCount(int complete, int total) {
+    return '$complete ka mid ah $total qorshe ayaa dhammaystiran';
+  }
+
+  @override
+  String planDaysProgress(int current, int expected) {
+    return '$current ka mid ah $expected maalmood';
+  }
+
+  @override
+  String planDaysCount(int count) {
+    return '$count maalmood';
+  }
+
+  @override
+  String get planStatusComplete => 'Dhammaystiran';
+
+  @override
+  String get planStatusInProgress => 'Socda';
+
+  @override
+  String get planStatusEmpty => 'Madhan';
+
+  @override
+  String restDaysCount(int count) {
+    return '$count nasasho';
+  }
+
+  @override
+  String get searchPlanDaysHint => 'Raadi maalmo cinwaan ama nambar...';
+
+  @override
+  String get noMatchingPlanDays => 'Maalmo kugu habboon raadintaada ma jiraan';
+
+  @override
+  String missingDaysWarning(String days) {
+    return 'Maalmo maqan: $days';
+  }
+
+  @override
+  String duplicateDaysWarning(String days) {
+    return 'Nambarada maalinta ee soo noqnoqda: $days';
+  }
+
+  @override
+  String get dayNumberInvalid => 'Geli nambar maalin 1 ama ka badan';
+
+  @override
+  String dayNumberDuplicate(int number) {
+    return 'Maalinta $number horay ayay ugu jirtay qorshahan';
+  }
+
+  @override
+  String dayNumberOutOfRange(int max) {
+    return 'Qorshahani wuxuu isticmaalaa maalmaha 1–$max';
+  }
+
+  @override
+  String get discardUnsavedVocalDay => 'Tuuri isbeddellada aan la kaydin?';
+
+  @override
+  String get failedToLoadVocalPlans =>
+      'Waa lagu guuldareystay in la soo raro horumarka qorshaha codka';
+
+  @override
+  String get duplicateDayBadge => 'SOO NOQNOQDA';
+
+  @override
+  String get missingAudioBadge => 'COD MAAHA';
+
+  @override
+  String get replaceAudio => 'Beddel';
+
+  @override
+  String get removeAudio => 'Ka saar';
+
+  @override
+  String get previewAudio => 'Dhageyso';
+
+  @override
+  String get pausePreview => 'Hakad';
+
+  @override
+  String get previouslyUploadedAudio => 'Horay loo soo geliyay';
+
+  @override
+  String get audioPendingReplacement =>
+      'Waa la beddeli doonaa marka la kaydiyo';
+
+  @override
+  String get audioMarkedForRemoval => 'Waa laga saari doonaa marka la kaydiyo';
+
+  @override
+  String get keepExistingAudio => 'Codka jira hayso';
+
+  @override
+  String get preparingAudioUpload => 'Diyaarinta soo gelinta codka...';
+
+  @override
+  String uploadingAudioProgress(String uploaded, String total, String percent) {
+    return '$uploaded / $total soo gelinaya · $percent%';
+  }
+
+  @override
+  String get savingVocalDrill => 'Kaydinta layliga codka...';
+
+  @override
+  String get audioUploadComplete => 'Soo gelintu waa dhammaatay';
+
+  @override
+  String get confirmRemoveAudioTitle => 'Codka ma laga saaraa?';
+
+  @override
+  String get confirmRemoveAudioBody =>
+      'Codkan waa laga saari doonaa layliga. Haddii layligu weli u baahan yahay cod, soo geli mid cusub ka hor kaydinta.';
+
+  @override
+  String get replacementAudioSelected => 'Beddelka waa la xushay';
+
+  @override
+  String get audioPreviewFailed => 'Lama ciyaari karo faylkan codka';
 }

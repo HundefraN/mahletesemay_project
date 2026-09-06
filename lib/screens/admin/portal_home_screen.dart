@@ -20,10 +20,12 @@ import '../../admin/review_suggestion_screen.dart';
 import '../../admin/widgets/admin_ui_kit.dart';
 import '../../models/bug_report_model.dart';
 import '../../models/suggestion_model.dart';
+import '../../models/usage_stats_model.dart';
 import '../../providers/auth_proveider.dart';
 import '../../providers/song_provider.dart';
 import '../../services/firebase_service.dart';
 import '../../services/supabase_service.dart';
+import '../../services/usage_analytics_service.dart';
 import '../../utils/responsive_sizer.dart';
 import '../../widgets/web_content_wrapper.dart';
 import '../home_screen.dart';
@@ -336,6 +338,14 @@ class PortalHomeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 24),
+                  AdminSectionHeader(
+                    title: AppLocalizations.of(context)?.audienceOverview ??
+                        'Audience',
+                    icon: Icons.groups_rounded,
+                  ),
+                  const SizedBox(height: 4),
+                  const _AudienceOverviewCards(),
                   const SizedBox(height: 24),
                   AdminSectionHeader(
                     title: AppLocalizations.of(context)?.userReports ??
@@ -1154,6 +1164,124 @@ class PortalHomeScreen extends StatelessWidget {
           fontWeight: FontWeight.w800,
           color: AdminUiKit.primaryNavy,
         ),
+      ),
+    );
+  }
+}
+
+class _AudienceOverviewCards extends StatefulWidget {
+  const _AudienceOverviewCards();
+
+  @override
+  State<_AudienceOverviewCards> createState() => _AudienceOverviewCardsState();
+}
+
+class _AudienceOverviewCardsState extends State<_AudienceOverviewCards> {
+  UsageStats? _stats;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final stats = await UsageAnalyticsService.instance.fetchStats();
+      if (!mounted) return;
+      setState(() {
+        _stats = stats;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _stats = UsageStats.empty();
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final installs = _stats?.appInstalls ?? 0;
+    final visitors = _stats?.websiteVisitors ?? 0;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _buildCard(
+            context,
+            isDark: isDark,
+            title: l10n?.appInstalls ?? 'App Installs',
+            value: _loading ? '—' : installs.toString(),
+            icon: Icons.download_done_rounded,
+            accentColor: AdminUiKit.royalBlue,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _buildCard(
+            context,
+            isDark: isDark,
+            title: l10n?.websiteVisitors ?? 'Website Visitors',
+            value: _loading ? '—' : visitors.toString(),
+            icon: Icons.language_rounded,
+            accentColor: AdminUiKit.emeraldGreen,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCard(
+    BuildContext context, {
+    required bool isDark,
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color accentColor,
+  }) {
+    return AdminGlassCard(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: accentColor, size: 20),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: isDark ? Colors.white : AdminUiKit.primaryNavy,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            title,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white60 : Colors.black54,
+            ),
+          ),
+        ],
       ),
     );
   }

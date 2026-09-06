@@ -87,12 +87,67 @@ class VocalExerciseDay {
     };
   }
 
+  VocalExerciseDay copyWith({
+    String? id,
+    int? dayNumber,
+    String? title,
+    String? englishTitle,
+    String? description,
+    String? audioUrl,
+    bool? isRestDay,
+    List<String>? searchKeywords,
+    bool clearAudioUrl = false,
+  }) {
+    return VocalExerciseDay(
+      id: id ?? this.id,
+      dayNumber: dayNumber ?? this.dayNumber,
+      title: title ?? this.title,
+      englishTitle: englishTitle ?? this.englishTitle,
+      description: description ?? this.description,
+      audioUrl: clearAudioUrl ? null : (audioUrl ?? this.audioUrl),
+      isRestDay: isRestDay ?? this.isRestDay,
+      searchKeywords: searchKeywords ?? this.searchKeywords,
+    );
+  }
+
+  factory VocalExerciseDay.fromForm({
+    required String id,
+    required int dayNumber,
+    required String title,
+    required String description,
+    required bool isRestDay,
+    String? audioUrl,
+  }) {
+    final englishTitle = AmharicTransliterator.containsAmharic(title)
+        ? AmharicTransliterator.toLatin(title)
+        : title;
+    return VocalExerciseDay(
+      id: id,
+      dayNumber: dayNumber,
+      title: title,
+      englishTitle: englishTitle,
+      description: description,
+      audioUrl: audioUrl,
+      isRestDay: isRestDay,
+      searchKeywords: AmharicTransliterator.generateSearchKeywords(
+        title: title,
+        englishTitle: englishTitle,
+        lyricsOrDescription: description,
+      ),
+    );
+  }
+
   Map<String, dynamic> toSupabase([String? planId]) {
+    final effectiveEnglish = englishTitle.isNotEmpty
+        ? englishTitle
+        : (AmharicTransliterator.containsAmharic(title)
+            ? AmharicTransliterator.toLatin(title)
+            : title);
     final effectiveKeywords = searchKeywords.isNotEmpty
         ? searchKeywords
         : AmharicTransliterator.generateSearchKeywords(
             title: title,
-            englishTitle: englishTitle,
+            englishTitle: effectiveEnglish,
             lyricsOrDescription: description,
           );
 
@@ -101,7 +156,7 @@ class VocalExerciseDay {
       if (planId != null) 'plan_id': planId,
       'day_number': dayNumber,
       'title': title,
-      'english_title': englishTitle,
+      'english_title': effectiveEnglish,
       'description': description,
       'audio_url': audioUrl,
       'is_rest_day': isRestDay,

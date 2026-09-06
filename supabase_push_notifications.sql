@@ -2,7 +2,7 @@
 -- Run in the Supabase SQL editor AFTER deploying supabase/functions/send-push.
 --
 -- Required secret (CLI):
---   supabase secrets set FIREBASE_SERVICE_ACCOUNT_JSON="$(cat service-account.json)"
+--   supabase secrets set FIREBASE_SERVICE_ACCOUNT="$(cat service-account.json)"
 --
 -- The Flutter admin client also invokes send-push after catalog writes.
 -- These triggers cover edits made in the dashboard or any other client.

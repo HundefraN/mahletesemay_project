@@ -563,6 +563,7 @@ class AdminEmptyState extends StatelessWidget {
   final String description;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final IconData actionIcon;
 
   const AdminEmptyState({
     super.key,
@@ -571,6 +572,7 @@ class AdminEmptyState extends StatelessWidget {
     required this.description,
     this.actionLabel,
     this.onAction,
+    this.actionIcon = Icons.add_rounded,
   });
 
   @override
@@ -624,7 +626,7 @@ class AdminEmptyState extends StatelessWidget {
               const SizedBox(height: 24),
               AdminPrimaryButton(
                 label: actionLabel!,
-                icon: Icons.add_rounded,
+                icon: actionIcon,
                 onPressed: onAction,
                 height: 44,
                 borderRadius: 12,

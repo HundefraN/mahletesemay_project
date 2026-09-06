@@ -45,7 +45,7 @@ class SupabaseStorageService {
   }
 
   /// Uploads raw audio bytes to Supabase storage bucket (`audio` by default)
-  /// and returns its full public URL. Works seamlessly on Web, iOS, and Android.
+  /// and returns its full public URL. Reports exact byte progress via [onProgress].
   static Future<String?> uploadAudioBytes(
     Uint8List bytes, {
     String extension = '.mp3',
@@ -56,19 +56,42 @@ class SupabaseStorageService {
     try {
       final ext = extension.startsWith('.') ? extension : '.$extension';
       final fileName = '${nanoid(12)}$ext';
-      final filePath = folder != null && folder.isNotEmpty ? '$folder/$fileName' : fileName;
+      final filePath =
+          folder != null && folder.isNotEmpty ? '$folder/$fileName' : fileName;
 
-      // Upload binary to Supabase Storage
-      await _client.storage.from(bucket).uploadBinary(
-            filePath,
-            bytes,
-            fileOptions: const FileOptions(
-              cacheControl: '3600',
-              upsert: true,
-            ),
+      if (onProgress != null) {
+        try {
+          await _uploadBinaryWithProgress(
+            bytes: bytes,
+            bucket: bucket,
+            path: filePath,
+            contentType: _audioContentType(ext),
+            onProgress: onProgress,
           );
+        } catch (e) {
+          debugPrint('Progress audio upload failed, falling back: $e');
+          onProgress(0, bytes.length);
+          await _client.storage.from(bucket).uploadBinary(
+                filePath,
+                bytes,
+                fileOptions: const FileOptions(
+                  cacheControl: '3600',
+                  upsert: true,
+                ),
+              );
+          onProgress(bytes.length, bytes.length);
+        }
+      } else {
+        await _client.storage.from(bucket).uploadBinary(
+              filePath,
+              bytes,
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                upsert: true,
+              ),
+            );
+      }
 
-      // Retrieve public CDN URL
       final publicUrl = _client.storage.from(bucket).getPublicUrl(filePath);
       debugPrint('Uploaded audio bytes to Supabase ($bucket): $publicUrl');
       return publicUrl;
@@ -76,6 +99,89 @@ class SupabaseStorageService {
       debugPrint('Error uploading audio bytes to Supabase Storage: $e');
       return null;
     }
+  }
+
+  static String _audioContentType(String extension) {
+    switch (extension.toLowerCase()) {
+      case '.mp3':
+        return 'audio/mpeg';
+      case '.wav':
+        return 'audio/wav';
+      case '.aac':
+        return 'audio/aac';
+      case '.m4a':
+        return 'audio/mp4';
+      case '.ogg':
+        return 'audio/ogg';
+      case '.flac':
+        return 'audio/flac';
+      default:
+        return 'application/octet-stream';
+    }
+  }
+
+  static Future<void> _uploadBinaryWithProgress({
+    required Uint8List bytes,
+    required String bucket,
+    required String path,
+    required String contentType,
+    required void Function(int count, int total) onProgress,
+  }) async {
+    final encodedPath = path.split('/').map(Uri.encodeComponent).join('/');
+    final uploadUrl =
+        '${SupabaseConfig.url}/storage/v1/object/$bucket/$encodedPath';
+
+    final session = _client.auth.currentSession;
+    final accessToken = session?.accessToken ?? SupabaseConfig.publishableKey;
+
+    onProgress(0, bytes.length);
+
+    final dio = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(minutes: 2),
+        sendTimeout: const Duration(minutes: 15),
+        receiveTimeout: const Duration(minutes: 2),
+      ),
+    );
+
+    final headers = <String, dynamic>{
+      'Authorization': 'Bearer $accessToken',
+      'apikey': SupabaseConfig.publishableKey,
+      'x-upsert': 'true',
+      'cache-control': '3600',
+      'content-length': bytes.length,
+    };
+
+    Future<Response<dynamic>> send(String method) {
+      return dio.request(
+        uploadUrl,
+        data: bytes,
+        options: Options(
+          method: method,
+          headers: headers,
+          contentType: contentType,
+          responseType: ResponseType.json,
+          validateStatus: (status) => status != null && status < 400,
+        ),
+        onSendProgress: (sent, total) {
+          final actualTotal = total > 0 ? total : bytes.length;
+          onProgress(sent.clamp(0, actualTotal), actualTotal);
+        },
+      );
+    }
+
+    try {
+      await send('POST');
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      if (status == 400 || status == 409 || status == 405) {
+        await send('PUT');
+      } else {
+        rethrow;
+      }
+    }
+
+    onProgress(bytes.length, bytes.length);
   }
 
   /// Uploads raw APK file bytes to Supabase storage bucket (`app-releases` by default)

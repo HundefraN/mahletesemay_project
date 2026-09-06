@@ -5,22 +5,32 @@ plugins {
     id "com.google.gms.google-services"
 }
 
-def localProperties = new Properties()
-def localPropertiesFile = rootProject.file('local.properties')
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.withReader('UTF-8') { reader ->
-        localProperties.load(reader)
+// Always take version from pubspec.yaml. local.properties is often stale
+// (still 1.0.3+5) and the Flutter plugin will bake that into the APK.
+def pubspecFile = file("${rootProject.projectDir}/../pubspec.yaml")
+def pubspecVersionName = '1.0.6'
+def pubspecVersionCode = 8
+if (pubspecFile.exists()) {
+    def match = pubspecFile.getText('UTF-8') =~ /(?m)^version:\s*([^\s#+]+)(?:\+(\d+))?/
+    if (match.find()) {
+        pubspecVersionName = match.group(1).trim()
+        if (match.group(2) != null) {
+            pubspecVersionCode = match.group(2).toInteger()
+        }
     }
 }
 
-def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
-if (flutterVersionCode == null) {
-    flutterVersionCode = '1'
-}
-
-def flutterVersionName = localProperties.getProperty('flutter.versionName')
-if (flutterVersionName == null) {
-    flutterVersionName = '1.0'
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    def localProperties = new Properties()
+    localPropertiesFile.withInputStream { localProperties.load(it) }
+    def currentName = localProperties.getProperty('flutter.versionName')
+    def currentCode = localProperties.getProperty('flutter.versionCode')
+    if (currentName != pubspecVersionName || currentCode != pubspecVersionCode.toString()) {
+        localProperties.setProperty('flutter.versionName', pubspecVersionName)
+        localProperties.setProperty('flutter.versionCode', pubspecVersionCode.toString())
+        localPropertiesFile.withOutputStream { localProperties.store(it, null) }
+    }
 }
 
 android {
@@ -46,8 +56,8 @@ android {
         applicationId "com.hundefra.mahlete_semay"
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion 34
-        versionCode flutterVersionCode.toInteger()
-        versionName flutterVersionName
+        versionCode pubspecVersionCode
+        versionName pubspecVersionName
         multiDexEnabled true
     }
 

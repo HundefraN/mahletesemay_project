@@ -365,7 +365,7 @@
   "generateCredentialsSubtitle": "Generate secure single-use access credentials",
   "trackInvitationsSubtitle": "Track claimed, active & pending invitations",
   "actionTimelineSubtitle": "Real-time moderator action timeline",
-  "liveMetricsSubtitle": "Live traffic, view charts, and database metrics",
+  "liveMetricsSubtitle": "App installs, website visits, and content metrics",
   "appAnalyticsTooltip": "App Analytics",
   "dailyTrainingPlans": "Daily Training Plans",
   "maleDailyPlan": "Male Daily Vocal Plan",
@@ -416,6 +416,16 @@
   "totalArtists": "Total Artists",
   "totalAlbums": "Total Albums",
   "totalSongViews": "Total Song Views",
+  "audienceOverview": "Audience",
+  "appInstalls": "App Installs",
+  "websiteVisitors": "Website Visitors",
+  "websiteVisits": "Website Visits",
+  "installsToday": "Installs today",
+  "visitsToday": "Visits today",
+  "trafficLast7Days": "Traffic (Last 7 Days)",
+  "noAudienceDataYet": "No audience data yet",
+  "noAudienceDataDesc": "Install and visit counts appear after people open the app or website.",
+  "audienceSubtitle": "Unique devices that installed the app and browsers that visited the website",
   "songsAdded7Days": "Songs Added (Last 7 Days)",
   "artistDistributionBreakdown": "Artist Distribution Breakdown",
   "top5ViewedSongs": "Top 5 Most Viewed Songs",
@@ -757,7 +767,7 @@
   "reportRemoveScreenshot": "Remove screenshot",
   "reportHeroTitle": "Help us improve",
   "reportHeroSubtitle": "Describe the issue and attach screenshots if you can.",
-  "reportPrivacyNote": "Includes app version and device type so we can reproduce the issue. No account is required.",
+  "reportPrivacyNote": "Includes app version and device type so we can reproduce the issue.",
   "crashDetectedTitle": "The app ran into a problem",
   "crashDetectedBody": "Last time the app closed unexpectedly. Sending a report helps us fix it faster.",
   "crashSendReport": "Send crash report",
@@ -805,5 +815,96 @@
   "aboutDeveloperRole": "CEO of Eben Dev Solutions",
   "aboutWebsite": "Website",
   "aboutVisitWebsite": "Visit website",
-  "aboutCouldNotOpenWebsite": "Could not open the website."
+  "aboutCouldNotOpenWebsite": "Could not open the website.",
+  "vocalPlansOverview": "Curriculum coverage",
+  "vocalPlansPublishedCount": "{published} of {expected} days published",
+  "@vocalPlansPublishedCount": {
+    "placeholders": {
+      "published": { "type": "int" },
+      "expected": { "type": "int" }
+    }
+  },
+  "vocalPlansCompleteCount": "{complete} of {total} plans complete",
+  "@vocalPlansCompleteCount": {
+    "placeholders": {
+      "complete": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "planDaysProgress": "{current} of {expected} days",
+  "@planDaysProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "expected": { "type": "int" }
+    }
+  },
+  "planDaysCount": "{count} days",
+  "@planDaysCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "planStatusComplete": "Complete",
+  "planStatusInProgress": "In progress",
+  "planStatusEmpty": "Empty",
+  "restDaysCount": "{count} rest",
+  "@restDaysCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "searchPlanDaysHint": "Search days by title or number...",
+  "noMatchingPlanDays": "No days match your search",
+  "missingDaysWarning": "Missing days: {days}",
+  "@missingDaysWarning": {
+    "placeholders": {
+      "days": { "type": "String" }
+    }
+  },
+  "duplicateDaysWarning": "Duplicate day numbers: {days}",
+  "@duplicateDaysWarning": {
+    "placeholders": {
+      "days": { "type": "String" }
+    }
+  },
+  "dayNumberInvalid": "Enter a day number of 1 or higher",
+  "dayNumberDuplicate": "Day {number} already exists in this plan",
+  "@dayNumberDuplicate": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "dayNumberOutOfRange": "This plan uses days 1–{max}",
+  "@dayNumberOutOfRange": {
+    "placeholders": {
+      "max": { "type": "int" }
+    }
+  },
+  "discardUnsavedVocalDay": "Discard unsaved changes to this vocal drill?",
+  "failedToLoadVocalPlans": "Failed to load vocal plan progress",
+  "duplicateDayBadge": "DUPLICATE",
+  "missingAudioBadge": "NO AUDIO",
+  "replaceAudio": "Replace",
+  "removeAudio": "Remove",
+  "previewAudio": "Preview",
+  "pausePreview": "Pause",
+  "previouslyUploadedAudio": "Previously uploaded",
+  "audioPendingReplacement": "Ready to replace on save",
+  "audioMarkedForRemoval": "Will be removed when you save",
+  "keepExistingAudio": "Keep existing audio",
+  "preparingAudioUpload": "Preparing audio upload...",
+  "uploadingAudioProgress": "Uploading {uploaded} of {total} · {percent}%",
+  "@uploadingAudioProgress": {
+    "placeholders": {
+      "uploaded": { "type": "String" },
+      "total": { "type": "String" },
+      "percent": { "type": "String" }
+    }
+  },
+  "savingVocalDrill": "Saving vocal drill...",
+  "audioUploadComplete": "Upload complete",
+  "confirmRemoveAudioTitle": "Remove audio?",
+  "confirmRemoveAudioBody": "This audio will be detached from the drill. Upload a replacement before saving if the exercise still needs audio.",
+  "replacementAudioSelected": "Replacement selected",
+  "audioPreviewFailed": "Could not play this audio file"
 }

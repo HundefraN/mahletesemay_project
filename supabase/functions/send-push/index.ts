@@ -2,7 +2,7 @@
 //
 // Deploy:
 //   supabase functions deploy send-push
-//   supabase secrets set FIREBASE_SERVICE_ACCOUNT_JSON="$(cat service-account.json)"
+//   supabase secrets set FIREBASE_SERVICE_ACCOUNT="$(cat service-account.json)"
 //
 // Payload (all optional except that silent defaults to true):
 // {
@@ -265,11 +265,29 @@ function serviceClient() {
 }
 
 function readServiceAccount(): ServiceAccount {
-  const raw = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
+  const raw =
+    Deno.env.get("FIREBASE_SERVICE_ACCOUNT") ??
+    Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
   if (!raw) {
-    throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON secret is not set");
+    throw new Error("FIREBASE_SERVICE_ACCOUNT secret is not set");
   }
-  return JSON.parse(raw) as ServiceAccount;
+  return parseServiceAccount(raw);
+}
+
+function parseServiceAccount(raw: string): ServiceAccount {
+  let value: unknown = raw.trim();
+  if (typeof value === "string") {
+    value = JSON.parse(value);
+  }
+  // Some dashboard pastes store the JSON double-encoded.
+  if (typeof value === "string") {
+    value = JSON.parse(value);
+  }
+  const sa = value as ServiceAccount;
+  if (!sa?.client_email || !sa?.private_key) {
+    throw new Error("Firebase service account JSON is missing client_email or private_key");
+  }
+  return sa;
 }
 
 async function getGoogleAccessToken(): Promise<string> {

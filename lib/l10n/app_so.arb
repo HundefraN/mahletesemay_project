@@ -300,7 +300,7 @@
   "generateCredentialsSubtitle": "Abuur furayaal ammaan ah oo hal mar la isticmaalo",
   "trackInvitationsSubtitle": "La soco martiqaadyada la sheegtay, kuwa shaqaynaya & kuwa sugaya",
   "actionTimelineSubtitle": "Jadwalka tooska ah ee tallaabooyinka dhexdhexaadiyaha",
-  "liveMetricsSubtitle": "Dhaqdhaqaaqa tooska ah, jaantusyada daawashada, iyo xogta kaydka",
+  "liveMetricsSubtitle": "Rakibaadda app-ka, booqashooyinka websaytka, iyo cabbirada nuxurka",
   "appAnalyticsTooltip": "Falanqaynta Abka",
   "dailyTrainingPlans": "Qorshayaasha Tababarka Maalinlaha ah",
   "maleDailyPlan": "Qorshaha Codka Maalinlaha ah ee Ragga",
@@ -351,6 +351,16 @@
   "totalArtists": "Wadarta Fannaaniinta",
   "totalAlbums": "Wadarta Albaamada",
   "totalSongViews": "Wadarta Daawashada Heesaha",
+  "audienceOverview": "Dhagaystayaasha",
+  "appInstalls": "Rakibaadda App-ka",
+  "websiteVisitors": "Booqdayaasha Websaytka",
+  "websiteVisits": "Booqashooyinka Websaytka",
+  "installsToday": "Rakibaadaha maanta",
+  "visitsToday": "Booqashooyinka maanta",
+  "trafficLast7Days": "Taraafigga (7-dii Maalmood ee La Soo Dhaafay)",
+  "noAudienceDataYet": "Weli ma jirto xog dhagaystayaal",
+  "noAudienceDataDesc": "Tirada rakibaadda iyo booqashada waxay muuqanayaan marka dadku furan app-ka ama websaytka.",
+  "audienceSubtitle": "Aaladaha app-ka ku rakibay iyo biraawsarrada websaytka booqday",
   "songsAdded7Days": "Heesaha Lagu Daray (7-dii Maalmood ee La Soo Dhaafay)",
   "artistDistributionBreakdown": "Qaybinta Fannaaniinta",
   "top5ViewedSongs": "5-ta Heesood ee Ugu Daawashada Badan",
@@ -679,5 +689,96 @@
   "aboutDeveloperRole": "Maamulaha Eben Dev Solutions",
   "aboutWebsite": "Mareeg",
   "aboutVisitWebsite": "Booqo mareegta",
-  "aboutCouldNotOpenWebsite": "Mareegta lama furi karin."
+  "aboutCouldNotOpenWebsite": "Mareegta lama furi karin.",
+  "vocalPlansOverview": "Daboolka manhajka",
+  "vocalPlansPublishedCount": "{published} ka mid ah {expected} maalmood ayaa la daabacay",
+  "@vocalPlansPublishedCount": {
+    "placeholders": {
+      "published": { "type": "int" },
+      "expected": { "type": "int" }
+    }
+  },
+  "vocalPlansCompleteCount": "{complete} ka mid ah {total} qorshe ayaa dhammaystiran",
+  "@vocalPlansCompleteCount": {
+    "placeholders": {
+      "complete": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "planDaysProgress": "{current} ka mid ah {expected} maalmood",
+  "@planDaysProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "expected": { "type": "int" }
+    }
+  },
+  "planDaysCount": "{count} maalmood",
+  "@planDaysCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "planStatusComplete": "Dhammaystiran",
+  "planStatusInProgress": "Socda",
+  "planStatusEmpty": "Madhan",
+  "restDaysCount": "{count} nasasho",
+  "@restDaysCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "searchPlanDaysHint": "Raadi maalmo cinwaan ama nambar...",
+  "noMatchingPlanDays": "Maalmo kugu habboon raadintaada ma jiraan",
+  "missingDaysWarning": "Maalmo maqan: {days}",
+  "@missingDaysWarning": {
+    "placeholders": {
+      "days": { "type": "String" }
+    }
+  },
+  "duplicateDaysWarning": "Nambarada maalinta ee soo noqnoqda: {days}",
+  "@duplicateDaysWarning": {
+    "placeholders": {
+      "days": { "type": "String" }
+    }
+  },
+  "dayNumberInvalid": "Geli nambar maalin 1 ama ka badan",
+  "dayNumberDuplicate": "Maalinta {number} horay ayay ugu jirtay qorshahan",
+  "@dayNumberDuplicate": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "dayNumberOutOfRange": "Qorshahani wuxuu isticmaalaa maalmaha 1–{max}",
+  "@dayNumberOutOfRange": {
+    "placeholders": {
+      "max": { "type": "int" }
+    }
+  },
+  "discardUnsavedVocalDay": "Tuuri isbeddellada aan la kaydin?",
+  "failedToLoadVocalPlans": "Waa lagu guuldareystay in la soo raro horumarka qorshaha codka",
+  "duplicateDayBadge": "SOO NOQNOQDA",
+  "missingAudioBadge": "COD MAAHA",
+  "replaceAudio": "Beddel",
+  "removeAudio": "Ka saar",
+  "previewAudio": "Dhageyso",
+  "pausePreview": "Hakad",
+  "previouslyUploadedAudio": "Horay loo soo geliyay",
+  "audioPendingReplacement": "Waa la beddeli doonaa marka la kaydiyo",
+  "audioMarkedForRemoval": "Waa laga saari doonaa marka la kaydiyo",
+  "keepExistingAudio": "Codka jira hayso",
+  "preparingAudioUpload": "Diyaarinta soo gelinta codka...",
+  "uploadingAudioProgress": "{uploaded} / {total} soo gelinaya · {percent}%",
+  "@uploadingAudioProgress": {
+    "placeholders": {
+      "uploaded": { "type": "String" },
+      "total": { "type": "String" },
+      "percent": { "type": "String" }
+    }
+  },
+  "savingVocalDrill": "Kaydinta layliga codka...",
+  "audioUploadComplete": "Soo gelintu waa dhammaatay",
+  "confirmRemoveAudioTitle": "Codka ma laga saaraa?",
+  "confirmRemoveAudioBody": "Codkan waa laga saari doonaa layliga. Haddii layligu weli u baahan yahay cod, soo geli mid cusub ka hor kaydinta.",
+  "replacementAudioSelected": "Beddelka waa la xushay",
+  "audioPreviewFailed": "Lama ciyaari karo faylkan codka"
 }

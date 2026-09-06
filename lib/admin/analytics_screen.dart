@@ -5,14 +5,52 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/usage_stats_model.dart';
 import '../../providers/song_provider.dart';
 import '../../providers/stats_provider.dart';
+import '../../services/usage_analytics_service.dart';
 import '../../utils/responsive_sizer.dart';
 import '../../widgets/web_content_wrapper.dart';
 import 'widgets/admin_ui_kit.dart';
 
-class AnalyticsScreen extends StatelessWidget {
+class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
+
+  @override
+  State<AnalyticsScreen> createState() => _AnalyticsScreenState();
+}
+
+class _AnalyticsScreenState extends State<AnalyticsScreen> {
+  UsageStats? _usage;
+  bool _loadingUsage = true;
+  String? _usageError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUsage();
+  }
+
+  Future<void> _loadUsage() async {
+    setState(() {
+      _loadingUsage = true;
+      _usageError = null;
+    });
+    try {
+      final stats = await UsageAnalyticsService.instance.fetchStats();
+      if (!mounted) return;
+      setState(() {
+        _usage = stats;
+        _loadingUsage = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _usageError = e.toString();
+        _loadingUsage = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +58,7 @@ class AnalyticsScreen extends StatelessWidget {
     final songProvider = Provider.of<SongProvider>(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
 
     final songs = songProvider.allSongs;
     final artists = songProvider.artists;
@@ -42,16 +81,38 @@ class AnalyticsScreen extends StatelessWidget {
         ),
         body: WebContentWrapper(
           maxWidth: 1000,
-          child: ListView(
+          child: RefreshIndicator(
+            color: AdminUiKit.goldAccent,
+            onRefresh: _loadUsage,
+            child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            physics: const BouncingScrollPhysics(),
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
             children: [
+              AdminSectionHeader(
+                title: l10n?.audienceOverview ?? 'Audience',
+                icon: Icons.groups_rounded,
+                padding: const EdgeInsets.only(top: 8, bottom: 8),
+              ),
+              Text(
+                l10n?.audienceSubtitle ??
+                    'Unique devices that installed the app and browsers that visited the website',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white54 : Colors.black45,
+                ),
+              ),
+              const SizedBox(height: 14),
+              _buildAudienceSection(context, isDark, l10n),
+              const SizedBox(height: 24),
+
               // Key Metrics Header
               AdminSectionHeader(
-                title: AppLocalizations.of(context)?.keyPlatformMetrics ??
-                    'Key Platform Metrics',
+                title: l10n?.keyPlatformMetrics ?? 'Key Platform Metrics',
                 icon: Icons.dashboard_customize_rounded,
-                padding: EdgeInsets.only(top: 8, bottom: 12),
+                padding: const EdgeInsets.only(top: 8, bottom: 12),
               ),
 
               // 2x2 Metric Cards
@@ -327,7 +388,213 @@ class AnalyticsScreen extends StatelessWidget {
               const SizedBox(height: 40),
             ],
           ),
-        ));
+        )));
+  }
+
+  Widget _buildAudienceSection(
+    BuildContext context,
+    bool isDark,
+    AppLocalizations? l10n,
+  ) {
+    if (_loadingUsage && _usage == null) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_usageError != null && _usage == null) {
+      return AdminGlassCard(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n?.noAudienceDataYet ?? 'No audience data yet',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                color: isDark ? Colors.white : AdminUiKit.primaryNavy,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Run supabase_usage_analytics_migration.sql in the Supabase SQL editor, then pull to refresh.',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12.5,
+                color: isDark ? Colors.white60 : Colors.black54,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final usage = _usage ?? UsageStats.empty();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GridView.count(
+          crossAxisCount: context.isDesktop ? 4 : (context.isTablet ? 3 : 2),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          childAspectRatio: 1.35,
+          children: [
+            _buildStatCard(
+              context,
+              title: l10n?.appInstalls ?? 'App Installs',
+              value: NumberFormat.compact().format(usage.appInstalls),
+              icon: Icons.download_done_rounded,
+              accentColor: AdminUiKit.royalBlue,
+            ),
+            _buildStatCard(
+              context,
+              title: l10n?.websiteVisitors ?? 'Website Visitors',
+              value: NumberFormat.compact().format(usage.websiteVisitors),
+              icon: Icons.language_rounded,
+              accentColor: AdminUiKit.emeraldGreen,
+            ),
+            _buildStatCard(
+              context,
+              title: l10n?.websiteVisits ?? 'Website Visits',
+              value: NumberFormat.compact().format(usage.websiteVisits),
+              icon: Icons.travel_explore_rounded,
+              accentColor: AdminUiKit.violetPurple,
+            ),
+            _buildStatCard(
+              context,
+              title: l10n?.visitsToday ?? 'Visits today',
+              value: NumberFormat.compact().format(usage.visitorsToday),
+              icon: Icons.today_rounded,
+              accentColor: AdminUiKit.amberOrange,
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        AdminSectionHeader(
+          title: l10n?.trafficLast7Days ?? 'Traffic (Last 7 Days)',
+          icon: Icons.stacked_bar_chart_rounded,
+          padding: const EdgeInsets.only(top: 8, bottom: 12),
+        ),
+        AdminGlassCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              SizedBox(
+                height: 180,
+                child: BarChart(
+                  _buildTrafficChartData(usage.last7Days, isDark: isDark),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _buildIndicator(
+                    AdminUiKit.royalBlue,
+                    l10n?.appInstalls ?? 'App Installs',
+                    usage.last7Days.fold(0, (sum, p) => sum + p.appInstalls),
+                    isDark,
+                  ),
+                  const SizedBox(width: 20),
+                  _buildIndicator(
+                    AdminUiKit.emeraldGreen,
+                    l10n?.websiteVisits ?? 'Website Visits',
+                    usage.last7Days.fold(0, (sum, p) => sum + p.websiteVisits),
+                    isDark,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  BarChartData _buildTrafficChartData(
+    List<UsageDailyPoint> points, {
+    required bool isDark,
+  }) {
+    final formatter = DateFormat('EEE');
+    final days = points.isNotEmpty
+        ? points
+        : List.generate(
+            7,
+            (i) => UsageDailyPoint(
+              day: DateTime.now().subtract(Duration(days: 6 - i)),
+              appInstalls: 0,
+              websiteVisits: 0,
+            ),
+          );
+    final maxVal = days.fold<int>(
+      0,
+      (max, p) => [
+        max,
+        p.appInstalls,
+        p.websiteVisits,
+      ].reduce((a, b) => a > b ? a : b),
+    );
+
+    return BarChartData(
+      alignment: BarChartAlignment.spaceAround,
+      maxY: (maxVal < 4 ? 4 : maxVal + 1).toDouble(),
+      barTouchData: BarTouchData(enabled: true),
+      titlesData: FlTitlesData(
+        show: true,
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            getTitlesWidget: (double value, TitleMeta meta) {
+              final index = value.toInt();
+              if (index < 0 || index >= days.length) {
+                return const SizedBox.shrink();
+              }
+              return SideTitleWidget(
+                meta: meta,
+                space: 4,
+                child: Text(
+                  formatter.format(days[index].day.toLocal()),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white60 : Colors.black54,
+                  ),
+                ),
+              );
+            },
+            reservedSize: 24,
+          ),
+        ),
+        leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      ),
+      gridData: const FlGridData(show: false),
+      borderData: FlBorderData(show: false),
+      barGroups: [
+        for (var i = 0; i < days.length; i++)
+          BarChartGroupData(
+            x: i,
+            barsSpace: 3,
+            barRods: [
+              BarChartRodData(
+                toY: days[i].appInstalls.toDouble(),
+                color: AdminUiKit.royalBlue,
+                width: 8,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              BarChartRodData(
+                toY: days[i].websiteVisits.toDouble(),
+                color: AdminUiKit.emeraldGreen,
+                width: 8,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ],
+          ),
+      ],
+    );
   }
 
   Widget _buildStatCard(

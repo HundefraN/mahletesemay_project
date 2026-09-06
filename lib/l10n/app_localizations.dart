@@ -1919,7 +1919,7 @@ abstract class AppLocalizations {
   /// No description provided for @liveMetricsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Live traffic, view charts, and database metrics'**
+  /// **'App installs, website visits, and content metrics'**
   String get liveMetricsSubtitle;
 
   /// No description provided for @appAnalyticsTooltip.
@@ -2221,6 +2221,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total Song Views'**
   String get totalSongViews;
+
+  /// No description provided for @audienceOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Audience'**
+  String get audienceOverview;
+
+  /// No description provided for @appInstalls.
+  ///
+  /// In en, this message translates to:
+  /// **'App Installs'**
+  String get appInstalls;
+
+  /// No description provided for @websiteVisitors.
+  ///
+  /// In en, this message translates to:
+  /// **'Website Visitors'**
+  String get websiteVisitors;
+
+  /// No description provided for @websiteVisits.
+  ///
+  /// In en, this message translates to:
+  /// **'Website Visits'**
+  String get websiteVisits;
+
+  /// No description provided for @installsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Installs today'**
+  String get installsToday;
+
+  /// No description provided for @visitsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Visits today'**
+  String get visitsToday;
+
+  /// No description provided for @trafficLast7Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Traffic (Last 7 Days)'**
+  String get trafficLast7Days;
+
+  /// No description provided for @noAudienceDataYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No audience data yet'**
+  String get noAudienceDataYet;
+
+  /// No description provided for @noAudienceDataDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Install and visit counts appear after people open the app or website.'**
+  String get noAudienceDataDesc;
+
+  /// No description provided for @audienceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unique devices that installed the app and browsers that visited the website'**
+  String get audienceSubtitle;
 
   /// No description provided for @songsAdded7Days.
   ///
@@ -3833,7 +3893,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportPrivacyNote.
   ///
   /// In en, this message translates to:
-  /// **'Includes app version and device type so we can reproduce the issue. No account is required.'**
+  /// **'Includes app version and device type so we can reproduce the issue.'**
   String get reportPrivacyNote;
 
   /// No description provided for @crashDetectedTitle.
@@ -4087,6 +4147,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not open the website.'**
   String get aboutCouldNotOpenWebsite;
+
+  /// No description provided for @vocalPlansOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Curriculum coverage'**
+  String get vocalPlansOverview;
+
+  /// No description provided for @vocalPlansPublishedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{published} of {expected} days published'**
+  String vocalPlansPublishedCount(int published, int expected);
+
+  /// No description provided for @vocalPlansCompleteCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{complete} of {total} plans complete'**
+  String vocalPlansCompleteCount(int complete, int total);
+
+  /// No description provided for @planDaysProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} of {expected} days'**
+  String planDaysProgress(int current, int expected);
+
+  /// No description provided for @planDaysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days'**
+  String planDaysCount(int count);
+
+  /// No description provided for @planStatusComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get planStatusComplete;
+
+  /// No description provided for @planStatusInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get planStatusInProgress;
+
+  /// No description provided for @planStatusEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty'**
+  String get planStatusEmpty;
+
+  /// No description provided for @restDaysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} rest'**
+  String restDaysCount(int count);
+
+  /// No description provided for @searchPlanDaysHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search days by title or number...'**
+  String get searchPlanDaysHint;
+
+  /// No description provided for @noMatchingPlanDays.
+  ///
+  /// In en, this message translates to:
+  /// **'No days match your search'**
+  String get noMatchingPlanDays;
+
+  /// No description provided for @missingDaysWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing days: {days}'**
+  String missingDaysWarning(String days);
+
+  /// No description provided for @duplicateDaysWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate day numbers: {days}'**
+  String duplicateDaysWarning(String days);
+
+  /// No description provided for @dayNumberInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a day number of 1 or higher'**
+  String get dayNumberInvalid;
+
+  /// No description provided for @dayNumberDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {number} already exists in this plan'**
+  String dayNumberDuplicate(int number);
+
+  /// No description provided for @dayNumberOutOfRange.
+  ///
+  /// In en, this message translates to:
+  /// **'This plan uses days 1–{max}'**
+  String dayNumberOutOfRange(int max);
+
+  /// No description provided for @discardUnsavedVocalDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard unsaved changes to this vocal drill?'**
+  String get discardUnsavedVocalDay;
+
+  /// No description provided for @failedToLoadVocalPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load vocal plan progress'**
+  String get failedToLoadVocalPlans;
+
+  /// No description provided for @duplicateDayBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'DUPLICATE'**
+  String get duplicateDayBadge;
+
+  /// No description provided for @missingAudioBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'NO AUDIO'**
+  String get missingAudioBadge;
+
+  /// No description provided for @replaceAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get replaceAudio;
+
+  /// No description provided for @removeAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get removeAudio;
+
+  /// No description provided for @previewAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get previewAudio;
+
+  /// No description provided for @pausePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get pausePreview;
+
+  /// No description provided for @previouslyUploadedAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Previously uploaded'**
+  String get previouslyUploadedAudio;
+
+  /// No description provided for @audioPendingReplacement.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to replace on save'**
+  String get audioPendingReplacement;
+
+  /// No description provided for @audioMarkedForRemoval.
+  ///
+  /// In en, this message translates to:
+  /// **'Will be removed when you save'**
+  String get audioMarkedForRemoval;
+
+  /// No description provided for @keepExistingAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep existing audio'**
+  String get keepExistingAudio;
+
+  /// No description provided for @preparingAudioUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing audio upload...'**
+  String get preparingAudioUpload;
+
+  /// No description provided for @uploadingAudioProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading {uploaded} of {total} · {percent}%'**
+  String uploadingAudioProgress(String uploaded, String total, String percent);
+
+  /// No description provided for @savingVocalDrill.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving vocal drill...'**
+  String get savingVocalDrill;
+
+  /// No description provided for @audioUploadComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload complete'**
+  String get audioUploadComplete;
+
+  /// No description provided for @confirmRemoveAudioTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove audio?'**
+  String get confirmRemoveAudioTitle;
+
+  /// No description provided for @confirmRemoveAudioBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This audio will be detached from the drill. Upload a replacement before saving if the exercise still needs audio.'**
+  String get confirmRemoveAudioBody;
+
+  /// No description provided for @replacementAudioSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Replacement selected'**
+  String get replacementAudioSelected;
+
+  /// No description provided for @audioPreviewFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not play this audio file'**
+  String get audioPreviewFailed;
 }
 
 class _AppLocalizationsDelegate

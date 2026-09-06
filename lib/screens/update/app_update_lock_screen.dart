@@ -1,14 +1,12 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../admin/widgets/admin_ui_kit.dart';
 import '../../models/app_config_model.dart';
-import '../../providers/auth_proveider.dart';
 import '../../services/app_update_service.dart';
+import '../../services/force_update_service.dart';
 
 /// Production-grade, strict non-dismissible App Lock Screen shown when a mandatory update is required.
 class AppUpdateLockScreen extends StatefulWidget {
@@ -30,8 +28,10 @@ class _AppUpdateLockScreenState extends State<AppUpdateLockScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // Recover a completed download after the install-permission settings restart.
+    // Recheck the installed version only. Do not auto-launch the installer on
+    // cold start — that leftover APK open is what crashed the app after update.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      AppUpdateService.instance.onAppResumed();
+      AppUpdateService.instance.recheckAfterInstall(resumeInstall: false);
     });
   }
 
@@ -53,7 +53,6 @@ class _AppUpdateLockScreenState extends State<AppUpdateLockScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     return PopScope(
       canPop: false, // Strict app lock: Android back button/gestures completely disabled
@@ -97,8 +96,14 @@ class _AppUpdateLockScreenState extends State<AppUpdateLockScreen>
                     builder: (context, _) {
                       final updateService = AppUpdateService.instance;
                       final effectiveConfig = widget.config ?? updateService.currentConfig;
-                      final installedVersion = updateService.installedVersion ?? '1.0.0';
-                      final latestVersion = effectiveConfig?.latestVersion ?? 'Latest';
+                      final installedVersion = ForceUpdateService.formatDisplay(
+                        updateService.installedVersion,
+                        fallback: '—',
+                      );
+                      final latestVersion = ForceUpdateService.formatDisplay(
+                        effectiveConfig?.latestVersion,
+                        fallback: 'Latest',
+                      );
                       final releaseNotes = effectiveConfig?.releaseNotes;
                       final apkUrl = effectiveConfig?.apkUrl;
 
@@ -235,7 +240,7 @@ class _AppUpdateLockScreenState extends State<AppUpdateLockScreen>
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        'v$installedVersion',
+                                        installedVersion,
                                         style: GoogleFonts.plusJakartaSans(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w700,
@@ -262,7 +267,7 @@ class _AppUpdateLockScreenState extends State<AppUpdateLockScreen>
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        'v$latestVersion',
+                                        latestVersion,
                                         style: GoogleFonts.plusJakartaSans(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w800,
@@ -375,6 +380,10 @@ class _AppUpdateLockScreenState extends State<AppUpdateLockScreen>
 
                             // 6. Action Panel: Download / Progress / Install
                             _buildActionSection(context, updateService, apkUrl, isDark),
+                            if (!updateService.isDownloading) ...[
+                              const SizedBox(height: 8),
+                              _buildRecheckButton(updateService, isDark),
+                            ],
 
                             // // 7. Developer & Admin Session Bypass
                             // if (kDebugMode || authProvider.isAdmin) ...[
@@ -721,6 +730,31 @@ class _AppUpdateLockScreenState extends State<AppUpdateLockScreen>
           ),
         ],
       ],
+    );
+  }
+
+  Widget _buildRecheckButton(AppUpdateService updateService, bool isDark) {
+    return TextButton.icon(
+      onPressed: updateService.isChecking
+          ? null
+          : () => updateService.recheckAfterInstall(resumeInstall: false),
+      icon: updateService.isChecking
+          ? const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.verified_outlined, size: 16),
+      label: Text(
+        updateService.isChecking
+            ? 'Checking installed version…'
+            : 'Already updated? Recheck now',
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white60 : Colors.black54,
+        ),
+      ),
     );
   }
 }

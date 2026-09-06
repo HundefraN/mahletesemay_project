@@ -302,7 +302,7 @@
   "generateCredentialsSubtitle": "Koodii galmaa amansiisaa yeroo tokkoo maddisiisi",
   "trackInvitationsSubtitle": "Affeerroowwan fudhataman, hojiirra jiran fi eegamaa jiran hordofi",
   "actionTimelineSubtitle": "Tarkaanfiiwwan qindeessitootaa yeroo qabatamaatti hordofi",
-  "liveMetricsSubtitle": "Tiraafika kallattii, chaartii ilaalamu fi safartuulee deetaabeezii",
+  "liveMetricsSubtitle": "Fe'iinsa appii, daawwanna weebsaayitii fi safartuulee qabiyyee",
   "appAnalyticsTooltip": "Xiinxala Appii",
   "dailyTrainingPlans": "Karoora Shaakala Guyyaa Guyyaa",
   "maleDailyPlan": "Karoora Sagalee Guyyaa Dhiiraa",
@@ -353,6 +353,16 @@
   "totalArtists": "Waliigala Artistootaa",
   "totalAlbums": "Waliigala Albaamotaa",
   "totalSongViews": "Waliigala Daawwannaawwan Faaruu",
+  "audienceOverview": "Dhaggeeffattoota",
+  "appInstalls": "Fe'iinsa Appii",
+  "websiteVisitors": "Daawwattoota Weebsaayitii",
+  "websiteVisits": "Daawwanna Weebsaayitii",
+  "installsToday": "Fe'iinsa har'aa",
+  "visitsToday": "Daawwanna har'aa",
+  "trafficLast7Days": "Tiraafika (Guyyoota 7 Darban)",
+  "noAudienceDataYet": "Hamma yoonaatti daataa dhaggeeffattootaa hin jiru",
+  "noAudienceDataDesc": "Lakkoofsi fe'iinsaa fi daawwannaa namoonni app ykn weebsaayitii yeroo banan mul'ata.",
+  "audienceSubtitle": "Meeshaalee app fe'an fi browzerota weebsaayitii daawwatan",
   "songsAdded7Days": "Faaruulee Dabalaman (Guyyoota 7 Darban)",
   "artistDistributionBreakdown": "Raabsa Artistootaa",
   "top5ViewedSongs": "Faaruulee 5 Baay'ee Daawwataman",
@@ -664,5 +674,96 @@
   "aboutDeveloperRole": "CEO Eben Dev Solutions",
   "aboutWebsite": "Marsariitii",
   "aboutVisitWebsite": "Marsariitii daawwadhu",
-  "aboutCouldNotOpenWebsite": "Marsariitiin banamuu hin dandeenye."
+  "aboutCouldNotOpenWebsite": "Marsariitiin banamuu hin dandeenye.",
+  "vocalPlansOverview": "Haguuggii sirna barnootaa",
+  "vocalPlansPublishedCount": "Guyyaawwan {published} keessaa {expected} maxxanfameera",
+  "@vocalPlansPublishedCount": {
+    "placeholders": {
+      "published": { "type": "int" },
+      "expected": { "type": "int" }
+    }
+  },
+  "vocalPlansCompleteCount": "Karoora {complete} keessaa {total} xumurameera",
+  "@vocalPlansCompleteCount": {
+    "placeholders": {
+      "complete": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "planDaysProgress": "Guyyaa {current} keessaa {expected}",
+  "@planDaysProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "expected": { "type": "int" }
+    }
+  },
+  "planDaysCount": "Guyyaawwan {count}",
+  "@planDaysCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "planStatusComplete": "Xumurame",
+  "planStatusInProgress": "Adeemsa irra",
+  "planStatusEmpty": "Duwwaa",
+  "restDaysCount": "Boqonnaa {count}",
+  "@restDaysCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "searchPlanDaysHint": "Guyyaa mata duree ykn lakkoofsaan barbaadi...",
+  "noMatchingPlanDays": "Guyyaan barbaacha keessan wajjin walsimu hin jiru",
+  "missingDaysWarning": "Guyyaawwan hanqatan: {days}",
+  "@missingDaysWarning": {
+    "placeholders": {
+      "days": { "type": "String" }
+    }
+  },
+  "duplicateDaysWarning": "Lakkoofsa guyyaa irra deebi'an: {days}",
+  "@duplicateDaysWarning": {
+    "placeholders": {
+      "days": { "type": "String" }
+    }
+  },
+  "dayNumberInvalid": "Lakkoofsa guyyaa 1 ykn isaa ol galchi",
+  "dayNumberDuplicate": "Guyyaan {number} karoora kana keessatti duraan jira",
+  "@dayNumberDuplicate": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "dayNumberOutOfRange": "Karooraan kun guyyaa 1–{max} fayyadama",
+  "@dayNumberOutOfRange": {
+    "placeholders": {
+      "max": { "type": "int" }
+    }
+  },
+  "discardUnsavedVocalDay": "Jijjiirama hin olkaafamne gatamuu?",
+  "failedToLoadVocalPlans": "Adeemsa karoora sagalee fe'uun hin dandeenye",
+  "duplicateDayBadge": "IRRA DEEBI'AA",
+  "missingAudioBadge": "SAGALEE HIN JIRU",
+  "replaceAudio": "Bakka buusi",
+  "removeAudio": "Haqi",
+  "previewAudio": "Dhaggeeffadhu",
+  "pausePreview": "Dhaabi",
+  "previouslyUploadedAudio": "Duraan ol fe'ame",
+  "audioPendingReplacement": "Yeroo olkaa'amu ni jijjiirama",
+  "audioMarkedForRemoval": "Yeroo olkaa'amu ni haqama",
+  "keepExistingAudio": "Sagalee jiru eegi",
+  "preparingAudioUpload": "Ol fe'iinsa sagalee qopheessaa...",
+  "uploadingAudioProgress": "{uploaded} keessaa {total} ol fe'aa · {percent}%",
+  "@uploadingAudioProgress": {
+    "placeholders": {
+      "uploaded": { "type": "String" },
+      "total": { "type": "String" },
+      "percent": { "type": "String" }
+    }
+  },
+  "savingVocalDrill": "Shaakala sagalee olkaa'aa...",
+  "audioUploadComplete": "Ol fe'iinsi xumurameera",
+  "confirmRemoveAudioTitle": "Sagaleen haqamuu?",
+  "confirmRemoveAudioBody": "Sagaleen kun shaakala irraa ni hiikama. Shaakalichi sagalee yoo barbaade olkaa'uu dura bakka bu'aa ol fe'i.",
+  "replacementAudioSelected": "Bakka bu'aan filameera",
+  "audioPreviewFailed": "Faayilii sagalee kana taphachiisuun hin dandeenye"
 }

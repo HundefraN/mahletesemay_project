@@ -707,5 +707,120 @@
   "enableNotifications": "ምልክታት ኣብርህ",
   "allowAccess": "ተበጻሕነት ፍቐድ",
   "allPermissionsGranted": "ኩሎም ፍቓዳት ተፈቒዱ!",
-  "onDeviceProcessingOnly": "100% ኣብ መሳርሒ ምስራሕ ጥራይ"
+  "onDeviceProcessingOnly": "100% ኣብ መሳርሒ ምስራሕ ጥራይ",
+  "vocalPlansOverview": "Curriculum coverage",
+  "vocalPlansPublishedCount": "{published} of {expected} days published",
+  "@vocalPlansPublishedCount": {
+    "placeholders": {
+      "published": {
+        "type": "int"
+      },
+      "expected": {
+        "type": "int"
+      }
+    }
+  },
+  "vocalPlansCompleteCount": "{complete} of {total} plans complete",
+  "@vocalPlansCompleteCount": {
+    "placeholders": {
+      "complete": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "planDaysProgress": "{current} of {expected} days",
+  "@planDaysProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "expected": {
+        "type": "int"
+      }
+    }
+  },
+  "planDaysCount": "{count} days",
+  "@planDaysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "planStatusComplete": "Complete",
+  "planStatusInProgress": "In progress",
+  "planStatusEmpty": "Empty",
+  "restDaysCount": "{count} rest",
+  "@restDaysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchPlanDaysHint": "Search days by title or number...",
+  "noMatchingPlanDays": "No days match your search",
+  "missingDaysWarning": "Missing days: {days}",
+  "@missingDaysWarning": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "duplicateDaysWarning": "Duplicate day numbers: {days}",
+  "@duplicateDaysWarning": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNumberInvalid": "Enter a day number of 1 or higher",
+  "dayNumberDuplicate": "Day {number} already exists in this plan",
+  "@dayNumberDuplicate": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "dayNumberOutOfRange": "This plan uses days 1–{max}",
+  "@dayNumberOutOfRange": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "discardUnsavedVocalDay": "Discard unsaved changes to this vocal drill?",
+  "failedToLoadVocalPlans": "Failed to load vocal plan progress",
+  "duplicateDayBadge": "DUPLICATE",
+  "missingAudioBadge": "NO AUDIO",
+  "replaceAudio": "Replace",
+  "removeAudio": "Remove",
+  "previewAudio": "Preview",
+  "pausePreview": "Pause",
+  "previouslyUploadedAudio": "Previously uploaded",
+  "audioPendingReplacement": "Ready to replace on save",
+  "audioMarkedForRemoval": "Will be removed when you save",
+  "keepExistingAudio": "Keep existing audio",
+  "preparingAudioUpload": "Preparing audio upload...",
+  "uploadingAudioProgress": "Uploading {uploaded} of {total} · {percent}%",
+  "@uploadingAudioProgress": {
+    "placeholders": {
+      "uploaded": { "type": "String" },
+      "total": { "type": "String" },
+      "percent": { "type": "String" }
+    }
+  },
+  "savingVocalDrill": "Saving vocal drill...",
+  "audioUploadComplete": "Upload complete",
+  "confirmRemoveAudioTitle": "Remove audio?",
+  "confirmRemoveAudioBody": "This audio will be detached from the drill. Upload a replacement before saving if the exercise still needs audio.",
+  "replacementAudioSelected": "Replacement selected",
+  "audioPreviewFailed": "Could not play this audio file"
 }

@@ -1110,6 +1110,38 @@ class AppLocalizationsAm extends AppLocalizations {
   String get totalSongViews => 'ጠቅላላ የመዝሙር እይታዎች';
 
   @override
+  String get audienceOverview => 'Audience';
+
+  @override
+  String get appInstalls => 'App Installs';
+
+  @override
+  String get websiteVisitors => 'Website Visitors';
+
+  @override
+  String get websiteVisits => 'Website Visits';
+
+  @override
+  String get installsToday => 'Installs today';
+
+  @override
+  String get visitsToday => 'Visits today';
+
+  @override
+  String get trafficLast7Days => 'Traffic (Last 7 Days)';
+
+  @override
+  String get noAudienceDataYet => 'No audience data yet';
+
+  @override
+  String get noAudienceDataDesc =>
+      'Install and visit counts appear after people open the app or website.';
+
+  @override
+  String get audienceSubtitle =>
+      'Unique devices that installed the app and browsers that visited the website';
+
+  @override
   String get songsAdded7Days => 'የተጨመሩ መዝሙራት (ባለፉት 7 ቀናት)';
 
   @override
@@ -1962,7 +1994,7 @@ class AppLocalizationsAm extends AppLocalizations {
 
   @override
   String get reportPrivacyNote =>
-      'Includes app version and device type so we can reproduce the issue. No account is required.';
+      'Includes app version and device type so we can reproduce the issue.';
 
   @override
   String get crashDetectedTitle => 'The app ran into a problem';
@@ -2094,4 +2126,133 @@ class AppLocalizationsAm extends AppLocalizations {
 
   @override
   String get aboutCouldNotOpenWebsite => 'Could not open the website.';
+
+  @override
+  String get vocalPlansOverview => 'የስርአተ-ትምህርት ሽፋን';
+
+  @override
+  String vocalPlansPublishedCount(int published, int expected) {
+    return '$published ከ $expected ቀናት ታትመዋል';
+  }
+
+  @override
+  String vocalPlansCompleteCount(int complete, int total) {
+    return '$complete ከ $total እቅዶች ተሟልተዋል';
+  }
+
+  @override
+  String planDaysProgress(int current, int expected) {
+    return '$current ከ $expected ቀናት';
+  }
+
+  @override
+  String planDaysCount(int count) {
+    return '$count ቀናት';
+  }
+
+  @override
+  String get planStatusComplete => 'ተሟልቷል';
+
+  @override
+  String get planStatusInProgress => 'በሂደት ላይ';
+
+  @override
+  String get planStatusEmpty => 'ባዶ';
+
+  @override
+  String restDaysCount(int count) {
+    return '$count እረፍት';
+  }
+
+  @override
+  String get searchPlanDaysHint => 'ቀናትን በርዕስ ወይም በቁጥር ፈልግ...';
+
+  @override
+  String get noMatchingPlanDays => 'ከፍለጋዎ ጋር የሚዛመድ ቀን የለም';
+
+  @override
+  String missingDaysWarning(String days) {
+    return 'የጎደሉ ቀናት: $days';
+  }
+
+  @override
+  String duplicateDaysWarning(String days) {
+    return 'ተደጋጋሚ የቀን ቁጥሮች: $days';
+  }
+
+  @override
+  String get dayNumberInvalid => '1 ወይም ከዚያ በላይ የሆነ የቀን ቁጥር ያስገቡ';
+
+  @override
+  String dayNumberDuplicate(int number) {
+    return 'ቀን $number በዚህ እቅድ ውስጥ አስቀድሞ አለ';
+  }
+
+  @override
+  String dayNumberOutOfRange(int max) {
+    return 'ይህ እቅድ ከ 1–$max ቀናት ይጠቀማል';
+  }
+
+  @override
+  String get discardUnsavedVocalDay => 'ያልተቀመጡ ለውጦች ይጣሉ?';
+
+  @override
+  String get failedToLoadVocalPlans => 'የድምፅ እቅድ ሂደትን መጫን አልተሳካም';
+
+  @override
+  String get duplicateDayBadge => 'ተደጋጋሚ';
+
+  @override
+  String get missingAudioBadge => 'ድምፅ የለም';
+
+  @override
+  String get replaceAudio => 'ቀይር';
+
+  @override
+  String get removeAudio => 'አስወግድ';
+
+  @override
+  String get previewAudio => 'አጫውት';
+
+  @override
+  String get pausePreview => 'ቆም';
+
+  @override
+  String get previouslyUploadedAudio => 'ቀድሞ የተጫነ';
+
+  @override
+  String get audioPendingReplacement => 'ሲቀመጥ ይቀየራል';
+
+  @override
+  String get audioMarkedForRemoval => 'ሲቀመጥ ይወገዳል';
+
+  @override
+  String get keepExistingAudio => 'ያለውን ድምጽ አቆይ';
+
+  @override
+  String get preparingAudioUpload => 'የድምጽ መጫን በመዘጋጀት ላይ...';
+
+  @override
+  String uploadingAudioProgress(String uploaded, String total, String percent) {
+    return '$uploaded ከ $total በመጫን ላይ · $percent%';
+  }
+
+  @override
+  String get savingVocalDrill => 'የድምጽ ልምምድ በማስቀመጥ ላይ...';
+
+  @override
+  String get audioUploadComplete => 'መጫን ተጠናቋል';
+
+  @override
+  String get confirmRemoveAudioTitle => 'ድምጽ ይወገድ?';
+
+  @override
+  String get confirmRemoveAudioBody =>
+      'ይህ ድምጽ ከልምምዱ ይላቀቃል። ልምምዱ ድምጽ ከፈለገ ከማስቀመጥዎ በፊት አዲስ ይጫኑ።';
+
+  @override
+  String get replacementAudioSelected => 'የመተኪያ ተመርጧል';
+
+  @override
+  String get audioPreviewFailed => 'ይህን የድምጽ ፋይል ማጫወት አልተቻለም';
 }
